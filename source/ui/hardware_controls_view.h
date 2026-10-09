@@ -25,7 +25,6 @@ private:
 
 	void show_card(int card_index);
 	void list_cards(const std::vector<AlsaCard>& cards, int selected_card);
-	void apply_saved_values();
 	void build_rows();
 	std::unique_ptr<juce::Component> make_editor(const AlsaControl& control);
 	std::unique_ptr<juce::Component> make_choice_editor(const AlsaControl& control);

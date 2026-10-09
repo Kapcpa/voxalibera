@@ -33,9 +33,9 @@ Needs `cmake`, `ninja`, `alsa-lib`, `libsystemd` and `pipewire-jack`. JUCE and C
 ```
 source/
   main.cpp     starts the application
-  app/         application lifecycle, main window, command-line tools
+  app/         application lifecycle, windows, commands and menus, command-line tools
   ui/          views; read state every frame, call into core/engine on user input
-  core/        app state: AppContext, Settings, DeviceSession (device choice, reservations, PipeWire setup)
+  core/        app state: AppContext, Settings, DeviceSession (device choice, reservations, PipeWire setup, restoring hardware controls)
   engine/      audio processing; everything the audio thread touches
   platform/    Linux specifics: ALSA cards and controls, D-Bus device reservation, PipeWire properties, thread priority
 tests/
@@ -45,7 +45,11 @@ Dependencies only point down: `app -> ui -> core -> engine -> platform`. Nothing
 
 ### Frame loop
 
-`MainView` runs a 30 Hz timer, the equivalent of a game loop: `context.update()` first, then every view's `update()`. Views poll state (meters, device starts, active card) instead of subscribing to events. There is no event bus.
+`MainWindow` runs a 30 Hz timer, the equivalent of a game loop: `context.update()` first, then the views that need it (`SettingsWindow::update()` while it's open). Views poll state (meters, device starts, active card) instead of subscribing to events. There is no event bus. Anything that must happen regardless of which windows are open (like restoring hardware controls after a device starts) belongs in `core/`, not in a view.
+
+### Commands
+
+Every user action is a command: an id in `app/commands.h`, one line in the definitions table (name, menu category, default key), and a handler in `MainWindow`'s `actions` map. Menus, keyboard shortcuts and later a command palette and scripts all go through JUCE's `ApplicationCommandManager`. A command without a handler shows up greyed out, so planned features can sit in the menus before they exist.
 
 ### Real-time rules
 

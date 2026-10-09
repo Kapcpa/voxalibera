@@ -29,8 +29,7 @@ HardwareControlsView::HardwareControlsView(AppContext& context)
 {
 	title.setFont(juce::FontOptions(TITLE_FONT_SIZE, juce::Font::bold));
 	card_box.setTextWhenNothingSelected("No card");
-	card_box.onChange = [this]
-	{ show_card(card_from_id(card_box.getSelectedId())); };
+	card_box.onChange = [this] { show_card(card_from_id(card_box.getSelectedId())); };
 	empty_message.setJustificationType(juce::Justification::topLeft);
 	viewport.setViewedComponent(&row_container, false);
 	viewport.setScrollBarsShown(true, false);
@@ -62,7 +61,6 @@ void HardwareControlsView::show_card(int card_index)
 	card_name = find_card_name(cards, card_index);
 
 	list_cards(cards, card_index);
-	apply_saved_values();
 	build_rows();
 }
 
@@ -74,18 +72,6 @@ void HardwareControlsView::list_cards(const std::vector<AlsaCard>& cards, int se
 		card_box.addItem(juce::String(card.index) + ": " + card.name, card_id(card.index));
 
 	card_box.setSelectedId(card_id(selected_card), juce::dontSendNotification);
-}
-
-void HardwareControlsView::apply_saved_values()
-{
-	const auto saved_card = context.settings.hardware_controls.find(card_name);
-
-	if (saved_card == context.settings.hardware_controls.end())
-		return;
-
-	for (const auto& control : controls->controls)
-		if (const auto saved = saved_card->second.find(control.key); saved != saved_card->second.end())
-			controls->write(control, saved->second);
 }
 
 void HardwareControlsView::build_rows()
@@ -126,8 +112,7 @@ std::unique_ptr<juce::Component> HardwareControlsView::make_choice_editor(const 
 	auto box = std::make_unique<juce::ComboBox>();
 	box->addItemList(control.choices, 1);
 	box->setSelectedId(controls->read(control) + 1, juce::dontSendNotification);
-	box->onChange = [this, control, editor = box.get()]
-	{ remember_value(control, editor->getSelectedId() - 1); };
+	box->onChange = [this, control, editor = box.get()] { remember_value(control, editor->getSelectedId() - 1); };
 	return box;
 }
 
@@ -135,8 +120,7 @@ std::unique_ptr<juce::Component> HardwareControlsView::make_toggle_editor(const 
 {
 	auto toggle = std::make_unique<juce::ToggleButton>();
 	toggle->setToggleState(controls->read(control) != 0, juce::dontSendNotification);
-	toggle->onClick = [this, control, editor = toggle.get()]
-	{ remember_value(control, editor->getToggleState() ? 1 : 0); };
+	toggle->onClick = [this, control, editor = toggle.get()] { remember_value(control, editor->getToggleState() ? 1 : 0); };
 	return toggle;
 }
 
@@ -147,16 +131,14 @@ std::unique_ptr<juce::Component> HardwareControlsView::make_level_editor(const A
 	slider->setTextBoxStyle(juce::Slider::TextBoxRight, false, VALUE_BOX_WIDTH, VALUE_BOX_HEIGHT);
 	slider->setValue(controls->read(control), juce::dontSendNotification);
 
-	slider->onValueChange = [this, control, editor = slider.get()]
-	{
+	slider->onValueChange = [this, control, editor = slider.get()] {
 		if (editor->isMouseButtonDown())
 			controls->write(control, (int) editor->getValue());
 		else
 			remember_value(control, (int) editor->getValue());
 	};
 
-	slider->onDragEnd = [this, control, editor = slider.get()]
-	{ remember_value(control, (int) editor->getValue()); };
+	slider->onDragEnd = [this, control, editor = slider.get()] { remember_value(control, (int) editor->getValue()); };
 	return slider;
 }
 

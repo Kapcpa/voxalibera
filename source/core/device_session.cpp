@@ -1,5 +1,6 @@
 #include "core/device_session.h"
 
+#include "core/hardware_restore.h"
 #include "platform/pipewire_properties.h"
 
 #include <set>
@@ -66,6 +67,8 @@ void DeviceSession::update(double now)
 	if (const auto choice = current_choice(); choice != applied_choice)
 		apply_choice(choice, now);
 
+	restore_hardware_after_device_start();
+
 	if (rescan_at && now >= *rescan_at)
 	{
 		rescan_at.reset();
@@ -131,8 +134,7 @@ bool DeviceSession::reserve_cards_for(const juce::StringArray& alsa_device_names
 		if (const auto card = find_card_for_alsa_device(cards, name); card != NO_CARD)
 			wanted_cards.insert(card);
 
-	std::erase_if(reservations, [&](const auto& entry)
-				  { return !wanted_cards.contains(entry.first); });
+	std::erase_if(reservations, [&](const auto& entry) { return !wanted_cards.contains(entry.first); });
 	reservation_problems.clear();
 
 	bool reserved_any = false;
@@ -180,4 +182,18 @@ void DeviceSession::restart_device()
 {
 	engine.device_manager.closeAudioDevice();
 	engine.device_manager.restartLastAudioDevice();
+}
+
+void DeviceSession::restore_hardware_after_device_start()
+{
+	const auto device_starts = engine.device_starts.load();
+
+	if (active_card == restored_card && device_starts == restored_device_starts)
+		return;
+
+	restored_card = active_card;
+	restored_device_starts = device_starts;
+
+	if (active_card != NO_CARD)
+		restore_saved_hardware_controls(settings, active_card);
 }

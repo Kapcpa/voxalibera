@@ -49,10 +49,13 @@ private:
 	bool use_jack_properties_for(const juce::String& jack_device_name);
 	void reopen_device();
 	void restart_device();
+	void restore_hardware_after_device_start();
 
 	AudioEngine& engine;
 	Settings& settings;
 	std::map<int, std::unique_ptr<DeviceReservation>> reservations;
 	DeviceChoice applied_choice;
 	std::optional<double> rescan_at;
+	int restored_card = NO_CARD;
+	int restored_device_starts = 0;
 };

@@ -1,28 +1,22 @@
 #pragma once
 
-#include "core/app_context.h"
-#include "ui/diagnostics_view.h"
-#include "ui/hardware_controls_view.h"
-#include "ui/level_meter_view.h"
-#include "ui/monitor_view.h"
+#include "ui/panel_view.h"
 
-#include <juce_audio_utils/juce_audio_utils.h>
+#include <juce_gui_basics/juce_gui_basics.h>
 
-class MainView : public juce::Component, private juce::Timer
+class MainView : public juce::Component
 {
 public:
-	explicit MainView(AppContext& context);
+	MainView();
+
+	bool is_mixer_visible() const { return mixer.isVisible(); }
+	void set_mixer_visible(bool visible);
 
 	void paint(juce::Graphics& graphics) override;
 	void resized() override;
 
 private:
-	void timerCallback() override;
-
-	AppContext& context;
-	juce::AudioDeviceSelectorComponent device_selector;
-	MonitorView monitor_view;
-	LevelMeterView level_meter_view;
-	DiagnosticsView diagnostics_view;
-	HardwareControlsView hardware_controls_view;
+	PanelView transport_bar{"Transport"};
+	PanelView track_area{"Tracks"};
+	PanelView mixer{"Mixer"};
 };

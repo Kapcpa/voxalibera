@@ -38,25 +38,21 @@ MonitorView::MonitorView(AppContext& context)
 	: context(context)
 {
 	monitoring_toggle.setToggleState(context.settings.monitoring, juce::dontSendNotification);
-	monitoring_toggle.onClick = [this]
-	{ set_monitoring(monitoring_toggle.getToggleState()); };
+	monitoring_toggle.onClick = [this] { set_monitoring(monitoring_toggle.getToggleState()); };
 
 	for (const auto& [routing, text] : ROUTING_CHOICES)
 		routing_box.addItem(text, routing_id(routing));
 
 	routing_box.setSelectedId(routing_id(context.settings.input_routing), juce::dontSendNotification);
-	routing_box.onChange = [this]
-	{ set_routing(routing_from_id(routing_box.getSelectedId())); };
+	routing_box.onChange = [this] { set_routing(routing_from_id(routing_box.getSelectedId())); };
 
 	for (const auto size : JACK_BUFFER_SIZES)
 		jack_buffer_box.addItem(juce::String(size) + " samples", size);
 
 	jack_buffer_box.setSelectedId(context.settings.jack_buffer_size, juce::dontSendNotification);
-	jack_buffer_box.onChange = [this]
-	{ set_jack_buffer_size(jack_buffer_box.getSelectedId()); };
+	jack_buffer_box.onChange = [this] { set_jack_buffer_size(jack_buffer_box.getSelectedId()); };
 
-	rescan_button.onClick = [this]
-	{ this->context.devices.rescan_devices(); };
+	rescan_button.onClick = [this] { this->context.devices.rescan_devices(); };
 
 	addAndMakeVisible(monitoring_toggle);
 	addAndMakeVisible(routing_label);
