@@ -30,6 +30,7 @@ void Application::initialise(const juce::String& command_line)
 		return;
 	}
 
+	juce::LookAndFeel::setDefaultLookAndFeel(&look_and_feel);
 	context = std::make_unique<AppContext>();
 	window = std::make_unique<MainWindow>(getApplicationName(), *context);
 }
@@ -38,6 +39,7 @@ void Application::shutdown()
 {
 	window.reset();
 	context.reset();
+	juce::LookAndFeel::setDefaultLookAndFeel(nullptr);
 }
 
 void Application::systemRequestedQuit()

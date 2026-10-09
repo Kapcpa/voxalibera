@@ -1,17 +1,14 @@
-#include "ui/hardware_controls_view.h"
+#include "ui/settings/interface_page.h"
+
+#include "ui/settings/settings_layout.h"
 
 namespace
 {
-	constexpr int TITLE_HEIGHT = 24;
-	constexpr int CARD_BOX_HEIGHT = 26;
 	constexpr int EMPTY_MESSAGE_HEIGHT = 40;
-	constexpr int ROW_HEIGHT = 30;
-	constexpr int ROW_PADDING = 2;
-	constexpr int LABEL_WIDTH = 170;
+	constexpr int CONTROL_LABEL_WIDTH = 190;
+	constexpr int CONTROL_ROW_HEIGHT = 36;
 	constexpr int VALUE_BOX_WIDTH = 50;
 	constexpr int VALUE_BOX_HEIGHT = 20;
-	constexpr int SECTION_GAP = 8;
-	constexpr float TITLE_FONT_SIZE = 16.0f;
 
 	int card_id(int card_index)
 	{
@@ -24,9 +21,8 @@ namespace
 	}
 }
 
-HardwareControlsView::HardwareControlsView(AppContext& context) : context(context)
+InterfacePage::InterfacePage(AppContext& context) : context(context)
 {
-	title.setFont(juce::FontOptions(TITLE_FONT_SIZE, juce::Font::bold));
 	card_box.setTextWhenNothingSelected("No card");
 	card_box.onChange = [this] { show_card(card_from_id(card_box.getSelectedId())); };
 	empty_message.setJustificationType(juce::Justification::topLeft);
@@ -34,12 +30,14 @@ HardwareControlsView::HardwareControlsView(AppContext& context) : context(contex
 	viewport.setScrollBarsShown(true, false);
 
 	addAndMakeVisible(title);
+	addAndMakeVisible(card_label);
 	addAndMakeVisible(card_box);
+	addAndMakeVisible(controls_title);
 	addAndMakeVisible(empty_message);
 	addAndMakeVisible(viewport);
 }
 
-void HardwareControlsView::update()
+void InterfacePage::update()
 {
 	const auto device_starts = context.engine.device_starts.load();
 
@@ -51,7 +49,7 @@ void HardwareControlsView::update()
 	show_card(followed_card);
 }
 
-void HardwareControlsView::show_card(int card_index)
+void InterfacePage::show_card(int card_index)
 {
 	rows.clear();
 
@@ -63,7 +61,7 @@ void HardwareControlsView::show_card(int card_index)
 	build_rows();
 }
 
-void HardwareControlsView::list_cards(const std::vector<AlsaCard>& cards, int selected_card)
+void InterfacePage::list_cards(const std::vector<AlsaCard>& cards, int selected_card)
 {
 	card_box.clear(juce::dontSendNotification);
 
@@ -73,7 +71,7 @@ void HardwareControlsView::list_cards(const std::vector<AlsaCard>& cards, int se
 	card_box.setSelectedId(card_id(selected_card), juce::dontSendNotification);
 }
 
-void HardwareControlsView::build_rows()
+void InterfacePage::build_rows()
 {
 	for (const auto& control : controls->controls) {
 		auto row = std::make_unique<ControlRow>();
@@ -90,7 +88,7 @@ void HardwareControlsView::build_rows()
 	resized();
 }
 
-std::unique_ptr<juce::Component> HardwareControlsView::make_editor(const AlsaControl& control)
+std::unique_ptr<juce::Component> InterfacePage::make_editor(const AlsaControl& control)
 {
 	switch (control.kind) {
 		case AlsaControlKind::choice:
@@ -104,7 +102,7 @@ std::unique_ptr<juce::Component> HardwareControlsView::make_editor(const AlsaCon
 	return make_level_editor(control);
 }
 
-std::unique_ptr<juce::Component> HardwareControlsView::make_choice_editor(const AlsaControl& control)
+std::unique_ptr<juce::Component> InterfacePage::make_choice_editor(const AlsaControl& control)
 {
 	auto box = std::make_unique<juce::ComboBox>();
 	box->addItemList(control.choices, 1);
@@ -113,7 +111,7 @@ std::unique_ptr<juce::Component> HardwareControlsView::make_choice_editor(const 
 	return box;
 }
 
-std::unique_ptr<juce::Component> HardwareControlsView::make_toggle_editor(const AlsaControl& control)
+std::unique_ptr<juce::Component> InterfacePage::make_toggle_editor(const AlsaControl& control)
 {
 	auto toggle = std::make_unique<juce::ToggleButton>();
 	toggle->setToggleState(controls->read(control) != 0, juce::dontSendNotification);
@@ -121,7 +119,7 @@ std::unique_ptr<juce::Component> HardwareControlsView::make_toggle_editor(const 
 	return toggle;
 }
 
-std::unique_ptr<juce::Component> HardwareControlsView::make_level_editor(const AlsaControl& control)
+std::unique_ptr<juce::Component> InterfacePage::make_level_editor(const AlsaControl& control)
 {
 	auto slider = std::make_unique<juce::Slider>(juce::Slider::LinearHorizontal, juce::Slider::TextBoxRight);
 	slider->setRange((double) control.minimum, (double) control.maximum, 1.0);
@@ -139,17 +137,17 @@ std::unique_ptr<juce::Component> HardwareControlsView::make_level_editor(const A
 	return slider;
 }
 
-void HardwareControlsView::remember_value(const AlsaControl& control, int value)
+void InterfacePage::remember_value(const AlsaControl& control, int value)
 {
 	controls->write(control, value);
 	context.settings.hardware_controls[card_name][control.key] = value;
 	context.settings.save();
 }
 
-juce::String HardwareControlsView::empty_message_text() const
+juce::String InterfacePage::empty_message_text() const
 {
 	if (!controls->is_open())
-		return "No sound card matches the selected device. Pick one above.";
+		return "No sound card matches the selected device. Pick one above to see its controls.";
 
 	if (controls->controls.empty())
 		return "This card has no adjustable controls.";
@@ -157,23 +155,30 @@ juce::String HardwareControlsView::empty_message_text() const
 	return {};
 }
 
-void HardwareControlsView::resized()
+void InterfacePage::resized()
 {
+	using namespace settings_layout;
 	auto area = getLocalBounds();
 
-	title.setBounds(area.removeFromTop(TITLE_HEIGHT));
-	area.removeFromTop(SECTION_GAP / 2);
-	card_box.setBounds(area.removeFromTop(CARD_BOX_HEIGHT));
+	title.setBounds(area.removeFromTop(SECTION_LABEL_HEIGHT));
+	area.removeFromTop(ROW_GAP);
+
+	auto card_row = area.removeFromTop(ROW_HEIGHT);
+	card_label.setBounds(card_row.removeFromLeft(LABEL_WIDTH));
+	card_box.setBounds(card_row.removeFromLeft(FIELD_WIDTH));
 	area.removeFromTop(SECTION_GAP);
+
+	controls_title.setBounds(area.removeFromTop(SECTION_LABEL_HEIGHT));
+	area.removeFromTop(ROW_GAP);
 	empty_message.setBounds(area.removeFromTop(empty_message.getText().isEmpty() ? 0 : EMPTY_MESSAGE_HEIGHT));
 	viewport.setBounds(area);
 
 	const auto width = viewport.getMaximumVisibleWidth();
-	row_container.setSize(width, (int) rows.size() * ROW_HEIGHT);
+	row_container.setSize(width, (int) rows.size() * CONTROL_ROW_HEIGHT);
 
 	for (size_t position = 0; position < rows.size(); ++position) {
-		auto bounds = juce::Rectangle<int>(0, (int) position * ROW_HEIGHT, width, ROW_HEIGHT).reduced(0, ROW_PADDING);
-		rows[position]->label.setBounds(bounds.removeFromLeft(LABEL_WIDTH));
-		rows[position]->editor->setBounds(bounds);
+		auto bounds = juce::Rectangle<int>(0, (int) position * CONTROL_ROW_HEIGHT, width, ROW_HEIGHT);
+		rows[position]->label.setBounds(bounds.removeFromLeft(CONTROL_LABEL_WIDTH));
+		rows[position]->editor->setBounds(bounds.removeFromLeft(FIELD_WIDTH));
 	}
 }

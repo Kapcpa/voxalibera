@@ -1,9 +1,10 @@
 #pragma once
 
 #include "app/main_menu.h"
-#include "app/settings_window.h"
 #include "core/app_context.h"
 #include "ui/main_view.h"
+#include "ui/modal_overlay.h"
+#include "ui/settings/settings_view.h"
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
@@ -18,6 +19,7 @@ public:
 	~MainWindow() override;
 
 	void closeButtonPressed() override;
+	void resized() override;
 
 	juce::ApplicationCommandTarget* getNextCommandTarget() override;
 	void getAllCommands(juce::Array<juce::CommandID>& commands) override;
@@ -26,14 +28,16 @@ public:
 
 private:
 	void timerCallback() override;
+	bool is_allowed_now(juce::CommandID id) const;
 	void toggle_mixer();
-	void show_audio_settings();
+	void show_settings(int page);
 	void show_about();
 
 	AppContext& context;
 	juce::ApplicationCommandManager command_manager;
 	MainMenu main_menu{command_manager};
 	MainView main_view;
-	SettingsWindow settings_window;
+	SettingsView settings_view;
+	ModalOverlay settings_overlay;
 	std::map<juce::CommandID, std::function<void()>> actions;
 };

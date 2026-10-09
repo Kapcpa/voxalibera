@@ -18,7 +18,7 @@ namespace
 		{"File", {command::NEW_PROJECT, command::OPEN_PROJECT, SEPARATOR, command::SAVE_PROJECT, command::SAVE_PROJECT_AS, SEPARATOR, command::QUIT}},
 		{"Edit", {command::UNDO, command::REDO}},
 		{"View", {command::TOGGLE_MIXER}},
-		{"Settings", {command::AUDIO_SETTINGS}},
+		{"Settings", {command::AUDIO_SETTINGS, command::INTERFACE_SETTINGS}},
 		{"Help", {command::ABOUT}},
 	};
 }

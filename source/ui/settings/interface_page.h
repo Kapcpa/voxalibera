@@ -2,18 +2,20 @@
 
 #include "core/app_context.h"
 #include "platform/alsa_controls.h"
+#include "ui/settings/section_label.h"
+#include "ui/settings/settings_page.h"
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
 #include <memory>
 #include <vector>
 
-class HardwareControlsView : public juce::Component
+class InterfacePage : public SettingsPage
 {
 public:
-	explicit HardwareControlsView(AppContext& context);
+	explicit InterfacePage(AppContext& context);
 
-	void update();
+	void update() override;
 	void resized() override;
 
 private:
@@ -40,8 +42,10 @@ private:
 	int followed_device_starts = -1;
 	std::vector<std::unique_ptr<ControlRow>> rows;
 
-	juce::Label title{{}, "Hardware controls"};
+	SectionLabel title{"Interface"};
+	juce::Label card_label{{}, "Card"};
 	juce::ComboBox card_box;
+	SectionLabel controls_title{"Hardware controls"};
 	juce::Label empty_message;
 	juce::Viewport viewport;
 	juce::Component row_container;

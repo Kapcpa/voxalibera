@@ -49,7 +49,15 @@ Dependencies only point down: `app -> ui -> core -> engine -> platform`. Nothing
 
 ### Frame loop
 
-`MainWindow` runs a 30 Hz timer, the equivalent of a game loop: `context.update()` first, then the views that need it (`SettingsWindow::update()` while it's open). Views poll state (meters, device starts, active card) instead of subscribing to events. There is no event bus. Anything that must happen regardless of which windows are open (like restoring hardware controls after a device starts) belongs in `core/`, not in a view.
+`MainWindow` runs a 30 Hz timer, the equivalent of a game loop: `context.update()` first, then the views that need it (the audio settings view while its overlay is open). Views poll state (meters, device starts, active card) instead of subscribing to events. There is no event bus. Anything that must happen regardless of which windows are open (like restoring hardware controls after a device starts) belongs in `core/`, not in a view.
+
+### Dialogs
+
+Settings and anything else that shouldn't be touched mid-session open as a `ModalOverlay` inside the main window: the window dims, the dialog sits centered, clicks outside it, the menu bar and every shortcut except Quit are blocked, and Escape closes it. No separate OS windows for this, since Wayland compositors decide where windows go.
+
+### Theme
+
+All colours live in `ui/theme.h`; `ThemeLookAndFeel` applies them to every JUCE widget. Views use `theme::` constants instead of their own colours.
 
 ### Commands
 

@@ -15,7 +15,8 @@ namespace
 		{command::UNDO, "Undo", "Edit", 'z', CONTROL},
 		{command::REDO, "Redo", "Edit", 'z', CONTROL_SHIFT},
 		{command::TOGGLE_MIXER, "Mixer", "View", 'x', NO_MODIFIERS},
-		{command::AUDIO_SETTINGS, "Audio Settings...", "Settings", ',', CONTROL},
+		{command::AUDIO_SETTINGS, "Audio...", "Settings", ',', CONTROL},
+		{command::INTERFACE_SETTINGS, "Interface...", "Settings", 0, NO_MODIFIERS},
 		{command::ABOUT, "About custom-daw", "Help", 0, NO_MODIFIERS},
 	};
 }

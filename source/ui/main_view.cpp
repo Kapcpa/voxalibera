@@ -4,8 +4,8 @@
 
 namespace
 {
-	constexpr int WIDTH = 1280;
-	constexpr int HEIGHT = 800;
+	constexpr int WIDTH = 1360;
+	constexpr int HEIGHT = 880;
 	constexpr int TRANSPORT_HEIGHT = 48;
 	constexpr int MIXER_HEIGHT = 260;
 	constexpr int GAP = 2;
