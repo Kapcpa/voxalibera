@@ -5,10 +5,9 @@ Working name for an open-source DAW for Linux, built in C++20 on JUCE 8 with our
 ## Build and run
 
 ```
-cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
-cmake --build build
-./build/custom_daw_artefacts/Release/custom-daw
-./build/custom_daw_artefacts/Release/custom-daw --list-devices
+./compile.sh                  configures on first use, builds, then runs
+./run.sh                      runs the last build
+./run.sh --list-devices
 ./build/tests/custom_daw_tests_artefacts/Release/custom_daw_tests
 ```
 

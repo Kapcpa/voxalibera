@@ -5,9 +5,8 @@ An open-source DAW for Linux in early development. Right now it opens an audio i
 ## Build
 
 ```
-cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
-cmake --build build
-./build/custom_daw_artefacts/Release/custom-daw
+./compile.sh    builds and runs
+./run.sh        runs the last build
 ```
 
 Requires `cmake`, `ninja`, `alsa-lib`, `libsystemd` and `pipewire-jack`.
