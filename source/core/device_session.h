@@ -5,6 +5,7 @@
 #include "platform/alsa_cards.h"
 #include "platform/device_reservation.h"
 
+#include <functional>
 #include <map>
 #include <memory>
 #include <optional>
@@ -21,6 +22,12 @@ public:
 	void open();
 	void update(double now);
 	void rescan_devices();
+
+	void choose_driver(const juce::String& type);
+	void choose_output(const juce::String& name);
+	void choose_input(const juce::String& name);
+	void choose_sample_rate(double rate);
+	void choose_buffer_size(int size);
 
 	bool is_exclusive() const { return !reservations.empty(); }
 
@@ -44,7 +51,8 @@ private:
 	DeviceChoice current_choice() const;
 	void open_saved_device();
 	void apply_choice(const DeviceChoice& choice, double now);
-	void remember_choice(const DeviceChoice& choice);
+	void change_setup(const std::function<void(juce::AudioDeviceManager::AudioDeviceSetup&)>& change);
+	void remember_current_device();
 	bool reserve_cards_for(const juce::StringArray& alsa_device_names);
 	bool use_jack_properties_for(const juce::String& jack_device_name);
 	void reopen_device();

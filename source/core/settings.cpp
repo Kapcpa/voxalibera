@@ -4,7 +4,7 @@
 
 namespace
 {
-	constexpr auto APPLICATION_FOLDER = "custom-daw";
+	constexpr auto APPLICATION_FOLDER = "voxalibera";
 	constexpr auto SETTINGS_FILE = "settings.json";
 
 	const std::map<InputRouting, juce::String> ROUTING_NAMES{

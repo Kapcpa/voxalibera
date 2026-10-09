@@ -1,4 +1,4 @@
-# custom-daw
+# Voxalibera
 
 An open-source DAW for Linux in early development. Right now it opens an audio interface with low latency, passes the input through to the output, and shows levels, latency and device diagnostics.
 

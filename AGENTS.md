@@ -1,4 +1,4 @@
-# custom-daw
+# Voxalibera
 
 Working name for an open-source DAW for Linux, built in C++20 on JUCE 8 with our own engine.
 
@@ -34,7 +34,7 @@ Needs `cmake`, `ninja`, `alsa-lib`, `libsystemd` and `pipewire-jack`. JUCE and C
 - Plain `struct` for data, members public by default; `private` only for what would break invariants.
 - Dependencies are passed explicitly (constructor references). No singletons, no globals. `AppContext` is the one shared object.
 - Settings and saved state are JSON with `kebab-case` keys, written with `juce::File::replaceWithText` (temporary file then rename, so a crash can't leave a half-written file).
-- Log notable events with `log_event()` (`core/log.h`), never from the audio thread. The log is `~/.local/state/custom-daw/custom-daw.log`, capped at 1 MB.
+- Log notable events with `log_event()` (`core/log.h`), never from the audio thread. The log is `~/.local/state/voxalibera/voxalibera.log`, capped at 1 MB.
 
 ## Architecture
 
@@ -78,6 +78,7 @@ The UI writes those atomics and saves `Settings`; the engine never sees `Setting
 
 ### Devices
 
+- Views never change the `AudioDeviceManager` themselves; they call `DeviceSession::choose_*`. Only those user choices are saved, so a fallback device (the saved one is unplugged) is used without overwriting the user's choice.
 - **ALSA mode:** `DeviceSession` borrows the card from PipeWire through `org.freedesktop.ReserveDevice1` and hands it back on close. The audio thread promotes itself to `SCHED_FIFO` because JUCE's ALSA backend doesn't.
 - **JACK mode (PipeWire):** before JUCE opens its JACK client, `PIPEWIRE_PROPS` sets `node.force-quantum` and, for cards that can't run at 48 kHz, `node.force-rate`. PipeWire drops both when the client disconnects.
 - JUCE scans JACK devices only once, so `DeviceSession` rescans after handing a card back, and on the Rescan button.

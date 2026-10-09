@@ -8,7 +8,7 @@
 
 namespace
 {
-	constexpr auto APPLICATION_NAME = "custom-daw";
+	constexpr auto APPLICATION_NAME = "voxalibera";
 	constexpr int INPUT_CHANNELS = 2;
 	constexpr int OUTPUT_CHANNELS = 2;
 	constexpr double RESCAN_DELAY_SECONDS = 1.5;
@@ -110,18 +110,56 @@ void DeviceSession::apply_choice(const DeviceChoice& choice, double now)
 
 	applied_choice = current_choice();
 	log_device(applied_choice);
-
-	if (engine.device_manager.getCurrentAudioDevice() != nullptr)
-		remember_choice(applied_choice);
 }
 
-void DeviceSession::remember_choice(const DeviceChoice& choice)
+void DeviceSession::choose_driver(const juce::String& type)
 {
-	settings.device_type = choice.type;
-	settings.output_device = choice.output;
-	settings.input_device = choice.input;
-	settings.sample_rate = choice.sample_rate;
-	settings.buffer_size = choice.buffer_size;
+	engine.device_manager.setCurrentAudioDeviceType(type, true);
+	remember_current_device();
+}
+
+void DeviceSession::choose_output(const juce::String& name)
+{
+	change_setup([&](auto& setup) { setup.outputDeviceName = name; });
+}
+
+void DeviceSession::choose_input(const juce::String& name)
+{
+	change_setup([&](auto& setup) { setup.inputDeviceName = name; });
+}
+
+void DeviceSession::choose_sample_rate(double rate)
+{
+	change_setup([&](auto& setup) { setup.sampleRate = rate; });
+}
+
+void DeviceSession::choose_buffer_size(int size)
+{
+	if (engine.device_manager.getCurrentAudioDeviceType() != JACK) {
+		change_setup([&](auto& setup) { setup.bufferSize = size; });
+		return;
+	}
+
+	settings.jack_buffer_size = size;
+	settings.save();
+}
+
+void DeviceSession::change_setup(const std::function<void(juce::AudioDeviceManager::AudioDeviceSetup&)>& change)
+{
+	auto setup = engine.device_manager.getAudioDeviceSetup();
+	change(setup);
+	engine.device_manager.setAudioDeviceSetup(setup, true);
+	remember_current_device();
+}
+
+void DeviceSession::remember_current_device()
+{
+	const auto setup = engine.device_manager.getAudioDeviceSetup();
+	settings.device_type = engine.device_manager.getCurrentAudioDeviceType();
+	settings.output_device = setup.outputDeviceName;
+	settings.input_device = setup.inputDeviceName;
+	settings.sample_rate = setup.sampleRate;
+	settings.buffer_size = setup.bufferSize;
 	settings.save();
 }
 

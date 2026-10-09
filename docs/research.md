@@ -1,6 +1,6 @@
 # Research: DAWs (October 2026)
 
-What popular DAWs share, how they differ, what users love and hate, and what that means for custom-daw.
+What popular DAWs share, how they differ, what users love and hate, and what that means for Voxalibera.
 
 **Sources and gaps:** web research across official manuals, Sound On Sound, MusicRadar, MusicTech, KVR, Gearspace, the Ableton, Ardour and Bitwig forums, Production Expert and Hacker News. **Reddit could not be read** (fetching was blocked), so beginner, FL Studio and Logic voices are under-represented; it's worth reading r/linuxaudio, r/Logic_Studio and r/Reaper by hand. A few shortcut and pricing details came from single sources.
 
@@ -117,7 +117,7 @@ Reaper's stability and scripting, Bitwig's modulators and sandboxing, Ableton's 
 
 Stem separation became standard (FL, Studio One, Live, Cubase, Logic); AI assistants and session players; sample-store integration (Splice); CLAP adoption (Bitwig, Reaper, FL, Studio One; not Ableton or Cubase); modulation everywhere; step sequencers inside linear DAWs; built-in Atmos; audio over the network (Ableton Link Audio). Cloud collaboration is still marginal.
 
-## What this means for custom-daw
+## What this means for Voxalibera
 
 ### Positioning
 
@@ -148,4 +148,4 @@ Time-stretching (use Rubber Band), stem separation (an open model like Demucs as
 1. Who is the first user: guitar/band recording (UX1 workflow), beat making, or both?
 2. Linear timeline only, or a clip launcher too (and if so, when)?
 3. How far to follow Logic's layout and keys vs Reaper/Ableton conventions?
-4. License: JUCE's open-source license is AGPLv3, so custom-daw would be AGPLv3 (or buy a JUCE license).
+4. License: JUCE's open-source license is AGPLv3, so Voxalibera is AGPLv3 (or buy a JUCE license).

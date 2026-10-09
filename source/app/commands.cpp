@@ -17,7 +17,7 @@ namespace
 		{command::TOGGLE_MIXER, "Mixer", "View", 'x', NO_MODIFIERS},
 		{command::AUDIO_SETTINGS, "Audio...", "Settings", ',', CONTROL},
 		{command::INTERFACE_SETTINGS, "Interface...", "Settings", 0, NO_MODIFIERS},
-		{command::ABOUT, "About custom-daw", "Help", 0, NO_MODIFIERS},
+		{command::ABOUT, "About Voxalibera", "Help", 0, NO_MODIFIERS},
 	};
 }
 

@@ -4,8 +4,8 @@
 
 namespace
 {
-	constexpr auto APPLICATION_FOLDER = "custom-daw";
-	constexpr auto LOG_FILE = "custom-daw.log";
+	constexpr auto APPLICATION_FOLDER = "voxalibera";
+	constexpr auto LOG_FILE = "voxalibera.log";
 	constexpr juce::int64 MAX_LOG_BYTES = 1024 * 1024;
 	constexpr auto TIME_FORMAT = "%H:%M:%S ";
 }

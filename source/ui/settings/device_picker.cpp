@@ -166,43 +166,27 @@ void DevicePicker::list_buffer_sizes()
 
 void DevicePicker::choose_driver()
 {
-	device_manager.setCurrentAudioDeviceType(driver.box.getText(), true);
+	context.devices.choose_driver(driver.box.getText());
 }
 
 void DevicePicker::choose_output()
 {
-	auto setup = device_manager.getAudioDeviceSetup();
-	setup.outputDeviceName = output.box.getText();
-	device_manager.setAudioDeviceSetup(setup, true);
+	context.devices.choose_output(output.box.getText());
 }
 
 void DevicePicker::choose_input()
 {
-	auto setup = device_manager.getAudioDeviceSetup();
-	setup.inputDeviceName = input.box.getText();
-	device_manager.setAudioDeviceSetup(setup, true);
+	context.devices.choose_input(input.box.getText());
 }
 
 void DevicePicker::choose_sample_rate()
 {
-	auto setup = device_manager.getAudioDeviceSetup();
-	setup.sampleRate = sample_rates[(size_t) sample_rate.box.getSelectedItemIndex()];
-	device_manager.setAudioDeviceSetup(setup, true);
+	context.devices.choose_sample_rate(sample_rates[(size_t) sample_rate.box.getSelectedItemIndex()]);
 }
 
 void DevicePicker::choose_buffer_size()
 {
-	const auto size = buffer_sizes[(size_t) buffer_size.box.getSelectedItemIndex()];
-
-	if (is_jack()) {
-		context.settings.jack_buffer_size = size;
-		context.settings.save();
-		return;
-	}
-
-	auto setup = device_manager.getAudioDeviceSetup();
-	setup.bufferSize = size;
-	device_manager.setAudioDeviceSetup(setup, true);
+	context.devices.choose_buffer_size(buffer_sizes[(size_t) buffer_size.box.getSelectedItemIndex()]);
 }
 
 void DevicePicker::rescan()
