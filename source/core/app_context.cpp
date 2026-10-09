@@ -9,5 +9,7 @@ AppContext::AppContext() : settings(Settings::load()), devices(engine, settings)
 
 void AppContext::update()
 {
-	devices.update(juce::Time::getMillisecondCounterHiRes() / 1000.0);
+	const auto now = juce::Time::getMillisecondCounterHiRes() / 1000.0;
+	devices.update(now);
+	xrun_watch.update(engine.device_manager.getCurrentAudioDevice(), now);
 }

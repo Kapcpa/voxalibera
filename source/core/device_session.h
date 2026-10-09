@@ -50,6 +50,7 @@ private:
 	void reopen_device();
 	void restart_device();
 	void restore_hardware_after_device_start();
+	void log_device(const DeviceChoice& choice) const;
 
 	AudioEngine& engine;
 	Settings& settings;

@@ -1,5 +1,7 @@
 #include "core/settings.h"
 
+#include "core/log.h"
+
 namespace
 {
 	constexpr auto APPLICATION_FOLDER = "custom-daw";
@@ -76,8 +78,12 @@ Settings Settings::load()
 	const auto json = juce::JSON::parse(file());
 	const auto* root = json.getDynamicObject();
 
-	if (root == nullptr)
+	if (root == nullptr) {
+		if (file().existsAsFile())
+			log_event("Settings file unreadable, using defaults: " + file().getFullPathName());
+
 		return settings;
+	}
 
 	settings.device_type = read(*root, "device-type", "").toString();
 	settings.output_device = read(*root, "output-device", "").toString();

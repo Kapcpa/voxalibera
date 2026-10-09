@@ -2,4 +2,5 @@
 set -euo pipefail
 
 cd "$(dirname "$0")"
-exec ./build/custom_daw_artefacts/Release/custom-daw "$@"
+source ./build_options.sh "$@"
+exec "./$application" "${arguments[@]}"

@@ -1,6 +1,7 @@
 #include "core/device_session.h"
 
 #include "core/hardware_restore.h"
+#include "core/log.h"
 #include "platform/pipewire_properties.h"
 
 #include <set>
@@ -108,6 +109,7 @@ void DeviceSession::apply_choice(const DeviceChoice& choice, double now)
 	active_card = is_alsa ? find_card_for_alsa_device(cards, device_name) : find_card_for_jack_device(cards, device_name);
 
 	applied_choice = current_choice();
+	log_device(applied_choice);
 
 	if (engine.device_manager.getCurrentAudioDevice() != nullptr)
 		remember_choice(applied_choice);
@@ -132,7 +134,13 @@ bool DeviceSession::reserve_cards_for(const juce::StringArray& alsa_device_names
 		if (const auto card = find_card_for_alsa_device(cards, name); card != NO_CARD)
 			wanted_cards.insert(card);
 
-	std::erase_if(reservations, [&](const auto& entry) { return !wanted_cards.contains(entry.first); });
+	std::erase_if(reservations, [&](const auto& entry) {
+		if (wanted_cards.contains(entry.first))
+			return false;
+
+		log_event("Returned " + find_card_name(cards, entry.first) + " to PipeWire");
+		return true;
+	});
 	reservation_problems.clear();
 
 	bool reserved_any = false;
@@ -145,10 +153,12 @@ bool DeviceSession::reserve_cards_for(const juce::StringArray& alsa_device_names
 
 		if (const auto result = reservation->acquire(card, APPLICATION_NAME); result.failed()) {
 			reservation_problems << find_card_name(cards, card) << ": " << result.getErrorMessage() << "\n";
+			log_event("Could not borrow " + find_card_name(cards, card) + " from PipeWire: " + result.getErrorMessage());
 			continue;
 		}
 
 		reservations[card] = std::move(reservation);
+		log_event("Borrowed " + find_card_name(cards, card) + " from PipeWire");
 		reserved_any = true;
 	}
 
@@ -165,6 +175,7 @@ bool DeviceSession::use_jack_properties_for(const juce::String& jack_device_name
 		return false;
 
 	use_jack_client_properties(properties);
+	log_event("PipeWire client properties: " + properties);
 	jack_properties = properties;
 	return true;
 }
@@ -190,6 +201,17 @@ void DeviceSession::restore_hardware_after_device_start()
 	restored_card = active_card;
 	restored_device_starts = device_starts;
 
-	if (active_card != NO_CARD)
-		restore_saved_hardware_controls(settings, active_card);
+	if (active_card == NO_CARD)
+		return;
+
+	if (const auto restored = restore_saved_hardware_controls(settings, active_card); restored > 0)
+		log_event("Restored " + juce::String(restored) + " saved hardware controls for " + find_card_name(list_alsa_cards(), active_card));
+}
+
+void DeviceSession::log_device(const DeviceChoice& choice) const
+{
+	if (auto* device = engine.device_manager.getCurrentAudioDevice())
+		log_event("Device open: " + choice.type + " / " + device->getName() + ", " + juce::String(device->getCurrentSampleRate(), 0) + " Hz, " + juce::String(device->getCurrentBufferSizeSamples()) + " samples");
+	else
+		log_event("No device open (" + choice.type + (choice.output.isEmpty() ? juce::String() : ", " + choice.output) + ")");
 }

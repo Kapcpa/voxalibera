@@ -21,6 +21,7 @@ public:
 
 private:
 	ThemeLookAndFeel look_and_feel;
+	std::unique_ptr<juce::FileLogger> logger;
 	std::unique_ptr<AppContext> context;
 	std::unique_ptr<MainWindow> window;
 };

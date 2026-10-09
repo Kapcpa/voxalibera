@@ -2,10 +2,7 @@
 set -euo pipefail
 
 cd "$(dirname "$0")"
-
-if [ ! -f build/CMakeCache.txt ]; then
-	cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
-fi
-
-cmake --build build
-exec ./run.sh "$@"
+source ./build_options.sh "$@"
+configure_if_needed
+cmake --build "$build_directory" --target custom_daw
+exec "./$application" "${arguments[@]}"

@@ -26,14 +26,12 @@ MainWindow::MainWindow(const juce::String& name, AppContext& context) : Document
 	addKeyListener(command_manager.getKeyMappings());
 
 	setUsingNativeTitleBar(true);
-	setMenuBar(&main_menu);
-	setContentNonOwned(&main_view, true);
+	setContentNonOwned(&content, true);
 	setResizable(true, true);
 	setResizeLimits(MIN_WIDTH, MIN_HEIGHT, MAX_SIZE, MAX_SIZE);
 	centreWithSize(getWidth(), getHeight());
 
 	settings_overlay.on_close = [this] { command_manager.commandStatusChanged(); };
-	addChildComponent(settings_overlay);
 
 	setVisible(true);
 
@@ -43,19 +41,12 @@ MainWindow::MainWindow(const juce::String& name, AppContext& context) : Document
 MainWindow::~MainWindow()
 {
 	stopTimer();
-	setMenuBar(nullptr);
 	clearContentComponent();
 }
 
 void MainWindow::closeButtonPressed()
 {
 	juce::JUCEApplication::getInstance()->systemRequestedQuit();
-}
-
-void MainWindow::resized()
-{
-	DocumentWindow::resized();
-	settings_overlay.setBounds(getLocalBounds());
 }
 
 void MainWindow::timerCallback()

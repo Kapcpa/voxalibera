@@ -6,6 +6,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(CUSTOM_DAW_TESTS "Build the base tests" ON)
+option(CUSTOM_DAW_SANITIZERS "Build with address and undefined behaviour sanitizers" OFF)
+
+if(CUSTOM_DAW_SANITIZERS)
+    add_compile_options(-fsanitize=address,undefined -fno-omit-frame-pointer)
+    add_link_options(-fsanitize=address,undefined)
+endif()
 
 include(FetchContent)
 FetchContent_Declare(JUCE

@@ -2,6 +2,7 @@
 
 #include "core/device_session.h"
 #include "core/settings.h"
+#include "core/xrun_watch.h"
 #include "engine/audio_engine.h"
 
 struct AppContext
@@ -13,4 +14,5 @@ struct AppContext
 	Settings settings;
 	AudioEngine engine;
 	DeviceSession devices;
+	XrunWatch xrun_watch;
 };

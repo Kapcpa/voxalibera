@@ -1,6 +1,7 @@
 #pragma once
 
 #include "app/main_menu.h"
+#include "app/window_content.h"
 #include "core/app_context.h"
 #include "ui/main_view.h"
 #include "ui/modal_overlay.h"
@@ -19,7 +20,6 @@ public:
 	~MainWindow() override;
 
 	void closeButtonPressed() override;
-	void resized() override;
 
 	juce::ApplicationCommandTarget* getNextCommandTarget() override;
 	void getAllCommands(juce::Array<juce::CommandID>& commands) override;
@@ -39,5 +39,6 @@ private:
 	MainView main_view;
 	SettingsView settings_view;
 	ModalOverlay settings_overlay;
+	WindowContent content{main_menu, main_view, settings_overlay};
 	std::map<juce::CommandID, std::function<void()>> actions;
 };

@@ -7,9 +7,12 @@ Working name for an open-source DAW for Linux, built in C++20 on JUCE 8 with our
 ```
 ./compile.sh                  configures on first use, builds, then runs
 ./run.sh                      runs the last build
-./run.sh --list-devices
-./build/tests/custom_daw_tests_artefacts/Release/custom_daw_tests
+./test.sh                     builds and runs the base tests
+./run.sh --list-devices       arguments after the options go to the app
+./compile.sh --debug          same scripts, debug build in build-debug/ with address and undefined behaviour sanitizers
 ```
+
+Shared script settings live in `build_options.sh`. Use the `--debug` build when chasing crashes or odd behaviour; sanitizer reports print to the terminal.
 
 Needs `cmake`, `ninja`, `alsa-lib`, `libsystemd` and `pipewire-jack`. JUCE and Catch2 are fetched by CMake.
 
@@ -30,7 +33,8 @@ Needs `cmake`, `ninja`, `alsa-lib`, `libsystemd` and `pipewire-jack`. JUCE and C
 - Composition over inheritance. Inherit only from JUCE base classes or thin interfaces.
 - Plain `struct` for data, members public by default; `private` only for what would break invariants.
 - Dependencies are passed explicitly (constructor references). No singletons, no globals. `AppContext` is the one shared object.
-- Settings and saved state are JSON with `kebab-case` keys.
+- Settings and saved state are JSON with `kebab-case` keys, written with `juce::File::replaceWithText` (temporary file then rename, so a crash can't leave a half-written file).
+- Log notable events with `log_event()` (`core/log.h`), never from the audio thread. The log is `~/.local/state/custom-daw/custom-daw.log`, capped at 1 MB.
 
 ## Architecture
 
