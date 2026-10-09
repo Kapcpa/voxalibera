@@ -89,7 +89,7 @@ void MainWindow::getCommandInfo(juce::CommandID id, juce::ApplicationCommandInfo
 	if (definition == nullptr)
 		return;
 
-	info.setInfo(definition->name, definition->name, definition->category, 0);
+	info.setInfo(definition->name, definition->name, definition->category, juce::ApplicationCommandInfo::dontTriggerVisualFeedback);
 	info.setActive(actions.contains(id) && is_allowed_now(id));
 
 	if (definition->key != 0)
