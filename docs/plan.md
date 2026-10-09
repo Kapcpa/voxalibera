@@ -46,7 +46,9 @@ Short design notes, decided once and then followed everywhere.
 
 ### Project files
 
-- A project is a folder: `project.json` (readable, diffable, kebab-case keys) plus `audio/`.
+Full design: [projects.md](projects.md). Where the installed app and the user's files live: [distribution.md](distribution.md).
+
+- A project is a folder: `<name>.vxl` (readable JSON, kebab-case keys) plus `audio/`, `plugins/`, `backups/`, `autosave/`, `cache/`.
 - Saving uses temporary-file-then-rename (already the rule). Autosave every few minutes to `project.autosave.json`.
 - Opening never fails because something is missing: missing audio files and plugins become placeholders that keep their data.
 
@@ -117,3 +119,4 @@ Clip launcher (session grid), CLAP, out-of-process plugin sandboxing, time-stret
 - Effects come before full editing: recording guitar through an amp simulator matters more early on than trimming clips. Selecting, moving and deleting clips is already in milestone 1.
 - Tempo, bars and a metronome are part of milestone 1; recording to a click is the normal case.
 - Tracks are mono or stereo, chosen when created. Splitting or swapping channels happens later as clip operations.
+- Projects use the `.vxl` extension. Imported audio is copied into the project. A project keeps the sample rate it was created at; export can convert to another rate.
