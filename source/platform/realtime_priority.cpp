@@ -5,12 +5,12 @@
 
 namespace
 {
-constexpr int AUDIO_THREAD_PRIORITY = 80;
+	constexpr int AUDIO_THREAD_PRIORITY = 80;
 
-bool is_realtime_policy(int policy)
-{
-	return policy == SCHED_FIFO || policy == SCHED_RR;
-}
+	bool is_realtime_policy(int policy)
+	{
+		return policy == SCHED_FIFO || policy == SCHED_RR;
+	}
 }
 
 bool make_current_thread_realtime()

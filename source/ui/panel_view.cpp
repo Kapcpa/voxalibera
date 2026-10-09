@@ -4,12 +4,11 @@
 
 namespace
 {
-constexpr float TITLE_FONT_SIZE = 13.0f;
-constexpr int TITLE_PADDING = 8;
+	constexpr float TITLE_FONT_SIZE = 13.0f;
+	constexpr int TITLE_PADDING = 8;
 }
 
-PanelView::PanelView(const juce::String& title)
-	: title(title)
+PanelView::PanelView(const juce::String& title) : title(title)
 {
 }
 

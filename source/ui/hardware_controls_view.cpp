@@ -2,30 +2,29 @@
 
 namespace
 {
-constexpr int TITLE_HEIGHT = 24;
-constexpr int CARD_BOX_HEIGHT = 26;
-constexpr int EMPTY_MESSAGE_HEIGHT = 40;
-constexpr int ROW_HEIGHT = 30;
-constexpr int ROW_PADDING = 2;
-constexpr int LABEL_WIDTH = 170;
-constexpr int VALUE_BOX_WIDTH = 50;
-constexpr int VALUE_BOX_HEIGHT = 20;
-constexpr int SECTION_GAP = 8;
-constexpr float TITLE_FONT_SIZE = 16.0f;
+	constexpr int TITLE_HEIGHT = 24;
+	constexpr int CARD_BOX_HEIGHT = 26;
+	constexpr int EMPTY_MESSAGE_HEIGHT = 40;
+	constexpr int ROW_HEIGHT = 30;
+	constexpr int ROW_PADDING = 2;
+	constexpr int LABEL_WIDTH = 170;
+	constexpr int VALUE_BOX_WIDTH = 50;
+	constexpr int VALUE_BOX_HEIGHT = 20;
+	constexpr int SECTION_GAP = 8;
+	constexpr float TITLE_FONT_SIZE = 16.0f;
 
-int card_id(int card_index)
-{
-	return card_index + 1;
+	int card_id(int card_index)
+	{
+		return card_index + 1;
+	}
+
+	int card_from_id(int id)
+	{
+		return id - 1;
+	}
 }
 
-int card_from_id(int id)
-{
-	return id - 1;
-}
-}
-
-HardwareControlsView::HardwareControlsView(AppContext& context)
-	: context(context)
+HardwareControlsView::HardwareControlsView(AppContext& context) : context(context)
 {
 	title.setFont(juce::FontOptions(TITLE_FONT_SIZE, juce::Font::bold));
 	card_box.setTextWhenNothingSelected("No card");
@@ -76,8 +75,7 @@ void HardwareControlsView::list_cards(const std::vector<AlsaCard>& cards, int se
 
 void HardwareControlsView::build_rows()
 {
-	for (const auto& control : controls->controls)
-	{
+	for (const auto& control : controls->controls) {
 		auto row = std::make_unique<ControlRow>();
 		row->label.setText(control.key, juce::dontSendNotification);
 		row->label.setTooltip(control.key);
@@ -94,8 +92,7 @@ void HardwareControlsView::build_rows()
 
 std::unique_ptr<juce::Component> HardwareControlsView::make_editor(const AlsaControl& control)
 {
-	switch (control.kind)
-	{
+	switch (control.kind) {
 		case AlsaControlKind::choice:
 			return make_choice_editor(control);
 		case AlsaControlKind::toggle:
@@ -174,8 +171,7 @@ void HardwareControlsView::resized()
 	const auto width = viewport.getMaximumVisibleWidth();
 	row_container.setSize(width, (int) rows.size() * ROW_HEIGHT);
 
-	for (size_t position = 0; position < rows.size(); ++position)
-	{
+	for (size_t position = 0; position < rows.size(); ++position) {
 		auto bounds = juce::Rectangle<int>(0, (int) position * ROW_HEIGHT, width, ROW_HEIGHT).reduced(0, ROW_PADDING);
 		rows[position]->label.setBounds(bounds.removeFromLeft(LABEL_WIDTH));
 		rows[position]->editor->setBounds(bounds);

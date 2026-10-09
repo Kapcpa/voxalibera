@@ -6,16 +6,16 @@
 
 namespace command
 {
-constexpr juce::CommandID NEW_PROJECT = 1;
-constexpr juce::CommandID OPEN_PROJECT = 2;
-constexpr juce::CommandID SAVE_PROJECT = 3;
-constexpr juce::CommandID SAVE_PROJECT_AS = 4;
-constexpr juce::CommandID QUIT = 5;
-constexpr juce::CommandID UNDO = 10;
-constexpr juce::CommandID REDO = 11;
-constexpr juce::CommandID TOGGLE_MIXER = 20;
-constexpr juce::CommandID AUDIO_SETTINGS = 30;
-constexpr juce::CommandID ABOUT = 40;
+	constexpr juce::CommandID NEW_PROJECT = 1;
+	constexpr juce::CommandID OPEN_PROJECT = 2;
+	constexpr juce::CommandID SAVE_PROJECT = 3;
+	constexpr juce::CommandID SAVE_PROJECT_AS = 4;
+	constexpr juce::CommandID QUIT = 5;
+	constexpr juce::CommandID UNDO = 10;
+	constexpr juce::CommandID REDO = 11;
+	constexpr juce::CommandID TOGGLE_MIXER = 20;
+	constexpr juce::CommandID AUDIO_SETTINGS = 30;
+	constexpr juce::CommandID ABOUT = 40;
 }
 
 struct CommandDefinition

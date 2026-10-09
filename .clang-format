@@ -6,17 +6,17 @@ ContinuationIndentWidth: 4
 ColumnLimit: 0
 BreakBeforeBraces: Custom
 BraceWrapping:
-  AfterCaseLabel: true
+  AfterCaseLabel: false
   AfterClass: true
-  AfterControlStatement: Always
+  AfterControlStatement: Never
   AfterEnum: true
   AfterFunction: true
   AfterNamespace: true
   AfterStruct: true
   AfterUnion: true
   AfterExternBlock: true
-  BeforeCatch: true
-  BeforeElse: true
+  BeforeCatch: false
+  BeforeElse: false
   BeforeLambdaBody: false
   BeforeWhile: false
   IndentBraces: false
@@ -29,7 +29,7 @@ AllowShortLoopsOnASingleLine: false
 AllowShortBlocksOnASingleLine: Never
 AccessModifierOffset: -4
 IndentCaseLabels: true
-NamespaceIndentation: None
+NamespaceIndentation: All
 PointerAlignment: Left
 SpaceBeforeParens: ControlStatements
 IncludeBlocks: Preserve
@@ -37,3 +37,5 @@ SortIncludes: CaseSensitive
 FixNamespaceComments: false
 SpaceAfterCStyleCast: true
 AllowShortLambdasOnASingleLine: All
+PackConstructorInitializers: CurrentLine
+BreakConstructorInitializers: BeforeColon

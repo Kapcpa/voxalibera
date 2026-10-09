@@ -4,10 +4,11 @@
 
 namespace
 {
-const std::vector<AlsaCard> CARDS{
-	{0, "HDA NVidia"},
-	{1, "HD-Audio Generic"},
-	{3, "POD Studio UX1"}};
+	const std::vector<AlsaCard> CARDS{
+		{0, "HDA NVidia"},
+		{1, "HD-Audio Generic"},
+		{3, "POD Studio UX1"},
+	};
 }
 
 TEST_CASE("alsa device names map to the card they start with")

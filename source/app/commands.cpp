@@ -2,22 +2,22 @@
 
 namespace
 {
-const juce::ModifierKeys NO_MODIFIERS;
-const juce::ModifierKeys CONTROL{juce::ModifierKeys::commandModifier};
-const juce::ModifierKeys CONTROL_SHIFT{juce::ModifierKeys::commandModifier | juce::ModifierKeys::shiftModifier};
+	const juce::ModifierKeys NO_MODIFIERS;
+	const juce::ModifierKeys CONTROL{juce::ModifierKeys::commandModifier};
+	const juce::ModifierKeys CONTROL_SHIFT{juce::ModifierKeys::commandModifier | juce::ModifierKeys::shiftModifier};
 
-const std::vector<CommandDefinition> DEFINITIONS{
-	{command::NEW_PROJECT, "New Project", "File", 'n', CONTROL},
-	{command::OPEN_PROJECT, "Open Project...", "File", 'o', CONTROL},
-	{command::SAVE_PROJECT, "Save", "File", 's', CONTROL},
-	{command::SAVE_PROJECT_AS, "Save As...", "File", 's', CONTROL_SHIFT},
-	{command::QUIT, "Quit", "File", 'q', CONTROL},
-	{command::UNDO, "Undo", "Edit", 'z', CONTROL},
-	{command::REDO, "Redo", "Edit", 'z', CONTROL_SHIFT},
-	{command::TOGGLE_MIXER, "Mixer", "View", 'x', NO_MODIFIERS},
-	{command::AUDIO_SETTINGS, "Audio Settings...", "Settings", ',', CONTROL},
-	{command::ABOUT, "About custom-daw", "Help", 0, NO_MODIFIERS}
-};
+	const std::vector<CommandDefinition> DEFINITIONS{
+		{command::NEW_PROJECT, "New Project", "File", 'n', CONTROL},
+		{command::OPEN_PROJECT, "Open Project...", "File", 'o', CONTROL},
+		{command::SAVE_PROJECT, "Save", "File", 's', CONTROL},
+		{command::SAVE_PROJECT_AS, "Save As...", "File", 's', CONTROL_SHIFT},
+		{command::QUIT, "Quit", "File", 'q', CONTROL},
+		{command::UNDO, "Undo", "Edit", 'z', CONTROL},
+		{command::REDO, "Redo", "Edit", 'z', CONTROL_SHIFT},
+		{command::TOGGLE_MIXER, "Mixer", "View", 'x', NO_MODIFIERS},
+		{command::AUDIO_SETTINGS, "Audio Settings...", "Settings", ',', CONTROL},
+		{command::ABOUT, "About custom-daw", "Help", 0, NO_MODIFIERS},
+	};
 }
 
 const std::vector<CommandDefinition>& command_definitions()

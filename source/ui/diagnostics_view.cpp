@@ -2,23 +2,22 @@
 
 namespace
 {
-constexpr int FRAMES_PER_REFRESH = 10;
-constexpr float FONT_SIZE = 14.0f;
-constexpr int UNREPORTED_XRUNS = -1;
+	constexpr int FRAMES_PER_REFRESH = 10;
+	constexpr float FONT_SIZE = 14.0f;
+	constexpr int UNREPORTED_XRUNS = -1;
 
-double samples_to_milliseconds(int samples, double sample_rate)
-{
-	return sample_rate > 0.0 ? 1000.0 * samples / sample_rate : 0.0;
+	double samples_to_milliseconds(int samples, double sample_rate)
+	{
+		return sample_rate > 0.0 ? 1000.0 * samples / sample_rate : 0.0;
+	}
+
+	juce::String describe_xruns(int xruns)
+	{
+		return xruns == UNREPORTED_XRUNS ? juce::String("not reported") : juce::String(xruns);
+	}
 }
 
-juce::String describe_xruns(int xruns)
-{
-	return xruns == UNREPORTED_XRUNS ? juce::String("not reported") : juce::String(xruns);
-}
-}
-
-DiagnosticsView::DiagnosticsView(AppContext& context)
-	: context(context)
+DiagnosticsView::DiagnosticsView(AppContext& context) : context(context)
 {
 	text.setFont(juce::FontOptions(juce::Font::getDefaultMonospacedFontName(), FONT_SIZE, juce::Font::plain));
 	text.setJustificationType(juce::Justification::topLeft);

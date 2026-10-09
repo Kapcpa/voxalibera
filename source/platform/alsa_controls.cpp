@@ -7,50 +7,49 @@
 
 namespace
 {
-const juce::StringArray TEST_SIGNAL_CONTROL_WORDS{"Impulse"};
+	const juce::StringArray TEST_SIGNAL_CONTROL_WORDS{"Impulse"};
 
-bool is_test_signal_control(const juce::String& name)
-{
-	for (const auto& word : TEST_SIGNAL_CONTROL_WORDS)
-		if (name.containsIgnoreCase(word))
-			return true;
-
-	return false;
-}
-
-bool is_user_adjustable(snd_ctl_elem_info_t* info)
-{
-	return snd_ctl_elem_info_get_interface(info) == SND_CTL_ELEM_IFACE_MIXER && snd_ctl_elem_info_is_writable(info) && !snd_ctl_elem_info_is_inactive(info);
-}
-
-std::optional<AlsaControlKind> kind_of(snd_ctl_elem_type_t type)
-{
-	if (type == SND_CTL_ELEM_TYPE_INTEGER)
-		return AlsaControlKind::level;
-
-	if (type == SND_CTL_ELEM_TYPE_ENUMERATED)
-		return AlsaControlKind::choice;
-
-	if (type == SND_CTL_ELEM_TYPE_BOOLEAN)
-		return AlsaControlKind::toggle;
-
-	return std::nullopt;
-}
-
-juce::StringArray read_choices(snd_ctl_t* handle, snd_ctl_elem_info_t* info)
-{
-	juce::StringArray choices;
-	const auto count = snd_ctl_elem_info_get_items(info);
-
-	for (unsigned int item = 0; item < count; ++item)
+	bool is_test_signal_control(const juce::String& name)
 	{
-		snd_ctl_elem_info_set_item(info, item);
-		snd_ctl_elem_info(handle, info);
-		choices.add(snd_ctl_elem_info_get_item_name(info));
+		for (const auto& word : TEST_SIGNAL_CONTROL_WORDS)
+			if (name.containsIgnoreCase(word))
+				return true;
+
+		return false;
 	}
 
-	return choices;
-}
+	bool is_user_adjustable(snd_ctl_elem_info_t* info)
+	{
+		return snd_ctl_elem_info_get_interface(info) == SND_CTL_ELEM_IFACE_MIXER && snd_ctl_elem_info_is_writable(info) && !snd_ctl_elem_info_is_inactive(info);
+	}
+
+	std::optional<AlsaControlKind> kind_of(snd_ctl_elem_type_t type)
+	{
+		if (type == SND_CTL_ELEM_TYPE_INTEGER)
+			return AlsaControlKind::level;
+
+		if (type == SND_CTL_ELEM_TYPE_ENUMERATED)
+			return AlsaControlKind::choice;
+
+		if (type == SND_CTL_ELEM_TYPE_BOOLEAN)
+			return AlsaControlKind::toggle;
+
+		return std::nullopt;
+	}
+
+	juce::StringArray read_choices(snd_ctl_t* handle, snd_ctl_elem_info_t* info)
+	{
+		juce::StringArray choices;
+		const auto count = snd_ctl_elem_info_get_items(info);
+
+		for (unsigned int item = 0; item < count; ++item) {
+			snd_ctl_elem_info_set_item(info, item);
+			snd_ctl_elem_info(handle, info);
+			choices.add(snd_ctl_elem_info_get_item_name(info));
+		}
+
+		return choices;
+	}
 }
 
 AlsaControls::AlsaControls(int card_index)
@@ -83,8 +82,7 @@ void AlsaControls::load_controls()
 
 	std::set<juce::String> seen_names;
 
-	for (unsigned int position = 0; position < snd_ctl_elem_list_get_used(list); ++position)
-	{
+	for (unsigned int position = 0; position < snd_ctl_elem_list_get_used(list); ++position) {
 		snd_ctl_elem_info_set_numid(info, snd_ctl_elem_list_get_numid(list, position));
 
 		if (snd_ctl_elem_info(handle, info) < 0 || !is_user_adjustable(info))
@@ -102,8 +100,7 @@ void AlsaControls::load_controls()
 		control.channel_count = snd_ctl_elem_info_get_count(info);
 		control.kind = *kind;
 
-		if (control.kind == AlsaControlKind::level)
-		{
+		if (control.kind == AlsaControlKind::level) {
 			control.minimum = snd_ctl_elem_info_get_min(info);
 			control.maximum = snd_ctl_elem_info_get_max(info);
 		}
@@ -130,10 +127,8 @@ int AlsaControls::read(const AlsaControl& control) const
 
 	int result = 0;
 
-	if (snd_ctl_elem_read(handle, value) == 0)
-	{
-		switch (control.kind)
-		{
+	if (snd_ctl_elem_read(handle, value) == 0) {
+		switch (control.kind) {
 			case AlsaControlKind::level:
 				result = (int) snd_ctl_elem_value_get_integer(value, 0);
 				break;
@@ -156,10 +151,8 @@ void AlsaControls::write(const AlsaControl& control, int new_value)
 	snd_ctl_elem_value_malloc(&value);
 	snd_ctl_elem_value_set_numid(value, control.id);
 
-	for (unsigned int channel = 0; channel < control.channel_count; ++channel)
-	{
-		switch (control.kind)
-		{
+	for (unsigned int channel = 0; channel < control.channel_count; ++channel) {
+		switch (control.kind) {
 			case AlsaControlKind::level:
 				snd_ctl_elem_value_set_integer(value, channel, new_value);
 				break;

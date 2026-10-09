@@ -4,11 +4,11 @@
 
 namespace
 {
-constexpr int WIDTH = 1280;
-constexpr int HEIGHT = 800;
-constexpr int TRANSPORT_HEIGHT = 48;
-constexpr int MIXER_HEIGHT = 260;
-constexpr int GAP = 2;
+	constexpr int WIDTH = 1280;
+	constexpr int HEIGHT = 800;
+	constexpr int TRANSPORT_HEIGHT = 48;
+	constexpr int MIXER_HEIGHT = 260;
+	constexpr int GAP = 2;
 }
 
 MainView::MainView()
@@ -38,8 +38,7 @@ void MainView::resized()
 	transport_bar.setBounds(area.removeFromTop(TRANSPORT_HEIGHT));
 	area.removeFromTop(GAP);
 
-	if (mixer.isVisible())
-	{
+	if (mixer.isVisible()) {
 		mixer.setBounds(area.removeFromBottom(MIXER_HEIGHT));
 		area.removeFromBottom(GAP);
 	}

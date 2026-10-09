@@ -2,9 +2,7 @@
 
 #include "ui/theme.h"
 
-SettingsWindow::SettingsWindow(AppContext& context)
-	: DocumentWindow("Audio Settings", theme::WINDOW_BACKGROUND, closeButton),
-	  audio_settings_view(context)
+SettingsWindow::SettingsWindow(AppContext& context) : DocumentWindow("Audio Settings", theme::WINDOW_BACKGROUND, closeButton), audio_settings_view(context)
 {
 	setUsingNativeTitleBar(true);
 	setContentNonOwned(&audio_settings_view, true);

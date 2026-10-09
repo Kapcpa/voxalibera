@@ -5,37 +5,37 @@
 
 namespace
 {
-constexpr int ROW_HEIGHT = 28;
-constexpr int ROW_GAP = 8;
-constexpr int TOGGLE_WIDTH = 230;
-constexpr int ROUTING_LABEL_WIDTH = 60;
-constexpr int RESCAN_WIDTH = 130;
-constexpr int JACK_BUFFER_WIDTH = 160;
+	constexpr int ROW_HEIGHT = 28;
+	constexpr int ROW_GAP = 8;
+	constexpr int TOGGLE_WIDTH = 230;
+	constexpr int ROUTING_LABEL_WIDTH = 60;
+	constexpr int RESCAN_WIDTH = 130;
+	constexpr int JACK_BUFFER_WIDTH = 160;
 
-const std::array JACK_BUFFER_SIZES{32, 64, 128, 256, 512, 1024};
+	const std::array JACK_BUFFER_SIZES{32, 64, 128, 256, 512, 1024};
 
-const std::array ROUTING_CHOICES{
-	std::pair{InputRouting::left_to_both, "Input 1 / left -> both outputs"},
-	std::pair{InputRouting::right_to_both, "Input 2 / right -> both outputs"},
-	std::pair{InputRouting::stereo, "Stereo as-is"}};
+	const std::array ROUTING_CHOICES{
+		std::pair{InputRouting::left_to_both, "Input 1 / left -> both outputs"},
+		std::pair{InputRouting::right_to_both, "Input 2 / right -> both outputs"},
+		std::pair{InputRouting::stereo, "Stereo as-is"},
+	};
 
-int routing_id(InputRouting routing)
-{
-	for (size_t position = 0; position < ROUTING_CHOICES.size(); ++position)
-		if (ROUTING_CHOICES[position].first == routing)
-			return (int) position + 1;
+	int routing_id(InputRouting routing)
+	{
+		for (size_t position = 0; position < ROUTING_CHOICES.size(); ++position)
+			if (ROUTING_CHOICES[position].first == routing)
+				return (int) position + 1;
 
-	return 0;
+		return 0;
+	}
+
+	InputRouting routing_from_id(int id)
+	{
+		return ROUTING_CHOICES[(size_t) id - 1].first;
+	}
 }
 
-InputRouting routing_from_id(int id)
-{
-	return ROUTING_CHOICES[(size_t) id - 1].first;
-}
-}
-
-MonitorView::MonitorView(AppContext& context)
-	: context(context)
+MonitorView::MonitorView(AppContext& context) : context(context)
 {
 	monitoring_toggle.setToggleState(context.settings.monitoring, juce::dontSendNotification);
 	monitoring_toggle.onClick = [this] { set_monitoring(monitoring_toggle.getToggleState()); };

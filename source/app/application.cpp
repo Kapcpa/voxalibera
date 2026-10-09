@@ -4,7 +4,7 @@
 
 namespace
 {
-constexpr auto LIST_DEVICES_FLAG = "--list-devices";
+	constexpr auto LIST_DEVICES_FLAG = "--list-devices";
 }
 
 const juce::String Application::getApplicationName()
@@ -24,8 +24,7 @@ bool Application::moreThanOneInstanceAllowed()
 
 void Application::initialise(const juce::String& command_line)
 {
-	if (command_line.contains(LIST_DEVICES_FLAG))
-	{
+	if (command_line.contains(LIST_DEVICES_FLAG)) {
 		print_audio_devices();
 		quit();
 		return;

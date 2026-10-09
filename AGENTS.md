@@ -16,7 +16,12 @@ Needs `cmake`, `ninja`, `alsa-lib`, `libsystemd` and `pipewire-jack`. JUCE and C
 ## Code rules
 
 - No comments in code. If something needs explaining, rename it or split it until it doesn't. Explanations live in this file or in docs, not next to code.
-- Formatting is whatever `.clang-format` produces: tabs, Allman braces, no line limit. Run `clang-format -i` on changed files.
+- Formatting is whatever `.clang-format` produces. Run `clang-format -i` on changed files. In short:
+  - tabs, no line limit;
+  - `{` on the same line for `if`/`for`/`while`/`switch`, on its own line for functions, classes and namespaces;
+  - namespace contents indented;
+  - constructor initializers on the signature line;
+  - lists spanning several lines end with a trailing comma, which keeps the closing `};` on its own line.
 - Files and folders: lowercase `snake_case` (`device_session.cpp`), one concept per file, aim for under ~300 lines.
 - Types `PascalCase`, functions and variables `snake_case`, constants `UPPER_SNAKE` (in an anonymous namespace at the top of the `.cpp`), enum values `snake_case`. Overrides of JUCE virtuals keep JUCE's names (`paint`, `resized`, `audioDeviceIOCallbackWithContext`).
 - Full words, no abbreviations except in math.

@@ -7,14 +7,13 @@
 
 namespace
 {
-constexpr auto APPLICATION_NAME = "custom-daw";
-constexpr int INPUT_CHANNELS = 2;
-constexpr int OUTPUT_CHANNELS = 2;
-constexpr double RESCAN_DELAY_SECONDS = 1.5;
+	constexpr auto APPLICATION_NAME = "custom-daw";
+	constexpr int INPUT_CHANNELS = 2;
+	constexpr int OUTPUT_CHANNELS = 2;
+	constexpr double RESCAN_DELAY_SECONDS = 1.5;
 }
 
-DeviceSession::DeviceSession(AudioEngine& engine, Settings& settings)
-	: engine(engine), settings(settings)
+DeviceSession::DeviceSession(AudioEngine& engine, Settings& settings) : engine(engine), settings(settings)
 {
 }
 
@@ -69,8 +68,7 @@ void DeviceSession::update(double now)
 
 	restore_hardware_after_device_start();
 
-	if (rescan_at && now >= *rescan_at)
-	{
+	if (rescan_at && now >= *rescan_at) {
 		rescan_at.reset();
 		rescan_devices();
 	}
@@ -139,15 +137,13 @@ bool DeviceSession::reserve_cards_for(const juce::StringArray& alsa_device_names
 
 	bool reserved_any = false;
 
-	for (const auto card : wanted_cards)
-	{
+	for (const auto card : wanted_cards) {
 		if (reservations.contains(card))
 			continue;
 
 		auto reservation = std::make_unique<DeviceReservation>();
 
-		if (const auto result = reservation->acquire(card, APPLICATION_NAME); result.failed())
-		{
+		if (const auto result = reservation->acquire(card, APPLICATION_NAME); result.failed()) {
 			reservation_problems << find_card_name(cards, card) << ": " << result.getErrorMessage() << "\n";
 			continue;
 		}

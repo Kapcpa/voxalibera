@@ -4,40 +4,38 @@
 
 namespace
 {
-constexpr float FLOOR_DB = -60.0f;
-constexpr float CLIPPING_DB = -1.0f;
-constexpr float HOT_DB = -12.0f;
-constexpr float PEAK_DECAY = 0.85f;
-constexpr int LABEL_WIDTH = 70;
-constexpr int VALUE_WIDTH = 80;
-constexpr int ROW_PADDING = 4;
+	constexpr float FLOOR_DB = -60.0f;
+	constexpr float CLIPPING_DB = -1.0f;
+	constexpr float HOT_DB = -12.0f;
+	constexpr float PEAK_DECAY = 0.85f;
+	constexpr int LABEL_WIDTH = 70;
+	constexpr int VALUE_WIDTH = 80;
+	constexpr int ROW_PADDING = 4;
 
-juce::Colour level_colour(float decibels)
-{
-	if (decibels > CLIPPING_DB)
-		return juce::Colours::red;
+	juce::Colour level_colour(float decibels)
+	{
+		if (decibels > CLIPPING_DB)
+			return juce::Colours::red;
 
-	if (decibels > HOT_DB)
-		return juce::Colours::orange;
+		if (decibels > HOT_DB)
+			return juce::Colours::orange;
 
-	return juce::Colours::limegreen;
+		return juce::Colours::limegreen;
+	}
+
+	juce::String level_text(float decibels)
+	{
+		return decibels <= FLOOR_DB ? juce::String("-inf dB") : juce::String(decibels, 1) + " dB";
+	}
 }
 
-juce::String level_text(float decibels)
-{
-	return decibels <= FLOOR_DB ? juce::String("-inf dB") : juce::String(decibels, 1) + " dB";
-}
-}
-
-LevelMeterView::LevelMeterView(LevelMeter& meter)
-	: meter(meter)
+LevelMeterView::LevelMeterView(LevelMeter& meter) : meter(meter)
 {
 }
 
 void LevelMeterView::update()
 {
-	for (int channel = 0; channel < LevelMeter::CHANNELS; ++channel)
-	{
+	for (int channel = 0; channel < LevelMeter::CHANNELS; ++channel) {
 		auto& displayed = displayed_peaks[(size_t) channel];
 		displayed = std::max(meter.take_peak(channel), displayed * PEAK_DECAY);
 	}

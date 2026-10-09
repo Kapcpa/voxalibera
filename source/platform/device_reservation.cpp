@@ -9,43 +9,44 @@
 
 namespace
 {
-constexpr auto RESERVATION_INTERFACE = "org.freedesktop.ReserveDevice1";
-constexpr auto RESERVATION_NAME_PREFIX = "org.freedesktop.ReserveDevice1.Audio";
-constexpr auto RESERVATION_PATH_PREFIX = "/org/freedesktop/ReserveDevice1/Audio";
-constexpr int32_t RESERVATION_PRIORITY = INT32_MAX;
-constexpr int TAKE_OVER_ATTEMPTS = 20;
-constexpr auto TAKE_OVER_RETRY_DELAY = std::chrono::milliseconds(25);
+	constexpr auto RESERVATION_INTERFACE = "org.freedesktop.ReserveDevice1";
+	constexpr auto RESERVATION_NAME_PREFIX = "org.freedesktop.ReserveDevice1.Audio";
+	constexpr auto RESERVATION_PATH_PREFIX = "/org/freedesktop/ReserveDevice1/Audio";
+	constexpr int32_t RESERVATION_PRIORITY = INT32_MAX;
+	constexpr int TAKE_OVER_ATTEMPTS = 20;
+	constexpr auto TAKE_OVER_RETRY_DELAY = std::chrono::milliseconds(25);
 
-juce::String describe_error(int status)
-{
-	return std::strerror(-status);
-}
+	juce::String describe_error(int status)
+	{
+		return std::strerror(-status);
+	}
 
-int read_property(sd_bus*, const char*, const char*, const char* property, sd_bus_message* reply, void* user_data, sd_bus_error*)
-{
-	const auto* reservation = static_cast<const DeviceReservation*>(user_data);
+	int read_property(sd_bus*, const char*, const char*, const char* property, sd_bus_message* reply, void* user_data, sd_bus_error*)
+	{
+		const auto* reservation = static_cast<const DeviceReservation*>(user_data);
 
-	if (std::strcmp(property, "Priority") == 0)
-		return sd_bus_message_append(reply, "i", RESERVATION_PRIORITY);
+		if (std::strcmp(property, "Priority") == 0)
+			return sd_bus_message_append(reply, "i", RESERVATION_PRIORITY);
 
-	if (std::strcmp(property, "ApplicationName") == 0)
-		return sd_bus_message_append(reply, "s", reservation->application_name.c_str());
+		if (std::strcmp(property, "ApplicationName") == 0)
+			return sd_bus_message_append(reply, "s", reservation->application_name.c_str());
 
-	return sd_bus_message_append(reply, "s", reservation->device_name.c_str());
-}
+		return sd_bus_message_append(reply, "s", reservation->device_name.c_str());
+	}
 
-int refuse_release(sd_bus_message* message, void*, sd_bus_error*)
-{
-	return sd_bus_reply_method_return(message, "b", 0);
-}
+	int refuse_release(sd_bus_message* message, void*, sd_bus_error*)
+	{
+		return sd_bus_reply_method_return(message, "b", 0);
+	}
 
-const sd_bus_vtable RESERVATION_VTABLE[] = {
-	SD_BUS_VTABLE_START(0),
-	SD_BUS_METHOD("RequestRelease", "i", "b", refuse_release, SD_BUS_VTABLE_UNPRIVILEGED),
-	SD_BUS_PROPERTY("Priority", "i", read_property, 0, SD_BUS_VTABLE_PROPERTY_CONST),
-	SD_BUS_PROPERTY("ApplicationName", "s", read_property, 0, SD_BUS_VTABLE_PROPERTY_CONST),
-	SD_BUS_PROPERTY("ApplicationDeviceName", "s", read_property, 0, SD_BUS_VTABLE_PROPERTY_CONST),
-	SD_BUS_VTABLE_END};
+	const sd_bus_vtable RESERVATION_VTABLE[] = {
+		SD_BUS_VTABLE_START(0),
+		SD_BUS_METHOD("RequestRelease", "i", "b", refuse_release, SD_BUS_VTABLE_UNPRIVILEGED),
+		SD_BUS_PROPERTY("Priority", "i", read_property, 0, SD_BUS_VTABLE_PROPERTY_CONST),
+		SD_BUS_PROPERTY("ApplicationName", "s", read_property, 0, SD_BUS_VTABLE_PROPERTY_CONST),
+		SD_BUS_PROPERTY("ApplicationDeviceName", "s", read_property, 0, SD_BUS_VTABLE_PROPERTY_CONST),
+		SD_BUS_VTABLE_END,
+	};
 }
 
 DeviceReservation::~DeviceReservation()
@@ -67,8 +68,7 @@ juce::Result DeviceReservation::acquire(int card_index, const juce::String& appl
 	if (result.wasOk())
 		result = claim_name();
 
-	if (result.failed())
-	{
+	if (result.failed()) {
 		release();
 		return result;
 	}
@@ -129,8 +129,7 @@ juce::Result DeviceReservation::take_over_name()
 {
 	auto status = -EEXIST;
 
-	for (int attempt = 0; attempt < TAKE_OVER_ATTEMPTS && status == -EEXIST; ++attempt)
-	{
+	for (int attempt = 0; attempt < TAKE_OVER_ATTEMPTS && status == -EEXIST; ++attempt) {
 		status = sd_bus_request_name(bus, bus_name.c_str(), SD_BUS_NAME_REPLACE_EXISTING);
 
 		if (status == -EEXIST)
@@ -145,8 +144,7 @@ juce::Result DeviceReservation::take_over_name()
 
 void DeviceReservation::release()
 {
-	if (bus != nullptr)
-	{
+	if (bus != nullptr) {
 		if (card != NO_CARD)
 			sd_bus_release_name(bus, bus_name.c_str());
 
@@ -162,7 +160,6 @@ void DeviceReservation::process_requests()
 	if (bus == nullptr)
 		return;
 
-	while (sd_bus_process(bus, nullptr) > 0)
-	{
+	while (sd_bus_process(bus, nullptr) > 0) {
 	}
 }

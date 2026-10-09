@@ -2,30 +2,18 @@
 
 namespace
 {
-constexpr int WIDTH = 1140;
-constexpr int HEIGHT = 820;
-constexpr int MARGIN = 12;
-constexpr int SECTION_GAP = 12;
-constexpr int COLUMN_GAP = 16;
-constexpr int HARDWARE_COLUMN_WIDTH = 380;
-constexpr int DEVICE_SELECTOR_HEIGHT = 420;
-constexpr int MONITOR_HEIGHT = 64;
-constexpr int LEVEL_METER_HEIGHT = 70;
-
-constexpr int MIN_CHANNELS = 1;
-constexpr int MAX_CHANNELS = 2;
-constexpr bool SHOW_MIDI_INPUTS = false;
-constexpr bool SHOW_MIDI_OUTPUTS = false;
-constexpr bool CHANNELS_AS_STEREO_PAIRS = false;
-constexpr bool HIDE_ADVANCED_OPTIONS = false;
+	constexpr int WIDTH = 1140;
+	constexpr int HEIGHT = 820;
+	constexpr int MARGIN = 12;
+	constexpr int SECTION_GAP = 12;
+	constexpr int COLUMN_GAP = 16;
+	constexpr int HARDWARE_COLUMN_WIDTH = 380;
+	constexpr int DEVICE_SELECTOR_HEIGHT = 420;
+	constexpr int MONITOR_HEIGHT = 64;
+	constexpr int LEVEL_METER_HEIGHT = 70;
 }
 
-AudioSettingsView::AudioSettingsView(AppContext& context)
-	: device_selector(context.engine.device_manager, MIN_CHANNELS, MAX_CHANNELS, MIN_CHANNELS, MAX_CHANNELS, SHOW_MIDI_INPUTS, SHOW_MIDI_OUTPUTS, CHANNELS_AS_STEREO_PAIRS, HIDE_ADVANCED_OPTIONS),
-	  monitor_view(context),
-	  level_meter_view(context.engine.input_meter),
-	  diagnostics_view(context),
-	  hardware_controls_view(context)
+AudioSettingsView::AudioSettingsView(AppContext& context) : device_selector(context.engine.device_manager), monitor_view(context), level_meter_view(context.engine.input_meter), diagnostics_view(context), hardware_controls_view(context)
 {
 	addAndMakeVisible(device_selector);
 	addAndMakeVisible(monitor_view);

@@ -5,19 +5,16 @@
 
 namespace
 {
-constexpr int FRAMES_PER_SECOND = 30;
+	constexpr int FRAMES_PER_SECOND = 30;
 }
 
-MainWindow::MainWindow(const juce::String& name, AppContext& context)
-	: DocumentWindow(name, theme::WINDOW_BACKGROUND, allButtons),
-	  context(context),
-	  settings_window(context)
+MainWindow::MainWindow(const juce::String& name, AppContext& context) : DocumentWindow(name, theme::WINDOW_BACKGROUND, allButtons), context(context), settings_window(context)
 {
 	actions = {
 		{command::QUIT, [] { juce::JUCEApplication::getInstance()->systemRequestedQuit(); }},
 		{command::TOGGLE_MIXER, [this] { toggle_mixer(); }},
 		{command::AUDIO_SETTINGS, [this] { show_audio_settings(); }},
-		{command::ABOUT, [this] { show_about(); }}
+		{command::ABOUT, [this] { show_about(); }},
 	};
 
 	command_manager.registerAllCommandsForTarget(this);

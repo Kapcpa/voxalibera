@@ -6,26 +6,26 @@
 
 namespace
 {
-using Block = std::array<float, 4>;
+	using Block = std::array<float, 4>;
 
-struct StereoBlock
-{
-	Block left{};
-	Block right{};
-};
+	struct StereoBlock
+	{
+		Block left{};
+		Block right{};
+	};
 
-StereoBlock run(Passthrough& passthrough, const Block& left_input, const Block& right_input, int input_count)
-{
-	StereoBlock output;
-	const float* inputs[]{left_input.data(), right_input.data()};
-	float* outputs[]{output.left.data(), output.right.data()};
-	passthrough.process(inputs, input_count, outputs, 2, (int) Block{}.size());
-	return output;
-}
+	StereoBlock run(Passthrough& passthrough, const Block& left_input, const Block& right_input, int input_count)
+	{
+		StereoBlock output;
+		const float* inputs[]{left_input.data(), right_input.data()};
+		float* outputs[]{output.left.data(), output.right.data()};
+		passthrough.process(inputs, input_count, outputs, 2, (int) Block{}.size());
+		return output;
+	}
 
-const Block LEFT_SIGNAL{0.1f, 0.2f, 0.3f, 0.4f};
-const Block RIGHT_SIGNAL{-0.5f, -0.6f, -0.7f, -0.8f};
-const Block SILENCE{};
+	const Block LEFT_SIGNAL{0.1f, 0.2f, 0.3f, 0.4f};
+	const Block RIGHT_SIGNAL{-0.5f, -0.6f, -0.7f, -0.8f};
+	const Block SILENCE{};
 }
 
 TEST_CASE("left input reaches both outputs")
