@@ -10,7 +10,7 @@ Starting the program, windows, commands and menus.
 - `main_window` - the main window; owns commands, the 30 Hz frame loop and the modal overlay. `WindowContent` lays out the menu bar, the main view and the overlay inside it.
 - `commands` - every command id with its name, menu and default shortcut.
 - `main_menu` - builds the menu bar from the command table, plus File > Open Recent; `describe_shortcut` turns key presses into readable text (`Ctrl+S`, `Space`).
-- `project_dialogs` - New, Open, Save and Save As with their file choosers, and the Save / Don't Save / Cancel question.
+- `project_dialogs` - New, Open, Save and Save As with their file choosers, the Save / Don't Save / Cancel question, crash and unsaved-session recovery at startup, and Clean Up Project.
 
 `MainWindow::actions` - map from command id to what it does; a command without an entry shows up greyed out.
 `describe_shortcut(key)` - text for a shortcut, used by menus.
@@ -24,6 +24,8 @@ Application state: the project, edits, devices, recording, settings.
 - `project/model` - the whole project as plain data: `Project` (tempo, tracks, folder, change counter), `Track`, `Clip`, the id types `TrackId` and `ClipId`, the track colour palette, and the solo rules.
 - `project/project_file` - the `.vxl` format: a project to JSON and back; skips broken parts instead of refusing the file.
 - `project/edit_history` - `Edit` and `EditHistory`: every change to the project, with undo and redo.
+- `project_recovery` - the `.lock` file that tells a crash from a clean exit, autosave written on the disk thread, finding crashed projects and leftover unsaved sessions, rebuilding a project from bare takes.
+- `project_cleanup` - takes no clip uses, deleting them with their waveform caches, and when to hint about them (`~/.local/state/voxalibera/cleanup-hints.json`).
 - `editors` - `TrackEditor` (add, delete, rename, colour, volume, arm, mute, solo) and `ClipEditor` (move the selection in time and across tracks, delete).
 - `selection` - which tracks and clips are selected; outside undo.
 - `recorder` - runs a recording: arms, creates take files, hands them to the engine, turns them into clips.

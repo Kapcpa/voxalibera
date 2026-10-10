@@ -2,6 +2,7 @@
 
 #include <pthread.h>
 #include <sched.h>
+#include <unistd.h>
 
 namespace
 {
@@ -49,4 +50,18 @@ bool make_current_thread_realtime()
 
 	parameters.sched_priority = AUDIO_THREAD_PRIORITY;
 	return pthread_setschedparam(pthread_self(), SCHED_FIFO, &parameters) == 0;
+}
+
+int current_process_id()
+{
+	return (int) getpid();
+}
+
+bool is_process_running(int process_id, const juce::String& program_name)
+{
+	if (process_id <= 0)
+		return false;
+
+	const juce::File command("/proc/" + juce::String(process_id) + "/comm");
+	return command.existsAsFile() && command.loadFileAsString().trim() == program_name;
 }

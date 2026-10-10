@@ -21,6 +21,7 @@ void AppContext::update()
 	xrun_watch.update(engine.device_manager.getCurrentAudioDevice(), now);
 	recorder.update();
 	peak_builder.deliver_to(peaks);
+	session.update(now);
 	publisher.update(now);
 }
 

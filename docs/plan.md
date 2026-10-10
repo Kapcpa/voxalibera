@@ -49,7 +49,7 @@ Short design notes, decided once and then followed everywhere.
 Full design: [projects.md](projects.md). Where the installed app and the user's files live: [distribution.md](distribution.md).
 
 - A project is a folder: `<name>.vxl` (readable JSON, kebab-case keys) plus `audio/`, `plugins/`, `backups/`, `autosave/`, `cache/`.
-- Saving uses temporary-file-then-rename (already the rule). Autosave every few minutes to `project.autosave.json`.
+- Saving uses temporary-file-then-rename (already the rule). Autosave every 5 minutes to `autosave/autosave.vxl`, written off the message thread; a `.lock` file detects crashes.
 - Opening never fails because something is missing: missing audio files and plugins become placeholders that keep their data.
 
 ### Plugins (milestone 2, but shapes the engine)
@@ -81,6 +81,7 @@ The core loop: arm a track, record, hear it back, record again.
 - Plugin windows, bypass, presets.
 - Sends, buses, groups; latency compensation across all of them.
 - Monitoring through effects while recording (amp simulators for guitar).
+- Track settings editable after creation: input (recovered tracks start with none), mono/stereo where it makes sense.
 - CPU: effect chains run per track inside `MixRenderer::render_track` (after clips and input, before volume and pan). From the start, chains sleep when the track is silent and their tail has ended. Then, in order of need:
   - freeze: render a track with its effects to a file in the background and play that instead, until it's unfrozen;
   - spread independent tracks across processor cores;
@@ -111,7 +112,7 @@ The core loop: arm a track, record, hear it back, record again.
 
 - Key remapping UI and command palette.
 - A proper notification system for errors and warnings (non-blocking, with details on demand) instead of the plain message dialog and the transport bar note.
-- Crash recovery from autosave, plugin crash isolation report.
+- Plugin crash isolation report.
 - Packaging (AUR, Flatpak or AppImage), a website, contributor docs.
 - Make the GitHub repository public.
 

@@ -59,7 +59,7 @@ namespace
 	};
 
 	const std::vector<Menu> MENUS{
-		{"File", {command::NEW_PROJECT, command::OPEN_PROJECT, RECENT_MENU, SEPARATOR, command::SAVE_PROJECT, command::SAVE_PROJECT_AS, SEPARATOR, command::QUIT}},
+		{"File", {command::NEW_PROJECT, command::OPEN_PROJECT, RECENT_MENU, SEPARATOR, command::SAVE_PROJECT, command::SAVE_PROJECT_AS, SEPARATOR, command::CLEAN_UP_PROJECT, SEPARATOR, command::QUIT}},
 		{"Edit", {command::UNDO, command::REDO, SEPARATOR, command::DELETE_SELECTION}},
 		{"View", {command::TOGGLE_MIXER}},
 		{"Transport", {command::PLAY_STOP, command::RECORD, command::RETURN_TO_START, command::TOGGLE_METRONOME}},

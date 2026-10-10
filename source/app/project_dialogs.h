@@ -22,10 +22,18 @@ public:
 	void open_recent(const juce::File& file);
 	void save(Next next = {});
 	void save_as(Next next = {});
+	void clean_up(Next next = {});
 	void close_project_then(Next next);
+	void check_recovery();
 
 private:
 	void open_file(const juce::File& file);
+	void load(const juce::File& file, bool restore_autosave);
+	void offer_restore(const juce::File& file, juce::Time autosaved, Next not_now);
+	void offer_reopen(const juce::File& file);
+	void offer_unsaved(std::vector<UnsavedSession> sessions, size_t index);
+	void confirm_clean_up(const juce::Array<juce::File>& unused, Next next);
+	void hint_cleanup_then(Next next);
 	void show_problem(const juce::String& title, const juce::String& message);
 
 	AppContext& context;

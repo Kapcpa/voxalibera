@@ -26,6 +26,8 @@ private:
 	std::map<juce::String, Peaks> peaks_by_file;
 };
 
+juce::File peak_cache_file(const juce::File& project_folder, const juce::String& file);
+
 class PeakBuilder : private juce::Thread
 {
 public:

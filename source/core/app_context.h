@@ -43,7 +43,7 @@ struct AppContext
 	ClipEditor clips{project, edits, selection};
 	PeakStore peaks;
 	PeakBuilder peak_builder;
-	ProjectSession session{engine, devices, project, edits, selection, peaks, peak_builder};
+	ProjectSession session{engine, devices, project, edits, selection, peaks, peak_builder, disk_thread};
 	Recorder recorder{engine, project, edits, selection, peaks, disk_thread};
 	AudioFilePool files;
 	ReadAhead read_ahead{engine.transport};

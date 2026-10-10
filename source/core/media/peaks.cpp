@@ -1,6 +1,7 @@
 #include "core/media/peaks.h"
 
 #include "core/log.h"
+#include "core/media/project_folders.h"
 #include "engine/audio_file.h"
 #include "engine/recording_session.h"
 
@@ -8,7 +9,6 @@
 
 namespace
 {
-	constexpr auto CACHE_FOLDER = "cache";
 	constexpr auto CACHE_EXTENSION = ".peaks";
 	constexpr int CACHE_MAGIC = 0x4b505856;
 	constexpr int PEAKS_PER_READ = 256;
@@ -76,6 +76,11 @@ void PeakStore::clear()
 	peaks_by_file.clear();
 }
 
+juce::File peak_cache_file(const juce::File& project_folder, const juce::String& file)
+{
+	return project_folder.getChildFile(CACHE_FOLDER).getChildFile(file + CACHE_EXTENSION);
+}
+
 PeakBuilder::PeakBuilder() : juce::Thread("Peak builder")
 {
 	startThread(juce::Thread::Priority::background);
@@ -92,7 +97,7 @@ void PeakBuilder::request(const juce::File& project_folder, const juce::String& 
 {
 	{
 		const std::scoped_lock lock(mutex);
-		jobs.push_back({project_folder.getChildFile(file), project_folder.getChildFile(CACHE_FOLDER).getChildFile(file + CACHE_EXTENSION), file, generation});
+		jobs.push_back({project_folder.getChildFile(file), peak_cache_file(project_folder, file), file, generation});
 	}
 
 	notify();

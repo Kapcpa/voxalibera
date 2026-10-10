@@ -11,6 +11,7 @@ namespace command
 	constexpr juce::CommandID SAVE_PROJECT = 3;
 	constexpr juce::CommandID SAVE_PROJECT_AS = 4;
 	constexpr juce::CommandID QUIT = 5;
+	constexpr juce::CommandID CLEAN_UP_PROJECT = 6;
 	constexpr juce::CommandID UNDO = 10;
 	constexpr juce::CommandID REDO = 11;
 	constexpr juce::CommandID TOGGLE_MIXER = 20;

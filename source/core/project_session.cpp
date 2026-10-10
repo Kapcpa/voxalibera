@@ -3,6 +3,7 @@
 #include "core/log.h"
 #include "core/media/project_folders.h"
 #include "core/project/project_file.h"
+#include "core/project_cleanup.h"
 #include "platform/system.h"
 
 namespace
@@ -91,7 +92,7 @@ void RecentProjects::save() const
 	target.replaceWithText(juce::JSON::toString(paths));
 }
 
-ProjectSession::ProjectSession(AudioEngine& engine, DeviceSession& devices, Project& project, EditHistory& edits, Selection& selection, PeakStore& peaks, PeakBuilder& peak_builder) : engine(engine), devices(devices), project(project), edits(edits), selection(selection), peaks(peaks), peak_builder(peak_builder)
+ProjectSession::ProjectSession(AudioEngine& engine, DeviceSession& devices, Project& project, EditHistory& edits, Selection& selection, PeakStore& peaks, PeakBuilder& peak_builder, juce::TimeSliceThread& disk_thread) : engine(engine), devices(devices), project(project), edits(edits), selection(selection), peaks(peaks), peak_builder(peak_builder), recovery(disk_thread)
 {
 }
 
@@ -114,14 +115,42 @@ void ProjectSession::start_new()
 	log_event("New project");
 }
 
-juce::Result ProjectSession::open(const juce::File& chosen, juce::StringArray& problems)
+void ProjectSession::update(double now)
+{
+	recovery.hold_lock(project.folder);
+	autosave_if_due(now);
+}
+
+void ProjectSession::autosave_if_due(double now)
+{
+	if (!has_unsaved_changes() || project.revision == autosaved_revision || read_only) {
+		autosave_due.reset();
+		return;
+	}
+
+	if (!autosave_due)
+		autosave_due = now + AUTOSAVE_SECONDS;
+
+	if (now < *autosave_due)
+		return;
+
+	if (project.folder == juce::File())
+		project.folder = new_unsaved_project_folder();
+
+	recovery.autosave(project.folder, write_project(project, JUCE_APPLICATION_VERSION_STRING));
+	autosaved_revision = project.revision;
+	autosave_due.reset();
+}
+
+juce::Result ProjectSession::open(const juce::File& chosen, juce::StringArray& problems, bool restore_autosave)
 {
 	if (!chosen.existsAsFile()) {
 		recent.remove(chosen);
 		return juce::Result::fail(chosen.getFullPathName() + " can't be found.");
 	}
 
-	auto loaded = read_project(chosen.loadFileAsString());
+	const auto source = restore_autosave ? autosave_file(chosen.getParentDirectory()) : chosen;
+	auto loaded = read_project(source.loadFileAsString());
 
 	if (!loaded) {
 		recent.remove(chosen);
@@ -145,11 +174,33 @@ juce::Result ProjectSession::open(const juce::File& chosen, juce::StringArray& p
 	replace_project(std::move(next));
 	file = chosen;
 	read_only = loaded->newer_format;
+
+	if (restore_autosave)
+		--saved_revision;
+
 	recent.add(chosen);
 	devices.use_project_rate(project.sample_rate);
 	request_missing_peaks();
-	log_event("Opened " + chosen.getFullPathName() + (problems.isEmpty() ? juce::String() : ": " + problems.joinIntoString("; ")));
+	log_event((restore_autosave ? "Restored the autosave of " : "Opened ") + chosen.getFullPathName() + (problems.isEmpty() ? juce::String() : ": " + problems.joinIntoString("; ")));
 	return juce::Result::ok();
+}
+
+void ProjectSession::recover(const UnsavedSession& unsaved)
+{
+	const auto autosaved = unsaved.has_autosave ? read_project(autosave_file(unsaved.folder).loadFileAsString()) : std::nullopt;
+	auto next = autosaved ? autosaved->project : project_from_takes(unsaved.folder);
+	next.folder = unsaved.folder;
+
+	for (auto& track : next.tracks)
+		track.armed = false;
+
+	replace_project(std::move(next));
+	file = juce::File();
+	read_only = false;
+	--saved_revision;
+	devices.use_project_rate(project.sample_rate);
+	request_missing_peaks();
+	log_event("Recovered the unsaved session in " + unsaved.folder.getFullPathName() + (autosaved ? " from its autosave" : " from its takes"));
 }
 
 void ProjectSession::replace_project(Project next)
@@ -159,6 +210,8 @@ void ProjectSession::replace_project(Project next)
 	next.revision = project.revision + 1;
 	project = std::move(next);
 	saved_revision = project.revision;
+	autosaved_revision = project.revision;
+	autosave_due.reset();
 	edits.clear();
 	selection.clear();
 	peak_builder.cancel_all();
@@ -249,6 +302,9 @@ juce::Result ProjectSession::write_to(const juce::File& target)
 		return juce::Result::fail("Could not write " + target.getFullPathName());
 
 	saved_revision = project.revision;
+	autosaved_revision = project.revision;
+	autosave_due.reset();
+	recovery.forget_autosave(target.getParentDirectory());
 	log_event("Saved " + target.getFullPathName());
 	return juce::Result::ok();
 }
@@ -269,12 +325,27 @@ void ProjectSession::back_up(const juce::File& target)
 		backups[index].deleteFile();
 }
 
-void ProjectSession::discard_unsaved_audio()
+void ProjectSession::discard_changes()
 {
-	if (is_saved() || !is_unsaved_project_folder(project.folder))
+	if (is_saved() || !is_unsaved_project_folder(project.folder)) {
+		if (project.folder != juce::File())
+			recovery.forget_autosave(project.folder);
+
 		return;
+	}
 
 	log_event("Discarded unsaved recordings in " + project.folder.getFullPathName());
 	project.folder.deleteRecursively();
 	project.folder = juce::File();
+}
+
+int ProjectSession::clean_up(const juce::Array<juce::File>& unused)
+{
+	const auto deleted = delete_media(project, unused);
+	edits.clear();
+
+	if (is_saved())
+		remember_cleanup_hint(file, 0);
+
+	return deleted;
 }

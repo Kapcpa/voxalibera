@@ -46,6 +46,7 @@ MainWindow::MainWindow(const juce::String& name, AppContext& context) : Document
 		{command::OPEN_PROJECT, [this] { project_dialogs.open_project(); }},
 		{command::SAVE_PROJECT, [this] { project_dialogs.save(); }},
 		{command::SAVE_PROJECT_AS, [this] { project_dialogs.save_as(); }},
+		{command::CLEAN_UP_PROJECT, [this] { project_dialogs.clean_up(); }},
 		{command::QUIT, [this] { request_quit(); }},
 		{command::TOGGLE_MIXER, [this] { toggle_mixer(); }},
 		{command::PLAY_STOP, [this] { this->context.toggle_playback(); }},
@@ -83,6 +84,10 @@ MainWindow::MainWindow(const juce::String& name, AppContext& context) : Document
 	main_menu.on_open_recent = [this](const juce::File& file) { project_dialogs.open_recent(file); };
 
 	setVisible(true);
+	juce::MessageManager::callAsync([window = juce::Component::SafePointer<MainWindow>(this)] {
+		if (window != nullptr)
+			window->project_dialogs.check_recovery();
+	});
 
 	startTimerHz(FRAMES_PER_SECOND);
 }
@@ -165,6 +170,7 @@ bool MainWindow::is_available(juce::CommandID id) const
 		case command::OPEN_PROJECT:
 		case command::SAVE_PROJECT:
 		case command::SAVE_PROJECT_AS:
+		case command::CLEAN_UP_PROJECT:
 			return !context.recorder.is_recording();
 		case command::DELETE_SELECTION:
 			return !context.selection.tracks.empty() || !context.selection.clips.empty();

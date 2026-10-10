@@ -57,3 +57,15 @@ juce::String media_display_name(const juce::String& relative_path)
 {
 	return relative_path.fromLastOccurrenceOf("/", false, false).upToLastOccurrenceOf(".", false, false);
 }
+
+juce::Array<juce::File> unsaved_project_folders()
+{
+	return unsaved_projects_folder().findChildFiles(juce::File::findDirectories, false);
+}
+
+juce::Array<juce::File> audio_files_in(const juce::File& project_folder)
+{
+	auto files = project_folder.getChildFile(AUDIO_FOLDER).findChildFiles(juce::File::findFiles, false, juce::String("*") + TAKE_EXTENSION);
+	files.sort();
+	return files;
+}
