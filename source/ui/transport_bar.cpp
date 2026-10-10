@@ -22,6 +22,7 @@ namespace
 	constexpr double TEMPO_STEP = 0.1;
 	constexpr int TEMPO_DECIMALS = 1;
 	constexpr int TEMPO_DRAG_SENSITIVITY = 800;
+	constexpr float RECORDING_OUTLINE = 1.5f;
 
 	const std::array<TimeSignature, 7> SIGNATURES{{{2, 4}, {3, 4}, {4, 4}, {5, 4}, {6, 8}, {7, 8}, {12, 8}}};
 
@@ -67,11 +68,10 @@ TransportBar::TransportBar(AppContext& context) : context(context), start_button
 	style_icon_button(start_button, return_to_start_icon());
 	style_icon_button(play_button, play_icon());
 	style_icon_button(record_button, record_icon());
-	record_button.setEnabled(false);
-	record_button.setAlpha(0.35f);
 
 	start_button.onClick = [this] { this->context.return_to_start(); };
 	play_button.onClick = [this] { this->context.toggle_playback(); };
+	record_button.onClick = [this] { this->context.toggle_recording(); };
 
 	musical_position.setFont(juce::FontOptions(juce::Font::getDefaultMonospacedFontName(), POSITION_FONT_SIZE, juce::Font::bold));
 	clock_position.setFont(juce::FontOptions(juce::Font::getDefaultMonospacedFontName(), CLOCK_FONT_SIZE, juce::Font::plain));
@@ -106,6 +106,7 @@ TransportBar::TransportBar(AppContext& context) : context(context), start_button
 void TransportBar::update()
 {
 	show_playing(context.engine.transport.is_playing());
+	show_recording(context.recorder.is_recording());
 	show_position();
 	show_project_values();
 }
@@ -118,6 +119,18 @@ void TransportBar::show_playing(bool playing)
 	shown_playing = playing;
 	play_button.setShape(playing ? stop_icon() : play_icon(), false, true, false);
 	play_button.setTooltip(playing ? "Stop (Space)" : "Play (Space)");
+}
+
+void TransportBar::show_recording(bool recording)
+{
+	if (recording == shown_recording)
+		return;
+
+	shown_recording = recording;
+	record_button.setColours(recording ? theme::RECORD : theme::RECORD.withAlpha(0.55f), theme::RECORD, theme::RECORD);
+	record_button.setOutline(recording ? theme::TEXT : juce::Colours::transparentBlack, RECORDING_OUTLINE);
+	musical_position.setColour(juce::Label::textColourId, recording ? theme::RECORD : theme::TEXT);
+	record_button.setTooltip(recording ? "Stop recording (Ctrl+R)" : "Record (Ctrl+R)");
 }
 
 void TransportBar::show_position()

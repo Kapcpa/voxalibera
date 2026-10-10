@@ -15,6 +15,14 @@ namespace
 		++project.revision;
 	}
 
+	void transfer_clip(Project& project, ClipId id, TrackId target)
+	{
+		auto& source_clips = project.find_track_of(id)->clips;
+		const auto clip = std::find_if(source_clips.begin(), source_clips.end(), [id](const Clip& existing) { return existing.id == id; });
+		project.find_track(target)->clips.push_back(*clip);
+		source_clips.erase(clip);
+	}
+
 	void apply_all(const Transaction& transaction, Project& project)
 	{
 		for (const auto& operation : transaction.operations)
@@ -77,6 +85,49 @@ void Edit::remove_track(TrackId id)
 		[id](Project& target) { target.tracks.erase(target.tracks.begin() + target.index_of(id)); },
 		[removed, index](Project& target) { target.tracks.insert(target.tracks.begin() + index, removed); },
 	});
+}
+
+ClipId Edit::add_clip(TrackId track_id, Clip clip)
+{
+	if (current_project().find_track(track_id) == nullptr)
+		return {};
+
+	clip.id = current_project().allocate_clip_id();
+	const auto id = clip.id;
+
+	record({
+		[track_id, clip](Project& target) { target.find_track(track_id)->clips.push_back(clip); },
+		[track_id, id](Project& target) { std::erase_if(target.find_track(track_id)->clips, [id](const Clip& existing) { return existing.id == id; }); },
+	});
+
+	return id;
+}
+
+void Edit::remove_clip(ClipId id)
+{
+	auto* track = current_project().find_track_of(id);
+
+	if (track == nullptr)
+		return;
+
+	const auto track_id = track->id;
+	const auto removed = *current_project().find_clip(id);
+
+	record({
+		[track_id, id](Project& target) { std::erase_if(target.find_track(track_id)->clips, [id](const Clip& existing) { return existing.id == id; }); },
+		[track_id, removed](Project& target) { target.find_track(track_id)->clips.push_back(removed); },
+	});
+}
+
+void Edit::move_clip(ClipId id, TrackId target)
+{
+	const auto* source = current_project().find_track_of(id);
+
+	if (source == nullptr || source->id == target || current_project().find_track(target) == nullptr)
+		return;
+
+	const auto source_id = source->id;
+	record({[id, target](Project& project) { transfer_clip(project, id, target); }, [id, source_id](Project& project) { transfer_clip(project, id, source_id); }});
 }
 
 void Edit::commit()

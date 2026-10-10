@@ -48,8 +48,23 @@ public:
 		record({[id, field, value](Project& target) { target.find_track(id)->*field = value; }, [id, field, old_value](Project& target) { target.find_track(id)->*field = old_value; }});
 	}
 
+	template <typename Value>
+	void set(ClipId id, Value Clip::* field, Value value)
+	{
+		const auto* clip = current_project().find_clip(id);
+
+		if (clip == nullptr)
+			return;
+
+		const auto old_value = clip->*field;
+		record({[id, field, value](Project& target) { target.find_clip(id)->*field = value; }, [id, field, old_value](Project& target) { target.find_clip(id)->*field = old_value; }});
+	}
+
 	TrackId add_track(Track track, size_t position);
 	void remove_track(TrackId id);
+	ClipId add_clip(TrackId track_id, Clip clip);
+	void remove_clip(ClipId id);
+	void move_clip(ClipId id, TrackId target);
 	void commit();
 
 private:

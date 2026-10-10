@@ -4,6 +4,7 @@ AppContext::AppContext() : settings(Settings::load()), devices(engine, settings)
 {
 	engine.passthrough.monitoring = settings.monitoring;
 	engine.passthrough.routing = settings.input_routing;
+	disk_thread.startThread();
 	devices.open();
 }
 
@@ -12,20 +13,40 @@ void AppContext::update()
 	const auto now = juce::Time::getMillisecondCounterHiRes() / 1000.0;
 	devices.update(now);
 	xrun_watch.update(engine.device_manager.getCurrentAudioDevice(), now);
+	recorder.update();
 	publisher.update();
 }
 
 void AppContext::toggle_playback()
 {
-	if (engine.transport.is_playing())
+	if (recorder.is_recording())
+		recorder.stop();
+	else if (engine.transport.is_playing())
 		engine.transport.stop();
 	else
 		engine.transport.play();
 }
 
+void AppContext::toggle_recording()
+{
+	if (recorder.is_recording())
+		recorder.stop();
+	else
+		recorder.start();
+}
+
+void AppContext::delete_selection()
+{
+	if (!selection.clips.empty())
+		clips.remove_selected();
+	else
+		tracks.remove_selected();
+}
+
 void AppContext::return_to_start()
 {
-	engine.transport.locate(0);
+	if (!recorder.is_recording())
+		engine.transport.locate(0);
 }
 
 void AppContext::toggle_metronome()

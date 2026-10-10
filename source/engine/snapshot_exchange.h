@@ -28,7 +28,7 @@ public:
 		std::erase_if(retired, [&](const Retired& entry) { return !audio_running || finished > entry.retired_after_block; });
 	}
 
-	const Snapshot* begin_block() const
+	Snapshot* begin_block() const
 	{
 		return current.load(std::memory_order_acquire);
 	}

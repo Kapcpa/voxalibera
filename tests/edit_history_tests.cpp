@@ -105,3 +105,43 @@ TEST_CASE("a new edit clears what could be redone")
 	CHECK_FALSE(history.can_redo());
 	CHECK(names(project) == juce::StringArray{"B"});
 }
+
+TEST_CASE("clips can be added, moved and removed, and undone")
+{
+	Project project;
+	EditHistory history(project);
+	const auto track = history.begin("Add").add_track(named("Guitar"), 0);
+
+	Clip take;
+	take.file = "audio/guitar-take-1.wav";
+	take.length = 1000;
+	const auto clip = history.begin("Record").add_clip(track, take);
+
+	history.begin("Move").set(clip, &Clip::start, std::int64_t{48000});
+	history.begin("Delete").remove_clip(clip);
+	CHECK(project.find_clip(clip) == nullptr);
+
+	history.undo();
+	CHECK(project.find_clip(clip)->start == 48000);
+
+	history.undo();
+	CHECK(project.find_clip(clip)->start == 0);
+
+	history.undo();
+	CHECK(project.find_track(track)->clips.empty());
+}
+
+TEST_CASE("a clip moved to another track keeps its id and moves back on undo")
+{
+	Project project;
+	EditHistory history(project);
+	const auto guitar = history.begin("Add").add_track(named("Guitar"), 0);
+	const auto bass = history.begin("Add").add_track(named("Bass"), 1);
+	const auto clip = history.begin("Record").add_clip(guitar, Clip{});
+
+	history.begin("Move").move_clip(clip, bass);
+	CHECK(project.find_track_of(clip)->id == bass);
+
+	history.undo();
+	CHECK(project.find_track_of(clip)->id == guitar);
+}

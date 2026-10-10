@@ -1,0 +1,49 @@
+#include "core/media/take_files.h"
+
+#include "platform/paths.h"
+
+namespace
+{
+	constexpr auto APPLICATION_FOLDER = "voxalibera";
+	constexpr auto UNSAVED_FOLDER = "unsaved";
+	constexpr auto FOLDER_TIME_FORMAT = "%Y-%m-%d_%H-%M-%S";
+	constexpr auto TAKE_EXTENSION = ".wav";
+	constexpr auto FALLBACK_TRACK_NAME = "track";
+	const juce::String ALLOWED_NAME_CHARACTERS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_";
+
+	juce::String file_safe(const juce::String& name)
+	{
+		const auto safe = name.trim().replaceCharacter(' ', '-').retainCharacters(ALLOWED_NAME_CHARACTERS);
+		return safe.isNotEmpty() ? safe : juce::String(FALLBACK_TRACK_NAME);
+	}
+}
+
+juce::File new_unsaved_project_folder()
+{
+	const auto folder = data_directory().getChildFile(APPLICATION_FOLDER).getChildFile(UNSAVED_FOLDER).getChildFile(juce::Time::getCurrentTime().formatted(FOLDER_TIME_FORMAT));
+	folder.getChildFile(AUDIO_FOLDER).createDirectory();
+	return folder;
+}
+
+juce::File next_take_file(const juce::File& project_folder, const juce::String& track_name)
+{
+	const auto audio_folder = project_folder.getChildFile(AUDIO_FOLDER);
+	const auto base = file_safe(track_name) + "-take-";
+
+	for (int number = 1;; ++number) {
+		const auto candidate = audio_folder.getChildFile(base + juce::String(number) + TAKE_EXTENSION);
+
+		if (!candidate.exists())
+			return candidate;
+	}
+}
+
+juce::String relative_media_path(const juce::File& project_folder, const juce::File& file)
+{
+	return file.getRelativePathFrom(project_folder);
+}
+
+juce::String media_display_name(const juce::String& relative_path)
+{
+	return relative_path.fromLastOccurrenceOf("/", false, false).upToLastOccurrenceOf(".", false, false);
+}

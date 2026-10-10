@@ -15,6 +15,7 @@ public:
 
 private:
 	void show_playing(bool playing);
+	void show_recording(bool recording);
 	void show_position();
 	void show_project_values();
 	void choose_signature();
@@ -29,5 +30,6 @@ private:
 	juce::ComboBox signature_box;
 	juce::TextButton metronome_button{"Click"};
 	bool shown_playing = true;
+	bool shown_recording = true;
 	TimeSignature shown_signature{0, 0};
 };

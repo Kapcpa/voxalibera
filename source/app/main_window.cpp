@@ -5,6 +5,17 @@
 
 namespace
 {
+	juce::String describe_deletion(const Selection& selection)
+	{
+		if (!selection.clips.empty())
+			return selection.clips.size() == 1 ? "Delete Clip" : "Delete Clips";
+
+		if (!selection.tracks.empty())
+			return selection.tracks.size() == 1 ? "Delete Track" : "Delete Tracks";
+
+		return "Delete";
+	}
+
 	constexpr int FRAMES_PER_SECOND = 30;
 	constexpr int MIN_WIDTH = 1000;
 	constexpr int MIN_HEIGHT = 700;
@@ -22,7 +33,8 @@ MainWindow::MainWindow(const juce::String& name, AppContext& context) : Document
 		{command::UNDO, [this] { this->context.undo(); }},
 		{command::REDO, [this] { this->context.redo(); }},
 		{command::NEW_TRACK, [this] { show_new_track_dialog(); }},
-		{command::DELETE_TRACKS, [this] { this->context.tracks.remove_selected(); }},
+		{command::DELETE_SELECTION, [this] { this->context.delete_selection(); }},
+		{command::RECORD, [this] { this->context.toggle_recording(); }},
 		{command::ARM_TRACKS, [this] { this->context.tracks.toggle_selected(&Track::armed, "Arm Track"); }},
 		{command::MUTE_TRACKS, [this] { this->context.tracks.toggle_selected(&Track::mute, "Mute Track"); }},
 		{command::SOLO_TRACKS, [this] { this->context.tracks.toggle_selected(&Track::solo, "Solo Track"); }},
@@ -93,7 +105,8 @@ bool MainWindow::is_available(juce::CommandID id) const
 			return context.edits.can_undo();
 		case command::REDO:
 			return context.edits.can_redo();
-		case command::DELETE_TRACKS:
+		case command::DELETE_SELECTION:
+			return !context.selection.tracks.empty() || !context.selection.clips.empty();
 		case command::ARM_TRACKS:
 		case command::MUTE_TRACKS:
 		case command::SOLO_TRACKS:
@@ -111,8 +124,8 @@ void MainWindow::describe_dynamic_command(juce::CommandID id, juce::ApplicationC
 	if (id == command::REDO && context.edits.can_redo())
 		info.shortName = "Redo " + context.edits.redo_name();
 
-	if (id == command::DELETE_TRACKS && context.selection.tracks.size() > 1)
-		info.shortName = "Delete Tracks";
+	if (id == command::DELETE_SELECTION)
+		info.shortName = describe_deletion(context.selection);
 
 	if (id == command::TOGGLE_MIXER)
 		info.setTicked(main_view.is_mixer_visible());

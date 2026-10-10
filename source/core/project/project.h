@@ -14,8 +14,14 @@ struct Project
 	Track* find_track(TrackId id);
 	const Track* find_track(TrackId id) const;
 	int index_of(TrackId id) const;
+	Clip* find_clip(ClipId id);
+	const Clip* find_clip(ClipId id) const;
+	Track* find_track_of(ClipId id);
+	const Track* find_track_of(ClipId id) const;
 	TrackId allocate_track_id();
+	ClipId allocate_clip_id();
 
+	juce::File folder;
 	Tempo tempo;
 	bool metronome = true;
 	std::vector<Track> tracks;

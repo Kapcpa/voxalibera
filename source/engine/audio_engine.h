@@ -4,6 +4,7 @@
 #include "engine/level_meter.h"
 #include "engine/metronome.h"
 #include "engine/passthrough.h"
+#include "engine/recording_session.h"
 #include "engine/snapshot_exchange.h"
 #include "engine/transport.h"
 
@@ -25,7 +26,8 @@ public:
 	Passthrough passthrough;
 	LevelMeter input_meter;
 	Transport transport;
-	SnapshotExchange<EngineSnapshot> snapshots;
+	SnapshotExchange<const EngineSnapshot> snapshots;
+	SnapshotExchange<RecordingSession> recording;
 	std::atomic<double> sample_rate{0.0};
 	std::atomic<bool> running{false};
 	std::atomic<bool> running_realtime{false};

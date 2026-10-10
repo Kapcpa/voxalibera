@@ -17,10 +17,10 @@ namespace
 
 	const std::vector<Menu> MENUS{
 		{"File", {command::NEW_PROJECT, command::OPEN_PROJECT, SEPARATOR, command::SAVE_PROJECT, command::SAVE_PROJECT_AS, SEPARATOR, command::QUIT}},
-		{"Edit", {command::UNDO, command::REDO}},
+		{"Edit", {command::UNDO, command::REDO, SEPARATOR, command::DELETE_SELECTION}},
 		{"View", {command::TOGGLE_MIXER}},
-		{"Transport", {command::PLAY_STOP, command::RETURN_TO_START, command::TOGGLE_METRONOME}},
-		{"Track", {command::NEW_TRACK, command::DELETE_TRACKS, SEPARATOR, command::ARM_TRACKS, command::MUTE_TRACKS, command::SOLO_TRACKS}},
+		{"Transport", {command::PLAY_STOP, command::RECORD, command::RETURN_TO_START, command::TOGGLE_METRONOME}},
+		{"Track", {command::NEW_TRACK, SEPARATOR, command::ARM_TRACKS, command::MUTE_TRACKS, command::SOLO_TRACKS}},
 		{"Settings", {command::AUDIO_SETTINGS, command::INTERFACE_SETTINGS}},
 		{"Help", {command::ABOUT}},
 	};

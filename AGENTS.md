@@ -92,6 +92,14 @@ The UI writes those atomics and saves `Settings`; the engine never sees `Setting
 - `EnginePublisher` notices a new revision once per frame, builds an `EngineSnapshot` (a read-only copy of what the audio thread needs) and publishes it through `SnapshotExchange`: an atomic pointer swap. Replaced snapshots are freed on the message thread once the audio thread has finished a block that started after the swap, never on the audio thread.
 - `Transport` takes play/stop/locate from the UI through a `LockFreeQueue` and publishes its state and position through atomics. Positions inside the engine are in samples; `engine/musical_time` converts to bars, beats and ticks.
 
+### Recording
+
+- `core/Recorder` runs a take from the message thread: it arms the selected track if nothing is armed, creates one WAV writer per armed track (`juce::AudioFormatWriter::ThreadedWriter` on the `disk_thread`), and hands a `RecordingSession` to the engine through `SnapshotExchange`, so it's only freed after the audio thread is done with it.
+- The audio thread only copies input samples into each writer's lock-free buffer and collects waveform peaks into a `LockFreeQueue`; the disk thread writes the files and refreshes the WAV header every couple of seconds, so a crash leaves a valid file.
+- On stop, `Recorder` waits until the engine has really stopped recording, then adds all takes as clips in one "Record" edit, shifted by the device's reported latency (`source_offset`).
+- Takes go to the project's folder; before the first save that's a temporary folder under `~/.local/share/voxalibera/unsaved/`. Files are never deleted silently (see `docs/projects.md`).
+- Clip `file` paths are relative to the project folder; never build a `juce::File` from them directly, resolve them against `project.folder`.
+
 ### Devices
 
 - Views never change the `AudioDeviceManager` themselves; they call `DeviceSession::choose_*`. Only those user choices are saved, so a fallback device (the saved one is unplugged) is used without overwriting the user's choice.

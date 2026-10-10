@@ -114,7 +114,7 @@ void TrackHeader::mouseDown(const juce::MouseEvent& event)
 		return;
 	}
 
-	if (event.mods.isCommandDown())
+	if (event.mods.isShiftDown())
 		context.selection.toggle(id);
 	else
 		context.selection.select_only(id);

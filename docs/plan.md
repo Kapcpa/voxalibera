@@ -119,4 +119,5 @@ Clip launcher (session grid), CLAP, out-of-process plugin sandboxing, time-stret
 - Effects come before full editing: recording guitar through an amp simulator matters more early on than trimming clips. Selecting, moving and deleting clips is already in milestone 1.
 - Tempo, bars and a metronome are part of milestone 1; recording to a click is the normal case.
 - Tracks are mono or stereo, chosen when created. Splitting or swapping channels happens later as clip operations.
+- Recording: Ctrl+R records (R arms the selected track). If no track is armed, recording arms the selected one. A count-in toggle comes later.
 - Projects use the `.vxl` extension. Imported audio is copied into the project. A project keeps the sample rate it was created at; export can convert to another rate.

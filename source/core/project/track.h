@@ -1,10 +1,12 @@
 #pragma once
 
+#include "core/project/clip.h"
 #include "core/project/ids.h"
 
 #include <juce_core/juce_core.h>
 
 #include <cstdint>
+#include <vector>
 
 enum class TrackChannels
 {
@@ -34,6 +36,7 @@ struct Track
 	bool solo = false;
 	float volume_db = 0.0f;
 	float pan = 0.0f;
+	std::vector<Clip> clips;
 };
 
 int channel_count(TrackChannels channels);

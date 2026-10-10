@@ -12,3 +12,4 @@ struct Id
 };
 
 using TrackId = Id<struct TrackTag>;
+using ClipId = Id<struct ClipTag>;
