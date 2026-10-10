@@ -4,7 +4,6 @@
 
 namespace
 {
-	constexpr auto APPLICATION_FOLDER = "voxalibera";
 	constexpr auto UNSAVED_FOLDER = "unsaved";
 	constexpr auto FOLDER_TIME_FORMAT = "%Y-%m-%d_%H-%M-%S";
 	constexpr auto TAKE_EXTENSION = ".wav";
@@ -19,7 +18,7 @@ namespace
 
 	juce::File unsaved_projects_folder()
 	{
-		return data_directory().getChildFile(APPLICATION_FOLDER).getChildFile(UNSAVED_FOLDER);
+		return app_data_directory().getChildFile(UNSAVED_FOLDER);
 	}
 }
 

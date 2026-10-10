@@ -1,10 +1,10 @@
 #include "core/settings.h"
 
 #include "core/log.h"
+#include "platform/system.h"
 
 namespace
 {
-	constexpr auto APPLICATION_FOLDER = "voxalibera";
 	constexpr auto SETTINGS_FILE = "settings.json";
 
 	const std::map<InputRouting, juce::String> ROUTING_NAMES{
@@ -67,9 +67,7 @@ namespace
 
 juce::File Settings::file()
 {
-	return juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
-		.getChildFile(APPLICATION_FOLDER)
-		.getChildFile(SETTINGS_FILE);
+	return app_config_directory().getChildFile(SETTINGS_FILE);
 }
 
 Settings Settings::load()

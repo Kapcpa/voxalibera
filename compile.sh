@@ -5,4 +5,3 @@ cd "$(dirname "$0")"
 source ./build_options.sh "$@"
 configure_if_needed
 cmake --build "$build_directory" --target voxalibera
-exec "./$application" "${arguments[@]}"

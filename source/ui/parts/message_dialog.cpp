@@ -1,4 +1,4 @@
-#include "ui/message_dialog.h"
+#include "ui/parts/message_dialog.h"
 
 #include "ui/settings/settings_parts.h"
 #include "ui/theme.h"

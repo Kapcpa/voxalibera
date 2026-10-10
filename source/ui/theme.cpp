@@ -1,5 +1,3 @@
-#include "ui/theme_look_and_feel.h"
-
 #include "ui/theme.h"
 
 namespace

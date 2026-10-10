@@ -20,7 +20,7 @@ target_sources(voxalibera_tests PRIVATE
     ${PROJECT_SOURCE_DIR}/source/engine/resampler.cpp
     ${PROJECT_SOURCE_DIR}/source/engine/transport.cpp
     ${PROJECT_SOURCE_DIR}/source/platform/alsa_cards.cpp
-    ${PROJECT_SOURCE_DIR}/source/platform/pipewire_properties.cpp)
+    ${PROJECT_SOURCE_DIR}/source/platform/pipewire.cpp)
 target_include_directories(voxalibera_tests PRIVATE ${PROJECT_SOURCE_DIR}/source)
 target_compile_definitions(voxalibera_tests PRIVATE ${VOXALIBERA_DEFINITIONS})
 
@@ -28,6 +28,7 @@ target_link_libraries(voxalibera_tests
     PRIVATE
         juce::juce_audio_formats
         PkgConfig::ALSA
+        PkgConfig::SYSTEMD
         Catch2::Catch2WithMain
     PUBLIC
         juce::juce_recommended_config_flags)

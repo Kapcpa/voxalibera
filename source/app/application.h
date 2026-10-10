@@ -2,7 +2,7 @@
 
 #include "app/main_window.h"
 #include "core/app_context.h"
-#include "ui/theme_look_and_feel.h"
+#include "ui/theme.h"
 
 #include <juce_gui_basics/juce_gui_basics.h>
 

@@ -4,8 +4,8 @@
 #include "app/project_dialogs.h"
 #include "core/app_context.h"
 #include "ui/main_view.h"
-#include "ui/message_dialog.h"
-#include "ui/modal_overlay.h"
+#include "ui/parts/message_dialog.h"
+#include "ui/parts/modal_overlay.h"
 #include "ui/settings/settings_view.h"
 #include "ui/tracks/new_track_dialog.h"
 

@@ -1,4 +1,4 @@
-#include "core/project_cleanup.h"
+#include "core/project/project_cleanup.h"
 
 #include "core/log.h"
 #include "core/media/peaks.h"
@@ -9,12 +9,11 @@
 
 namespace
 {
-	constexpr auto APPLICATION_FOLDER = "voxalibera";
 	constexpr auto HINTS_FILE = "cleanup-hints.json";
 
 	juce::File hints_file()
 	{
-		return state_directory().getChildFile(APPLICATION_FOLDER).getChildFile(HINTS_FILE);
+		return app_state_directory().getChildFile(HINTS_FILE);
 	}
 
 	juce::var load_hints()

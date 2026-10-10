@@ -5,7 +5,7 @@ An open-source DAW for Linux in early development. Right now it opens an audio i
 ## Build
 
 ```
-./compile.sh    builds and runs
+./compile.sh    builds
 ./run.sh        runs the last build
 ./test.sh       builds and runs the tests
 ```

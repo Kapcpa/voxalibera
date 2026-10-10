@@ -1,16 +1,16 @@
-#include "core/device_session.h"
+#include "core/audio/device_session.h"
 
 #include "core/log.h"
 #include "platform/alsa_cards.h"
 #include "platform/alsa_controls.h"
-#include "platform/pipewire_properties.h"
+#include "platform/pipewire.h"
+#include "platform/system.h"
 
 #include <cmath>
 #include <set>
 
 namespace
 {
-	constexpr auto APPLICATION_NAME = "voxalibera";
 	constexpr int INPUT_CHANNELS = 2;
 	constexpr int OUTPUT_CHANNELS = 2;
 	constexpr double RESCAN_DELAY_SECONDS = 1.5;

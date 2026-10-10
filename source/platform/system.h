@@ -2,8 +2,11 @@
 
 #include <juce_core/juce_core.h>
 
-juce::File state_directory();
-juce::File data_directory();
+constexpr auto APPLICATION_NAME = "voxalibera";
+
+juce::File app_config_directory();
+juce::File app_state_directory();
+juce::File app_data_directory();
 
 bool make_current_thread_realtime();
 

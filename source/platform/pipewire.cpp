@@ -1,9 +1,12 @@
-#include "platform/device_reservation.h"
+#include "platform/pipewire.h"
+
+#include "platform/alsa_cards.h"
 
 #include <systemd/sd-bus.h>
 
 #include <cerrno>
 #include <climits>
+#include <cstdlib>
 #include <cstring>
 #include <thread>
 
@@ -162,4 +165,19 @@ void DeviceReservation::process_requests()
 
 	while (sd_bus_process(bus, nullptr) > 0) {
 	}
+}
+
+juce::String jack_client_properties(int quantum, int forced_sample_rate)
+{
+	auto properties = "{ node.force-quantum = " + juce::String(quantum);
+
+	if (forced_sample_rate != NO_FORCED_RATE)
+		properties << ", node.force-rate = " << forced_sample_rate;
+
+	return properties + " }";
+}
+
+void use_jack_client_properties(const juce::String& properties)
+{
+	setenv("PIPEWIRE_PROPS", properties.toRawUTF8(), 1);
 }

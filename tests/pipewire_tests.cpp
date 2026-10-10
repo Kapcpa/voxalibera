@@ -1,5 +1,5 @@
 #include "platform/alsa_cards.h"
-#include "platform/pipewire_properties.h"
+#include "platform/pipewire.h"
 
 #include <catch2/catch_test_macros.hpp>
 

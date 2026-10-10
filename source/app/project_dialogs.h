@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/app_context.h"
-#include "ui/message_dialog.h"
+#include "ui/parts/message_dialog.h"
 
 #include <juce_gui_basics/juce_gui_basics.h>
 

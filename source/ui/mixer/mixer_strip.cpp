@@ -2,7 +2,6 @@
 
 #include "engine/levels.h"
 #include "ui/theme.h"
-#include "ui/theme_look_and_feel.h"
 
 #include <cmath>
 

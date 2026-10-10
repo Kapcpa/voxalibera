@@ -1,4 +1,4 @@
-#include "ui/meter_view.h"
+#include "ui/parts/meter_view.h"
 
 #include "ui/theme.h"
 

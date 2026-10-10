@@ -1,8 +1,8 @@
-#include "core/project_recovery.h"
+#include "core/project/project_recovery.h"
 
 #include "core/log.h"
 #include "core/media/project_folders.h"
-#include "core/project_cleanup.h"
+#include "core/project/project_cleanup.h"
 #include "engine/audio_file.h"
 #include "platform/system.h"
 
@@ -11,7 +11,6 @@ namespace
 	constexpr auto LOCK_FILE = ".lock";
 	constexpr auto AUTOSAVE_FOLDER = "autosave";
 	constexpr auto AUTOSAVE_FILE = "autosave.vxl";
-	constexpr auto PROGRAM_NAME = "voxalibera";
 	constexpr int IDLE_MILLISECONDS = 500;
 
 	juce::File lock_file(const juce::File& project_folder)
@@ -21,7 +20,7 @@ namespace
 
 	bool is_locked_by_running_app(const juce::File& project_folder)
 	{
-		return is_process_running(lock_file(project_folder).loadFileAsString().trim().getIntValue(), PROGRAM_NAME);
+		return is_process_running(lock_file(project_folder).loadFileAsString().trim().getIntValue(), APPLICATION_NAME);
 	}
 }
 

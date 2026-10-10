@@ -5,7 +5,7 @@ Working name for an open-source DAW for Linux, built in C++20 on JUCE 8 with our
 ## Build and run
 
 ```
-./compile.sh                  configures on first use, builds, then runs
+./compile.sh                  configures on first use and builds
 ./run.sh                      runs the last build
 ./test.sh                     builds and runs the base tests
 ./run.sh --list-devices       arguments after the options go to the app
@@ -30,6 +30,7 @@ Needs `cmake`, `ninja`, `alsa-lib`, `libsystemd` and `pipewire-jack`. JUCE and C
   - Merge into another file when it has a single user and is small (under ~50 lines), when it's plain data that always travels together (the project model), or when it's small building blocks of one screen.
   - Keep separate when it runs on another thread or belongs to another layer, when several places use it, or when merging would pass ~300 lines.
   - Past ~300 lines, split along a natural seam.
+  - Folders group files by topic, once a topic has three or more files; a file goes in the folder of what it's about, not of who uses it.
 - Types `PascalCase`, functions and variables `snake_case`, constants `UPPER_SNAKE` (in an anonymous namespace at the top of the `.cpp`), enum values `snake_case`. Overrides of JUCE virtuals keep JUCE's names (`paint`, `resized`, `audioDeviceIOCallbackWithContext`).
 - Full words, no abbreviations except in math.
 - No magic numbers in logic or layout: name them as constants.
@@ -49,9 +50,14 @@ source/
   main.cpp     starts the application
   app/         application lifecycle, windows, commands and menus, command-line tools
   ui/          views; read state every frame, call into core/engine on user input
-  core/        app state: AppContext, Settings, DeviceSession (device choice, reservations, PipeWire setup, restoring hardware controls)
+    tracks/ mixer/ settings/   one folder per screen area
+    parts/                     pieces several screens reuse (meters, overlay, message dialog)
+  core/        app state: AppContext, Settings, editors, selection, log
+    project/   the song document and its files: model, edits, .vxl format, session, recovery, cleanup
+    audio/     talks to the engine and the devices: device session, engine publisher, recorder
+    media/     audio files and waveforms
   engine/      audio processing; everything the audio thread touches
-  platform/    Linux specifics: ALSA cards and controls, D-Bus device reservation, PipeWire properties, thread priority
+  platform/    Linux specifics: ALSA cards and controls, PipeWire (device reservation, client properties), app folders, thread priority
 tests/
 ```
 

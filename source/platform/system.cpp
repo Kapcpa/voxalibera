@@ -6,6 +6,8 @@
 
 namespace
 {
+	constexpr auto CONFIG_HOME_VARIABLE = "XDG_CONFIG_HOME";
+	constexpr auto DEFAULT_CONFIG_HOME = ".config";
 	constexpr auto STATE_HOME_VARIABLE = "XDG_STATE_HOME";
 	constexpr auto DEFAULT_STATE_HOME = ".local/state";
 	constexpr auto DATA_HOME_VARIABLE = "XDG_DATA_HOME";
@@ -29,14 +31,19 @@ namespace
 	}
 }
 
-juce::File state_directory()
+juce::File app_config_directory()
 {
-	return xdg_directory(STATE_HOME_VARIABLE, DEFAULT_STATE_HOME);
+	return xdg_directory(CONFIG_HOME_VARIABLE, DEFAULT_CONFIG_HOME).getChildFile(APPLICATION_NAME);
 }
 
-juce::File data_directory()
+juce::File app_state_directory()
 {
-	return xdg_directory(DATA_HOME_VARIABLE, DEFAULT_DATA_HOME);
+	return xdg_directory(STATE_HOME_VARIABLE, DEFAULT_STATE_HOME).getChildFile(APPLICATION_NAME);
+}
+
+juce::File app_data_directory()
+{
+	return xdg_directory(DATA_HOME_VARIABLE, DEFAULT_DATA_HOME).getChildFile(APPLICATION_NAME);
 }
 
 bool make_current_thread_realtime()

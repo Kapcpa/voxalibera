@@ -3,7 +3,7 @@
 #include "core/settings.h"
 #include "engine/audio_engine.h"
 #include "platform/alsa_cards.h"
-#include "platform/device_reservation.h"
+#include "platform/pipewire.h"
 
 #include <functional>
 #include <map>

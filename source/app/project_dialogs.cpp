@@ -1,8 +1,8 @@
 #include "app/project_dialogs.h"
 
 #include "core/media/project_folders.h"
+#include "core/project/project_cleanup.h"
 #include "core/project/project_file.h"
-#include "core/project_cleanup.h"
 
 namespace
 {

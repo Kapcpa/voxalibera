@@ -36,3 +36,6 @@ private:
 
 	JUCE_DECLARE_NON_COPYABLE(DeviceReservation)
 };
+
+juce::String jack_client_properties(int quantum, int forced_sample_rate);
+void use_jack_client_properties(const juce::String& properties);

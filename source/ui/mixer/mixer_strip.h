@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/app_context.h"
-#include "ui/meter_view.h"
+#include "ui/parts/meter_view.h"
 
 #include <juce_gui_basics/juce_gui_basics.h>
 

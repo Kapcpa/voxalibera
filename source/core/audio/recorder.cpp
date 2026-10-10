@@ -1,4 +1,4 @@
-#include "core/recorder.h"
+#include "core/audio/recorder.h"
 
 #include "core/log.h"
 #include "core/media/project_folders.h"
