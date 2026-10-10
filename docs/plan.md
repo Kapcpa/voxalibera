@@ -110,6 +110,7 @@ The core loop: arm a track, record, hear it back, record again.
 ### 6. Ready to open up
 
 - Key remapping UI and command palette.
+- A proper notification system for errors and warnings (non-blocking, with details on demand) instead of the plain message dialog and the transport bar note.
 - Crash recovery from autosave, plugin crash isolation report.
 - Packaging (AUR, Flatpak or AppImage), a website, contributor docs.
 - Make the GitHub repository public.
@@ -124,4 +125,7 @@ Clip launcher (session grid), CLAP, out-of-process plugin sandboxing, time-stret
 - Tempo, bars and a metronome are part of milestone 1; recording to a click is the normal case.
 - Tracks are mono or stereo, chosen when created. Splitting or swapping channels happens later as clip operations.
 - Recording: Ctrl+R records (R arms the selected track). If no track is armed, recording arms the selected one. A count-in toggle comes later.
+- The app starts with an empty project; File > Open Recent lists the last ones (a start screen comes later). Projects default to `~/Music/Voxalibera/<name>/<name>.vxl`.
+- Arming is saved in the project, but tracks open disarmed (arming means monitoring, so an armed track with a laptop microphone could feed back). A setting to restore it can come later.
+- Sample rate: a project keeps the rate of its first recording. In JACK mode the app asks PipeWire to run at the project's rate; when the card can't run it (the UX1 only runs 44.1 kHz), and in ALSA mode, clips at another rate stay silent with a clear message. Real-time resampling in the engine is a firm later task (with the export dialog), so ALSA and any device work too.
 - Projects use the `.vxl` extension. Imported audio is copied into the project. A project keeps the sample rate it was created at; export can convert to another rate.

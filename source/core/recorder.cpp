@@ -100,6 +100,9 @@ void Recorder::start()
 	if (project.folder == juce::File())
 		project.folder = new_unsaved_project_folder();
 
+	if (project.sample_rate <= 0.0)
+		project.sample_rate = sample_rate;
+
 	auto new_session = create_session(tracks, sample_rate);
 
 	if (new_session == nullptr) {

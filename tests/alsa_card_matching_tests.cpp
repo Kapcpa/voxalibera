@@ -23,3 +23,17 @@ TEST_CASE("jack device names map by distinctive words")
 	CHECK(find_card_for_jack_device(CARDS, "UX1 Stereo") == 3);
 	CHECK(find_card_for_jack_device(CARDS, "Ryzen HD Audio Controller Analog Stereo") == NO_CARD);
 }
+
+TEST_CASE("usb stream descriptions tell which rates a card runs at")
+{
+	const auto ux1 = "Line 6 POD Studio UX1\n\nPlayback:\n  Status: Stop\n  Interface 1\n    Altset 1\n    Format: S24_3LE\n    Channels: 2\n    Rates: 44100\n";
+	CHECK(usb_stream_lists_rate(ux1, 44100));
+	CHECK_FALSE(usb_stream_lists_rate(ux1, 48000));
+
+	const auto several = "    Rates: 44100, 48000, 96000\n";
+	CHECK(usb_stream_lists_rate(several, 48000));
+
+	const auto range = "    Rates: 8000 - 48000 (continuous)\n";
+	CHECK(usb_stream_lists_rate(range, 44100));
+	CHECK_FALSE(usb_stream_lists_rate(range, 96000));
+}

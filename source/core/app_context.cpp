@@ -20,6 +20,7 @@ void AppContext::update()
 	devices.update(now);
 	xrun_watch.update(engine.device_manager.getCurrentAudioDevice(), now);
 	recorder.update();
+	peak_builder.deliver_to(peaks);
 	publisher.update(now);
 }
 

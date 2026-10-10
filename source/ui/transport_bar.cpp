@@ -23,6 +23,7 @@ namespace
 	constexpr int TEMPO_DECIMALS = 1;
 	constexpr int TEMPO_DRAG_SENSITIVITY = 800;
 	constexpr float RECORDING_OUTLINE = 1.5f;
+	constexpr int WARNING_MIN_WIDTH = 200;
 
 	const std::array<TimeSignature, 7> SIGNATURES{{{2, 4}, {3, 4}, {4, 4}, {5, 4}, {6, 8}, {7, 8}, {12, 8}}};
 
@@ -97,7 +98,11 @@ TransportBar::TransportBar(AppContext& context) : context(context), start_button
 	metronome_button.setWantsKeyboardFocus(false);
 	metronome_button.onClick = [this] { this->context.toggle_metronome(); };
 
-	for (auto* child : std::initializer_list<juce::Component*>{&start_button, &play_button, &record_button, &musical_position, &clock_position, &tempo_field, &signature_box, &metronome_button})
+	rate_warning.setColour(juce::Label::textColourId, theme::RECORD);
+	rate_warning.setJustificationType(juce::Justification::centredRight);
+	rate_warning.setMinimumHorizontalScale(1.0f);
+
+	for (auto* child : std::initializer_list<juce::Component*>{&start_button, &play_button, &record_button, &musical_position, &clock_position, &tempo_field, &signature_box, &metronome_button, &rate_warning})
 		addAndMakeVisible(child);
 
 	update();
@@ -109,6 +114,20 @@ void TransportBar::update()
 	show_recording(context.recorder.is_recording());
 	show_position();
 	show_project_values();
+	show_rate_warning();
+}
+
+void TransportBar::show_rate_warning()
+{
+	const auto file_rate = context.publisher.mismatched_file_rate();
+	const auto device_rate = context.engine.sample_rate.load();
+	const auto text = file_rate > 0.0 && device_rate > 0.0 ? "Clips at " + juce::String(file_rate, 0) + " Hz are silent: the device runs at " + juce::String(device_rate, 0) + " Hz" : juce::String();
+
+	if (rate_warning.getText() == text)
+		return;
+
+	rate_warning.setText(text, juce::dontSendNotification);
+	rate_warning.setTooltip(text.isEmpty() ? juce::String() : "Set the sample rate to " + juce::String(file_rate, 0) + " Hz in Settings > Audio");
 }
 
 void TransportBar::show_playing(bool playing)
@@ -194,4 +213,6 @@ void TransportBar::resized()
 	signature_box.setBounds(centred(area.removeFromLeft(SIGNATURE_WIDTH), CONTROL_HEIGHT));
 	area.removeFromLeft(GROUP_GAP);
 	metronome_button.setBounds(centred(area.removeFromLeft(METRONOME_WIDTH), CONTROL_HEIGHT));
+	area.removeFromLeft(GROUP_GAP);
+	rate_warning.setBounds(area.getWidth() >= WARNING_MIN_WIDTH ? area : juce::Rectangle<int>());
 }

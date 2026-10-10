@@ -1,9 +1,11 @@
 #pragma once
 
 #include "app/main_menu.h"
+#include "app/project_dialogs.h"
 #include "app/window_content.h"
 #include "core/app_context.h"
 #include "ui/main_view.h"
+#include "ui/message_dialog.h"
 #include "ui/modal_overlay.h"
 #include "ui/settings/settings_view.h"
 #include "ui/tracks/new_track_dialog.h"
@@ -21,6 +23,7 @@ public:
 	~MainWindow() override;
 
 	void closeButtonPressed() override;
+	void request_quit();
 
 	juce::ApplicationCommandTarget* getNextCommandTarget() override;
 	void getAllCommands(juce::Array<juce::CommandID>& commands) override;
@@ -38,6 +41,9 @@ private:
 	void toggle_mixer();
 	void show_settings(int page);
 	void show_about();
+	void show_message(const juce::String& title, const juce::String& message, std::vector<MessageChoice> choices);
+	void show_title();
+	void quit_after_recording();
 
 	AppContext& context;
 	juce::ApplicationCommandManager command_manager;
@@ -45,7 +51,10 @@ private:
 	MainView main_view;
 	SettingsView settings_view;
 	NewTrackDialog new_track_dialog;
+	MessageDialog message_dialog;
+	ProjectDialogs project_dialogs{context, [this](const auto& title, const auto& message, auto choices) { show_message(title, message, std::move(choices)); }};
 	ModalOverlay overlay;
 	WindowContent content{main_menu, main_view, overlay};
 	std::map<juce::CommandID, std::function<void()>> actions;
+	bool quit_pending = false;
 };

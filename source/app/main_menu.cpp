@@ -8,6 +8,16 @@
 namespace
 {
 	constexpr juce::CommandID SEPARATOR = 0;
+	constexpr juce::CommandID RECENT_MENU = -1;
+	constexpr int FIRST_RECENT_ITEM = 10000;
+
+	juce::String describe_recent(const juce::File& file)
+	{
+		const auto home = juce::File::getSpecialLocation(juce::File::userHomeDirectory);
+		const auto folder = file.getParentDirectory();
+		const auto location = folder.isAChildOf(home) ? "~/" + folder.getRelativePathFrom(home) : folder.getFullPathName();
+		return file.getFileNameWithoutExtension() + "   " + location;
+	}
 
 	struct Menu
 	{
@@ -16,7 +26,7 @@ namespace
 	};
 
 	const std::vector<Menu> MENUS{
-		{"File", {command::NEW_PROJECT, command::OPEN_PROJECT, SEPARATOR, command::SAVE_PROJECT, command::SAVE_PROJECT_AS, SEPARATOR, command::QUIT}},
+		{"File", {command::NEW_PROJECT, command::OPEN_PROJECT, RECENT_MENU, SEPARATOR, command::SAVE_PROJECT, command::SAVE_PROJECT_AS, SEPARATOR, command::QUIT}},
 		{"Edit", {command::UNDO, command::REDO, SEPARATOR, command::DELETE_SELECTION}},
 		{"View", {command::TOGGLE_MIXER}},
 		{"Transport", {command::PLAY_STOP, command::RECORD, command::RETURN_TO_START, command::TOGGLE_METRONOME}},
@@ -48,6 +58,8 @@ juce::PopupMenu MainMenu::getMenuForIndex(int menu_index, const juce::String&)
 	for (const auto item : MENUS[(size_t) menu_index].items) {
 		if (item == SEPARATOR)
 			popup.addSeparator();
+		else if (item == RECENT_MENU)
+			popup.addItem(recent_menu());
 		else
 			popup.addItem(command_item(item));
 	}
@@ -70,6 +82,24 @@ juce::PopupMenu::Item MainMenu::command_item(juce::CommandID id)
 	return item;
 }
 
-void MainMenu::menuItemSelected(int, int)
+juce::PopupMenu::Item MainMenu::recent_menu()
 {
+	shown_recent_files = recent_files ? recent_files() : juce::Array<juce::File>();
+	juce::PopupMenu submenu;
+
+	for (int index = 0; index < shown_recent_files.size(); ++index)
+		submenu.addItem(FIRST_RECENT_ITEM + index, describe_recent(shown_recent_files[index]));
+
+	juce::PopupMenu::Item item("Open Recent");
+	item.subMenu = std::make_unique<juce::PopupMenu>(std::move(submenu));
+	item.isEnabled = !shown_recent_files.isEmpty() && (!can_open_recent || can_open_recent());
+	return item;
+}
+
+void MainMenu::menuItemSelected(int item_id, int)
+{
+	const auto index = item_id - FIRST_RECENT_ITEM;
+
+	if (index >= 0 && index < shown_recent_files.size() && on_open_recent)
+		on_open_recent(shown_recent_files[index]);
 }

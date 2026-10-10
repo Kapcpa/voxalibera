@@ -16,13 +16,23 @@ namespace
 		const auto safe = name.trim().replaceCharacter(' ', '-').retainCharacters(ALLOWED_NAME_CHARACTERS);
 		return safe.isNotEmpty() ? safe : juce::String(FALLBACK_TRACK_NAME);
 	}
+
+	juce::File unsaved_projects_folder()
+	{
+		return data_directory().getChildFile(APPLICATION_FOLDER).getChildFile(UNSAVED_FOLDER);
+	}
 }
 
 juce::File new_unsaved_project_folder()
 {
-	const auto folder = data_directory().getChildFile(APPLICATION_FOLDER).getChildFile(UNSAVED_FOLDER).getChildFile(juce::Time::getCurrentTime().formatted(FOLDER_TIME_FORMAT));
+	const auto folder = unsaved_projects_folder().getChildFile(juce::Time::getCurrentTime().formatted(FOLDER_TIME_FORMAT));
 	folder.getChildFile(AUDIO_FOLDER).createDirectory();
 	return folder;
+}
+
+bool is_unsaved_project_folder(const juce::File& folder)
+{
+	return folder.isAChildOf(unsaved_projects_folder());
 }
 
 juce::File next_take_file(const juce::File& project_folder, const juce::String& track_name)

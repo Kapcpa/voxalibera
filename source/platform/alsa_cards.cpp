@@ -63,6 +63,41 @@ namespace
 		return rates;
 	}
 
+	std::optional<bool> probe_rate_support(int card_index, unsigned int rate)
+	{
+		snd_pcm_t* pcm = nullptr;
+		const auto device = "hw:" + juce::String(card_index) + ",0";
+
+		if (snd_pcm_open(&pcm, device.toRawUTF8(), SND_PCM_STREAM_PLAYBACK, SND_PCM_NONBLOCK) != 0)
+			return std::nullopt;
+
+		snd_pcm_hw_params_t* parameters = nullptr;
+		snd_pcm_hw_params_malloc(&parameters);
+
+		std::optional<bool> supported;
+
+		if (snd_pcm_hw_params_any(pcm, parameters) >= 0)
+			supported = snd_pcm_hw_params_test_rate(pcm, parameters, rate, 0) == 0;
+
+		snd_pcm_hw_params_free(parameters);
+		snd_pcm_close(pcm);
+		return supported;
+	}
+
+	bool lists_rate(const juce::String& rates, int rate)
+	{
+		if (rates.contains("-")) {
+			const auto lowest = rates.upToFirstOccurrenceOf("-", false, false).trim().getIntValue();
+			const auto highest = rates.fromFirstOccurrenceOf("-", false, false).trim().getIntValue();
+			return rate >= lowest && rate <= highest;
+		}
+
+		juce::StringArray values;
+		values.addTokens(rates, ",", {});
+		values.trim();
+		return values.contains(juce::String(rate));
+	}
+
 	CardRates read_running_rate(int card_index)
 	{
 		const juce::File hardware_parameters("/proc/asound/card" + juce::String(card_index) + "/pcm0p/sub0/hw_params");
@@ -148,4 +183,27 @@ int sample_rate_to_force(int card_index)
 		return NO_FORCED_RATE;
 
 	return (int) rates.lowest;
+}
+
+bool usb_stream_lists_rate(const juce::String& stream_description, int rate)
+{
+	for (const auto& line : juce::StringArray::fromLines(stream_description))
+		if (line.trim().startsWith("Rates:") && lists_rate(line.fromFirstOccurrenceOf(":", false, false), rate))
+			return true;
+
+	return false;
+}
+
+bool card_supports_rate(int card_index, int rate)
+{
+	if (const auto probed = probe_rate_support(card_index, (unsigned int) rate))
+		return *probed;
+
+	const juce::File usb_stream("/proc/asound/card" + juce::String(card_index) + "/stream0");
+
+	if (usb_stream.existsAsFile())
+		return usb_stream_lists_rate(usb_stream.loadFileAsString(), rate);
+
+	const auto running = read_running_rate(card_index).lowest;
+	return running == 0 || running == (unsigned int) rate;
 }

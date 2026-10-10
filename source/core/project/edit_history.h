@@ -90,6 +90,7 @@ public:
 	juce::String redo_name() const;
 	void undo();
 	void redo();
+	void clear();
 
 private:
 	friend class Edit;

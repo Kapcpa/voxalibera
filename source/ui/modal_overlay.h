@@ -9,7 +9,7 @@ class ModalOverlay : public juce::Component
 public:
 	ModalOverlay();
 
-	void open(const juce::String& new_title, juce::Component& new_content);
+	void open(const juce::String& new_title, juce::Component& new_content, bool with_close_button = true);
 	void close();
 	bool is_open() const { return isVisible(); }
 

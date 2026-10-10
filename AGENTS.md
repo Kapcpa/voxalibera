@@ -63,7 +63,7 @@ Dependencies only point down: `app -> ui -> core -> engine -> platform`. Nothing
 
 ### Dialogs
 
-Settings and anything else that shouldn't be touched mid-session open as a `ModalOverlay` inside the main window: the window dims, the dialog sits centered, clicks outside it, the menu bar and every shortcut except Quit are blocked, and Escape closes it. No separate OS windows for this, since Wayland compositors decide where windows go.
+Settings and anything else that shouldn't be touched mid-session open as a `ModalOverlay` inside the main window: the window dims, the dialog sits centered, clicks outside it, the menu bar and every shortcut except Quit are blocked, and Escape closes it. No separate OS windows for this, since Wayland compositors decide where windows go. Messages and questions use `MessageDialog` through `MainWindow::show_message`, never `NativeMessageBox`, so they look like the rest of the app.
 
 ### Theme
 
@@ -93,6 +93,14 @@ The UI writes those atomics and saves `Settings`; the engine never sees `Setting
 - Selection lives in `core/Selection`, outside the model and outside undo.
 - `project.revision` and `selection.revision` change with every edit; views compare them each frame and refresh only when they changed. Per-object views (track headers) are kept by id, so they survive reordering and keep their state.
 
+### Project files
+
+- `core/project/project_file` writes a `Project` as JSON (`.vxl`, kebab-case keys, a `format` number). Reading never refuses a file it can parse: broken tracks or clips are skipped and reported. A newer `format` opens read-only (Save becomes Save As).
+- A new field in the model needs a line in `write_*` and `read_*` there, with a default for older files. Bump `PROJECT_FORMAT` only when old versions would misread the file.
+- `ProjectSession` owns the file: open replaces the whole `Project` (history and selection cleared, tracks disarmed), save writes with `replaceWithText` and keeps the last 10 copies in `backups/`. Unsaved changes are `project.revision != saved_revision`.
+- The first Save As moves the temporary recordings folder into the project; Save As of a saved project copies its `audio/`. "Don't Save" on a never-saved project deletes its temporary folder, and the question says so.
+- A project's sample rate is the rate of its first recording. In JACK mode `DeviceSession::use_project_rate` asks PipeWire for it (`node.force-rate`) when the card can run it (the UX1 only runs 44.1 kHz); otherwise, and in ALSA mode, a different device rate leaves clips silent and the transport bar says why.
+
 ### Engine snapshots and transport
 
 - `EnginePublisher` notices a new revision once per frame, builds an `EngineSnapshot` (a read-only copy of what the audio thread needs) and publishes it through `SnapshotExchange`: an atomic pointer swap. Replaced snapshots are freed on the message thread once the audio thread has finished a block that started after the swap, never on the audio thread.
@@ -112,7 +120,7 @@ The UI writes those atomics and saves `Settings`; the engine never sees `Setting
 - Audio files are memory-mapped (`engine/AudioFile`); the audio thread copies samples straight from mapped memory. `ReadAhead` on the disk thread touches the next seconds of every clip so the pages are in memory before they're played.
 - `MixRenderer` renders in chunks of up to 2048 samples into preallocated buffers: clips and monitored input per track, then gain and pan, then the master gain. Mono clips on stereo tracks play on both sides; stereo clips on mono tracks are summed.
 - Track meters live in `engine.mixer.track_meters`; the publisher gives each track a slot (`publisher.meter_of(id)`).
-- Clips whose file sample rate differs from the device stay silent and are logged once (resampling comes with saved projects).
+- Clips whose file sample rate differs from the device stay silent, are logged once and shown in the transport bar (`publisher.mismatched_file_rate()`). Real-time resampling is a planned task.
 
 ### Devices
 

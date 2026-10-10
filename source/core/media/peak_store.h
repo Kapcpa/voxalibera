@@ -16,6 +16,7 @@ class PeakStore
 public:
 	const Peaks* find(const juce::String& file) const;
 	void store(const juce::String& file, Peaks peaks);
+	void clear();
 
 private:
 	std::map<juce::String, Peaks> peaks_by_file;

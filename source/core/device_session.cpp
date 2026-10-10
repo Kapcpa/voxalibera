@@ -4,6 +4,7 @@
 #include "core/log.h"
 #include "platform/pipewire_properties.h"
 
+#include <cmath>
 #include <set>
 
 namespace
@@ -144,6 +145,17 @@ void DeviceSession::choose_buffer_size(int size)
 	settings.save();
 }
 
+void DeviceSession::use_project_rate(double rate)
+{
+	project_rate = rate;
+
+	if (engine.device_manager.getCurrentAudioDeviceType() != JACK)
+		return;
+
+	if (use_jack_properties_for(applied_choice.output) && engine.device_manager.getCurrentAudioDevice() != nullptr)
+		restart_device();
+}
+
 void DeviceSession::change_setup(const std::function<void(juce::AudioDeviceManager::AudioDeviceSetup&)>& change)
 {
 	auto setup = engine.device_manager.getAudioDeviceSetup();
@@ -206,7 +218,10 @@ bool DeviceSession::reserve_cards_for(const juce::StringArray& alsa_device_names
 bool DeviceSession::use_jack_properties_for(const juce::String& jack_device_name)
 {
 	const auto card = find_card_for_jack_device(list_alsa_cards(), jack_device_name);
-	const auto forced_rate = card == NO_CARD ? NO_FORCED_RATE : sample_rate_to_force(card);
+	const auto card_rate = card == NO_CARD ? NO_FORCED_RATE : sample_rate_to_force(card);
+	const auto wanted_rate = (int) std::lround(project_rate);
+	const auto can_run_project_rate = project_rate > 0.0 && (card == NO_CARD || card_supports_rate(card, wanted_rate));
+	const auto forced_rate = can_run_project_rate ? wanted_rate : card_rate;
 	const auto properties = jack_client_properties(settings.jack_buffer_size, forced_rate);
 
 	if (properties == jack_properties)

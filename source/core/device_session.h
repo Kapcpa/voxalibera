@@ -28,6 +28,7 @@ public:
 	void choose_input(const juce::String& name);
 	void choose_sample_rate(double rate);
 	void choose_buffer_size(int size);
+	void use_project_rate(double rate);
 
 	bool is_exclusive() const { return !reservations.empty(); }
 
@@ -67,4 +68,5 @@ private:
 	std::optional<double> rescan_at;
 	int restored_card = NO_CARD;
 	int restored_device_starts = 0;
+	double project_rate = 0.0;
 };

@@ -18,6 +18,7 @@ private:
 	void show_recording(bool recording);
 	void show_position();
 	void show_project_values();
+	void show_rate_warning();
 	void choose_signature();
 
 	AppContext& context;
@@ -29,6 +30,7 @@ private:
 	juce::Slider tempo_field{juce::Slider::LinearBarVertical, juce::Slider::TextBoxBelow};
 	juce::ComboBox signature_box;
 	juce::TextButton metronome_button{"Click"};
+	juce::Label rate_warning;
 	bool shown_playing = true;
 	bool shown_recording = true;
 	TimeSignature shown_signature{0, 0};

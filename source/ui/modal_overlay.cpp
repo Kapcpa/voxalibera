@@ -20,8 +20,9 @@ ModalOverlay::ModalOverlay()
 	setWantsKeyboardFocus(true);
 }
 
-void ModalOverlay::open(const juce::String& new_title, juce::Component& new_content)
+void ModalOverlay::open(const juce::String& new_title, juce::Component& new_content, bool with_close_button)
 {
+	close_button.setVisible(with_close_button);
 	if (content != nullptr)
 		removeChildComponent(content);
 

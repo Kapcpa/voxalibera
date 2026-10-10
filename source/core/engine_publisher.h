@@ -15,6 +15,7 @@ public:
 
 	void update(double now);
 	int meter_of(TrackId id) const;
+	double mismatched_file_rate() const { return mismatched_rate; }
 
 private:
 	void publish(double now);
@@ -30,6 +31,7 @@ private:
 	int published_revision = -1;
 	double published_rate = 0.0;
 	bool files_missing = false;
+	double mismatched_rate = 0.0;
 	double next_retry = 0.0;
 	std::map<TrackId, int> meters;
 	std::set<juce::String> reported_rate_mismatches;

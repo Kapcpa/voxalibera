@@ -11,6 +11,7 @@ target_sources(voxalibera_tests PRIVATE
     ${VOXALIBERA_TEST_SOURCES}
     ${PROJECT_SOURCE_DIR}/source/core/project/edit_history.cpp
     ${PROJECT_SOURCE_DIR}/source/core/project/model.cpp
+    ${PROJECT_SOURCE_DIR}/source/core/project/project_file.cpp
     ${PROJECT_SOURCE_DIR}/source/engine/audio_file.cpp
     ${PROJECT_SOURCE_DIR}/source/engine/gain.cpp
     ${PROJECT_SOURCE_DIR}/source/engine/level_meter.cpp

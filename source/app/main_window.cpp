@@ -20,12 +20,17 @@ namespace
 	constexpr int MIN_WIDTH = 1000;
 	constexpr int MIN_HEIGHT = 700;
 	constexpr int MAX_SIZE = 10000;
+	const juce::String UNSAVED_MARK = juce::String::fromUTF8(" \xe2\x80\xa2");
 }
 
 MainWindow::MainWindow(const juce::String& name, AppContext& context) : DocumentWindow(name, theme::WINDOW_BACKGROUND, allButtons), context(context), main_view(context), settings_view(context), new_track_dialog(context)
 {
 	actions = {
-		{command::QUIT, [] { juce::JUCEApplication::getInstance()->systemRequestedQuit(); }},
+		{command::NEW_PROJECT, [this] { project_dialogs.new_project(); }},
+		{command::OPEN_PROJECT, [this] { project_dialogs.open_project(); }},
+		{command::SAVE_PROJECT, [this] { project_dialogs.save(); }},
+		{command::SAVE_PROJECT_AS, [this] { project_dialogs.save_as(); }},
+		{command::QUIT, [this] { request_quit(); }},
 		{command::TOGGLE_MIXER, [this] { toggle_mixer(); }},
 		{command::PLAY_STOP, [this] { this->context.toggle_playback(); }},
 		{command::RETURN_TO_START, [this] { this->context.return_to_start(); }},
@@ -55,7 +60,11 @@ MainWindow::MainWindow(const juce::String& name, AppContext& context) : Document
 
 	overlay.on_close = [this] { command_manager.commandStatusChanged(); };
 	new_track_dialog.on_finished = [this] { close_overlay(); };
+	message_dialog.on_finished = [this] { close_overlay(); };
 	main_view.track_area.on_add_track = [this] { show_new_track_dialog(); };
+	main_menu.recent_files = [this] { return this->context.session.recent.files; };
+	main_menu.can_open_recent = [this] { return is_allowed_now(command::OPEN_PROJECT) && is_available(command::OPEN_PROJECT); };
+	main_menu.on_open_recent = [this](const juce::File& file) { project_dialogs.open_recent(file); };
 
 	setVisible(true);
 
@@ -70,13 +79,44 @@ MainWindow::~MainWindow()
 
 void MainWindow::closeButtonPressed()
 {
-	juce::JUCEApplication::getInstance()->systemRequestedQuit();
+	request_quit();
+}
+
+void MainWindow::request_quit()
+{
+	if (context.recorder.is_recording()) {
+		context.recorder.stop();
+		quit_pending = true;
+		return;
+	}
+
+	close_overlay();
+	project_dialogs.close_project_then([] { juce::JUCEApplication::getInstance()->quit(); });
+}
+
+void MainWindow::quit_after_recording()
+{
+	if (!quit_pending || context.recorder.is_recording())
+		return;
+
+	quit_pending = false;
+	request_quit();
+}
+
+void MainWindow::show_title()
+{
+	const auto title = context.session.name() + (context.session.has_unsaved_changes() ? UNSAVED_MARK : juce::String()) + " - " + juce::JUCEApplication::getInstance()->getApplicationName();
+
+	if (getName() != title)
+		setName(title);
 }
 
 void MainWindow::timerCallback()
 {
 	context.update();
 	main_view.update();
+	show_title();
+	quit_after_recording();
 	release_focus_outside_text_fields();
 
 	if (overlay.is_open())
@@ -105,6 +145,11 @@ bool MainWindow::is_available(juce::CommandID id) const
 			return context.edits.can_undo();
 		case command::REDO:
 			return context.edits.can_redo();
+		case command::NEW_PROJECT:
+		case command::OPEN_PROJECT:
+		case command::SAVE_PROJECT:
+		case command::SAVE_PROJECT_AS:
+			return !context.recorder.is_recording();
 		case command::DELETE_SELECTION:
 			return !context.selection.tracks.empty() || !context.selection.clips.empty();
 		case command::ARM_TRACKS:
@@ -199,11 +244,12 @@ void MainWindow::close_overlay()
 
 void MainWindow::show_about()
 {
-	const auto options = juce::MessageBoxOptions()
-							 .withIconType(juce::MessageBoxIconType::InfoIcon)
-							 .withTitle(getName())
-							 .withMessage("Version " + juce::JUCEApplication::getInstance()->getApplicationVersion() + "\nOpen-source DAW for Linux, AGPLv3.")
-							 .withButton("OK");
+	show_message("About " + juce::JUCEApplication::getInstance()->getApplicationName(), "Version " + juce::JUCEApplication::getInstance()->getApplicationVersion() + "\nOpen-source DAW for Linux, AGPLv3.", {{"OK", {}}});
+}
 
-	juce::NativeMessageBox::showAsync(options, nullptr);
+void MainWindow::show_message(const juce::String& title, const juce::String& message, std::vector<MessageChoice> choices)
+{
+	message_dialog.prepare(message, std::move(choices));
+	overlay.open(title, message_dialog, false);
+	command_manager.commandStatusChanged();
 }

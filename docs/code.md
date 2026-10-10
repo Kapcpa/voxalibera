@@ -10,7 +10,8 @@ Starting the program, windows, commands and menus.
 - `main_window` - the main window; owns commands, the 30 Hz frame loop and the modal overlay.
 - `window_content` - lays out the menu bar, the main view and the overlay inside the window.
 - `commands` - every command id with its name, menu and default shortcut.
-- `main_menu` - builds the menu bar from the command table.
+- `main_menu` - builds the menu bar from the command table, plus File > Open Recent.
+- `project_dialogs` - New, Open, Save and Save As with their file choosers, and the Save / Don't Save / Cancel question.
 - `shortcut_text` - turns key presses into readable text (`Ctrl+S`, `Space`).
 
 `MainWindow::actions` - map from command id to what it does; a command without an entry shows up greyed out.
@@ -20,8 +21,11 @@ Starting the program, windows, commands and menus.
 
 Application state: the project, edits, devices, recording, settings.
 
-- `app_context` - `AppContext`, the one shared object: settings, engine, devices, project, edits, selection, recorder.
+- `app_context` - `AppContext`, the one shared object: settings, engine, devices, project, edits, selection, recorder, project session.
+- `project_session` - the open project's file: new, open, save, save as (moves or copies the recordings), backups, unsaved changes.
+- `recent_projects` - the last opened projects, in `~/.local/state/voxalibera/recent.json`.
 - `project/model` - the whole project as plain data: `Project` (tempo, tracks, folder, change counter), `Track`, `Clip`, the id types `TrackId` and `ClipId`, the track colour palette, and the solo rules.
+- `project/project_file` - the `.vxl` format: a project to JSON and back; skips broken parts instead of refusing the file.
 - `project/edit_history` - `Edit` and `EditHistory`: every change to the project, with undo and redo.
 - `track_editor` - track actions: add, delete, rename, colour, volume, arm, mute, solo.
 - `clip_editor` - clip actions: move the selection (in time and across tracks), delete.
@@ -29,6 +33,7 @@ Application state: the project, edits, devices, recording, settings.
 - `recorder` - runs a recording: arms, creates take files, hands them to the engine, turns them into clips.
 - `media/take_files` - where takes go and how they're named.
 - `media/peak_store` - waveform overviews per file, for drawing clips.
+- `media/peak_builder` - after opening a project, builds waveform overviews on a background thread, cached in the project's `cache/` folder.
 - `media/audio_file_pool` - opens each audio file once and shares it between snapshots; reopens a take once it's finished.
 - `media/read_ahead` - on the disk thread, loads the next few seconds of every clip into memory before the audio thread needs it.
 - `device_session` - opening devices, borrowing them from PipeWire, PipeWire properties for JACK.
@@ -49,6 +54,7 @@ Application state: the project, edits, devices, recording, settings.
 `context.publisher.meter_of(id)` - which meter in `engine.mixer.track_meters` belongs to a track.
 `context.devices.choose_output(name)` (and the other `choose_*`) - changes the device and saves it as the user's choice.
 `project.find_track(id)` / `find_clip(id)` / `find_track_of(clip)` - lookups; return `nullptr` when missing.
+`context.session.open(file, problems)` / `save()` / `save_as(file)` - project files; `has_unsaved_changes()` compares `project.revision` with the saved one.
 `log_event(message)` - writes a timestamped line to the log; never call it from the audio thread.
 
 ## engine/
@@ -77,7 +83,7 @@ Everything the audio thread touches. Nothing here allocates, locks or touches fi
 
 Linux specifics. The only place that includes ALSA, sd-bus or PipeWire.
 
-- `alsa_cards` - lists sound cards and matches device names to cards; finds a card's required sample rate.
+- `alsa_cards` - lists sound cards and matches device names to cards; finds a card's required sample rate and whether it can run a given one.
 - `alsa_controls` - reads and writes a card's hardware controls.
 - `device_reservation` - borrows a card from PipeWire over D-Bus and gives it back.
 - `pipewire_properties` - the properties our JACK client asks PipeWire for (buffer size, sample rate).
@@ -91,8 +97,9 @@ Views. They read state every frame and call into `core/` on user input; they nev
 - `main_view` - the main window's zones: transport bar, tracks area, mixer.
 - `mixer/mixer_view` - the master strip on the left, then one strip per track, scrolling sideways.
 - `mixer/mixer_strip` - pan, values, fader with meter, mute, solo and a colour name plate; the master keeps the same sections so all faders line up.
-- `transport_bar` - play, stop, record, position, tempo, time signature, metronome.
+- `transport_bar` - play, stop, record, position, tempo, time signature, metronome, and a warning when clips don't match the device's sample rate.
 - `modal_overlay` - dims the window and shows a dialog in the middle.
+- `message_dialog` - a message with a row of buttons (Save changes, problems, About), shown in the overlay.
 - `theme` / `theme_look_and_feel` - all colours, applied to every JUCE widget; draws our own faders and knobs.
 - `meter_view` - draws a `LevelMeter`, horizontally with labels (settings) or vertically (mixer).
 - `tracks/track_area_view` - headers, ruler and timeline together; scrolling, zoom, following the playhead.
@@ -112,4 +119,4 @@ Views. They read state every frame and call into `core/` on user input; they nev
 
 ## tests/
 
-Base tests for things that must never silently break: musical time, edit history, playback and mixing, the test monitor, device matching, PipeWire properties. Run with `./test.sh`.
+Base tests for things that must never silently break: musical time, edit history, playback and mixing, the test monitor, device matching, PipeWire properties, the project file. Run with `./test.sh`.

@@ -200,3 +200,9 @@ void EditHistory::redo()
 	done.push_back(std::move(undone.back()));
 	undone.pop_back();
 }
+
+void EditHistory::clear()
+{
+	done.clear();
+	undone.clear();
+}

@@ -4,10 +4,12 @@
 #include "core/device_session.h"
 #include "core/engine_publisher.h"
 #include "core/media/audio_file_pool.h"
+#include "core/media/peak_builder.h"
 #include "core/media/peak_store.h"
 #include "core/media/read_ahead.h"
 #include "core/project/edit_history.h"
 #include "core/project/model.h"
+#include "core/project_session.h"
 #include "core/recorder.h"
 #include "core/selection.h"
 #include "core/settings.h"
@@ -43,6 +45,8 @@ struct AppContext
 	TrackEditor tracks{project, edits, selection};
 	ClipEditor clips{project, edits, selection};
 	PeakStore peaks;
+	PeakBuilder peak_builder;
+	ProjectSession session{engine, devices, project, edits, selection, peaks, peak_builder};
 	Recorder recorder{engine, project, edits, selection, peaks, disk_thread};
 	AudioFilePool files;
 	ReadAhead read_ahead{engine.transport};

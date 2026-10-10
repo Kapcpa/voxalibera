@@ -105,6 +105,7 @@ struct Project
 	ClipId allocate_clip_id();
 
 	juce::File folder;
+	double sample_rate = 0.0;
 	Tempo tempo;
 	bool metronome = true;
 	float master_volume_db = 0.0f;

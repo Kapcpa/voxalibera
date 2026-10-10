@@ -43,6 +43,7 @@ void EnginePublisher::publish(double now)
 
 	forget_removed_tracks();
 	files_missing = false;
+	mismatched_rate = 0.0;
 
 	auto snapshot = std::make_unique<EngineSnapshot>();
 	snapshot->tempo = project.tempo;
@@ -97,6 +98,8 @@ std::shared_ptr<const AudioFile> EnginePublisher::open_clip_file(const Clip& cli
 
 	if (same_rate(file->sample_rate(), sample_rate))
 		return file;
+
+	mismatched_rate = file->sample_rate();
 
 	if (reported_rate_mismatches.insert(clip.file).second)
 		log_event(clip.file + " is at " + juce::String(file->sample_rate(), 0) + " Hz but the device runs at " + juce::String(sample_rate, 0) + " Hz; it stays silent until they match");

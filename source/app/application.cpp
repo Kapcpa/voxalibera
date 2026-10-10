@@ -68,5 +68,8 @@ void Application::shutdown()
 
 void Application::systemRequestedQuit()
 {
-	quit();
+	if (window != nullptr)
+		window->request_quit();
+	else
+		quit();
 }
