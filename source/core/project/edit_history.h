@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/project/project.h"
+#include "core/project/model.h"
 
 #include <functional>
 #include <vector>

@@ -7,7 +7,7 @@
 #include "core/media/peak_store.h"
 #include "core/media/read_ahead.h"
 #include "core/project/edit_history.h"
-#include "core/project/project.h"
+#include "core/project/model.h"
 #include "core/recorder.h"
 #include "core/selection.h"
 #include "core/settings.h"

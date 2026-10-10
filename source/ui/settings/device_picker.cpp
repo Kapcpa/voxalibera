@@ -1,6 +1,6 @@
 #include "ui/settings/device_picker.h"
 
-#include "ui/settings/settings_layout.h"
+#include "ui/settings/settings_parts.h"
 
 namespace
 {

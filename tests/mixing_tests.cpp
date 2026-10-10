@@ -1,4 +1,4 @@
-#include "core/project/track.h"
+#include "core/project/model.h"
 #include "engine/gain.h"
 
 #include <catch2/catch_test_macros.hpp>

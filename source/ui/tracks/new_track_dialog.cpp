@@ -1,6 +1,6 @@
 #include "ui/tracks/new_track_dialog.h"
 
-#include "ui/settings/settings_layout.h"
+#include "ui/settings/settings_parts.h"
 
 namespace
 {

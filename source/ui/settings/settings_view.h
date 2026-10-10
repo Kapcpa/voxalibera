@@ -3,7 +3,7 @@
 #include "core/app_context.h"
 #include "ui/settings/audio_page.h"
 #include "ui/settings/interface_page.h"
-#include "ui/settings/sidebar_button.h"
+#include "ui/settings/settings_parts.h"
 
 #include <juce_gui_basics/juce_gui_basics.h>
 

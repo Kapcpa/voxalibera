@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/app_context.h"
-#include "ui/mixer/meter_view.h"
+#include "ui/meter_view.h"
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
@@ -36,7 +36,7 @@ private:
 	juce::Label pan_value;
 	juce::Label volume_value;
 	juce::Slider fader{juce::Slider::LinearVertical, juce::Slider::NoTextBox};
-	MeterView meter_view;
+	MeterView meter_view{MeterView::Orientation::vertical};
 	juce::TextButton mute_button{"M"};
 	juce::TextButton solo_button{"S"};
 };

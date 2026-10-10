@@ -1,6 +1,6 @@
 #include "ui/tracks/track_header.h"
 
-#include "core/project/track_colours.h"
+#include "core/project/model.h"
 #include "ui/theme.h"
 
 namespace

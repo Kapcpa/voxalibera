@@ -6,13 +6,12 @@ What lives where in `source/`, and the functions worth knowing. Rules and archit
 
 Starting the program, windows, commands and menus.
 
-- `application` - the JUCE application: creates the log, theme, `AppContext` and the main window.
+- `application` - the JUCE application: creates the log, theme, `AppContext` and the main window; `--list-devices` prints every audio device JUCE can see.
 - `main_window` - the main window; owns commands, the 30 Hz frame loop and the modal overlay.
 - `window_content` - lays out the menu bar, the main view and the overlay inside the window.
 - `commands` - every command id with its name, menu and default shortcut.
 - `main_menu` - builds the menu bar from the command table.
 - `shortcut_text` - turns key presses into readable text (`Ctrl+S`, `Space`).
-- `device_listing` - `--list-devices`: prints every audio device JUCE can see.
 
 `MainWindow::actions` - map from command id to what it does; a command without an entry shows up greyed out.
 `describe_shortcut(key)` - text for a shortcut, used by menus.
@@ -22,12 +21,8 @@ Starting the program, windows, commands and menus.
 Application state: the project, edits, devices, recording, settings.
 
 - `app_context` - `AppContext`, the one shared object: settings, engine, devices, project, edits, selection, recorder.
-- `project/project` - `Project`: tempo, time signature, tracks, the project folder and change counter.
-- `project/track` - `Track` and its input and channel helpers.
-- `project/clip` - `Clip`: a range of an audio file placed on a track.
-- `project/ids` - `TrackId`, `ClipId`: separate id types that can't be mixed up.
+- `project/model` - the whole project as plain data: `Project` (tempo, tracks, folder, change counter), `Track`, `Clip`, the id types `TrackId` and `ClipId`, the track colour palette, and the solo rules.
 - `project/edit_history` - `Edit` and `EditHistory`: every change to the project, with undo and redo.
-- `project/track_colours` - the palette new tracks take their colours from.
 - `track_editor` - track actions: add, delete, rename, colour, volume, arm, mute, solo.
 - `clip_editor` - clip actions: move the selection (in time and across tracks), delete.
 - `selection` - which tracks and clips are selected; outside undo.
@@ -96,11 +91,10 @@ Views. They read state every frame and call into `core/` on user input; they nev
 - `main_view` - the main window's zones: transport bar, tracks area, mixer.
 - `mixer/mixer_view` - the master strip on the left, then one strip per track, scrolling sideways.
 - `mixer/mixer_strip` - pan, values, fader with meter, mute, solo and a colour name plate; the master keeps the same sections so all faders line up.
-- `mixer/meter_view` - a vertical two-channel meter.
 - `transport_bar` - play, stop, record, position, tempo, time signature, metronome.
 - `modal_overlay` - dims the window and shows a dialog in the middle.
 - `theme` / `theme_look_and_feel` - all colours, applied to every JUCE widget; draws our own faders and knobs.
-- `level_meter_view` - draws a `LevelMeter`.
+- `meter_view` - draws a `LevelMeter`, horizontally with labels (settings) or vertically (mixer).
 - `tracks/track_area_view` - headers, ruler and timeline together; scrolling, zoom, following the playhead.
 - `tracks/track_header` - one track's name, colour, arm, mute, solo and volume.
 - `tracks/timeline_view` - lanes, grid, clips, live takes, playhead; clip selection and dragging.
@@ -111,7 +105,7 @@ Views. They read state every frame and call into `core/` on user input; they nev
 - `settings/settings_view` - the settings dialog with its sidebar.
 - `settings/audio_page`, `device_picker`, `monitoring_section`, `status_section` - the Audio page.
 - `settings/interface_page` - the interface's hardware controls.
-- `settings/settings_layout`, `section_label`, `sidebar_button`, `settings_page` - shared pieces for settings pages.
+- `settings/settings_parts` - shared pieces for settings pages: layout sizes, the page base class, section labels, sidebar buttons.
 
 `TrackAreaView::update()` - refreshes headers only when the project or selection changed; repaints the timeline while playing.
 `paint_clip(graphics, bounds, appearance)` - draws any clip, recorded or live.

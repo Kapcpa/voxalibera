@@ -1,6 +1,6 @@
 #include "ui/settings/settings_view.h"
 
-#include "ui/settings/settings_layout.h"
+#include "ui/settings/settings_parts.h"
 #include "ui/theme.h"
 
 namespace

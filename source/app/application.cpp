@@ -1,11 +1,30 @@
 #include "app/application.h"
 
-#include "app/device_listing.h"
 #include "core/log.h"
+
+#include <iostream>
 
 namespace
 {
 	constexpr auto LIST_DEVICES_FLAG = "--list-devices";
+
+	void print_device_names(juce::AudioIODeviceType& type, bool inputs)
+	{
+		for (const auto& name : type.getDeviceNames(inputs))
+			std::cout << "  " << (inputs ? "in:  " : "out: ") << name << "\n";
+	}
+
+	void print_audio_devices()
+	{
+		juce::AudioDeviceManager device_manager;
+
+		for (auto* type : device_manager.getAvailableDeviceTypes()) {
+			type->scanForDevices();
+			std::cout << type->getTypeName() << "\n";
+			print_device_names(*type, false);
+			print_device_names(*type, true);
+		}
+	}
 }
 
 const juce::String Application::getApplicationName()

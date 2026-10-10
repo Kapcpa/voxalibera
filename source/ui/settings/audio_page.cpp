@@ -1,6 +1,6 @@
 #include "ui/settings/audio_page.h"
 
-#include "ui/settings/settings_layout.h"
+#include "ui/settings/settings_parts.h"
 
 AudioPage::AudioPage(AppContext& context) : device_picker(context), monitoring_section(context), status_section(context)
 {

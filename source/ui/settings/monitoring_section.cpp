@@ -1,6 +1,6 @@
 #include "ui/settings/monitoring_section.h"
 
-#include "ui/settings/settings_layout.h"
+#include "ui/settings/settings_parts.h"
 
 #include <array>
 #include <utility>
@@ -25,8 +25,9 @@ namespace
 	}
 }
 
-MonitoringSection::MonitoringSection(AppContext& context) : context(context), level_meter_view(context.engine.input_meter)
+MonitoringSection::MonitoringSection(AppContext& context) : context(context)
 {
+	level_meter_view.show(&context.engine.input_meter);
 	monitoring_toggle.setToggleState(context.settings.test_monitor, juce::dontSendNotification);
 	monitoring_toggle.onClick = [this] { set_monitoring(monitoring_toggle.getToggleState()); };
 

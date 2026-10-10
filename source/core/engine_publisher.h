@@ -2,7 +2,7 @@
 
 #include "core/media/audio_file_pool.h"
 #include "core/media/read_ahead.h"
-#include "core/project/project.h"
+#include "core/project/model.h"
 #include "engine/audio_engine.h"
 
 #include <map>

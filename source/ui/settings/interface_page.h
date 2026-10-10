@@ -2,8 +2,7 @@
 
 #include "core/app_context.h"
 #include "platform/alsa_controls.h"
-#include "ui/settings/section_label.h"
-#include "ui/settings/settings_page.h"
+#include "ui/settings/settings_parts.h"
 
 #include <juce_gui_basics/juce_gui_basics.h>
 

@@ -25,7 +25,11 @@ Needs `cmake`, `ninja`, `alsa-lib`, `libsystemd` and `pipewire-jack`. JUCE and C
   - namespace contents indented;
   - constructor initializers on the signature line;
   - lists spanning several lines end with a trailing comma, which keeps the closing `};` on its own line.
-- Files and folders: lowercase `snake_case` (`device_session.cpp`), one concept per file, aim for under ~300 lines.
+- Files and folders: lowercase `snake_case` (`device_session.cpp`).
+- One file is one thing someone would look for by name ("where's the recording?", "where's the mixer?"), not one class. A header and its `.cpp` together should land between roughly 50 and 300 lines.
+  - Merge into another file when it has a single user and is small (under ~50 lines), when it's plain data that always travels together (the project model), or when it's small building blocks of one screen.
+  - Keep separate when it runs on another thread or belongs to another layer, when several places use it, or when merging would pass ~300 lines.
+  - Past ~300 lines, split along a natural seam.
 - Types `PascalCase`, functions and variables `snake_case`, constants `UPPER_SNAKE` (in an anonymous namespace at the top of the `.cpp`), enum values `snake_case`. Overrides of JUCE virtuals keep JUCE's names (`paint`, `resized`, `audioDeviceIOCallbackWithContext`).
 - Full words, no abbreviations except in math.
 - No magic numbers in logic or layout: name them as constants.

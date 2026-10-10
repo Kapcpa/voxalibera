@@ -1,6 +1,6 @@
 #include "core/track_editor.h"
 
-#include "core/project/track_colours.h"
+#include "core/project/model.h"
 
 namespace
 {

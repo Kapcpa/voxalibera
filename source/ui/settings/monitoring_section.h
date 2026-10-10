@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/app_context.h"
-#include "ui/level_meter_view.h"
+#include "ui/meter_view.h"
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
@@ -25,5 +25,5 @@ private:
 	juce::Label routing_label{{}, "Source"};
 	juce::ComboBox routing_box;
 	juce::Label meter_label{{}, "Input level"};
-	LevelMeterView level_meter_view;
+	MeterView level_meter_view{MeterView::Orientation::horizontal};
 };
