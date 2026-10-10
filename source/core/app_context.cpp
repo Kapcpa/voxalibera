@@ -30,5 +30,31 @@ void AppContext::return_to_start()
 
 void AppContext::toggle_metronome()
 {
-	project.set_metronome(!project.metronome);
+	edits.begin(project.metronome ? "Metronome Off" : "Metronome On").set(&Project::metronome, !project.metronome);
+}
+
+void AppContext::set_tempo(double quarter_notes_per_minute)
+{
+	auto tempo = project.tempo;
+	tempo.quarter_notes_per_minute = std::clamp(quarter_notes_per_minute, Project::MIN_TEMPO, Project::MAX_TEMPO);
+	edits.begin("Tempo", "tempo").set(&Project::tempo, tempo);
+}
+
+void AppContext::set_time_signature(TimeSignature signature)
+{
+	auto tempo = project.tempo;
+	tempo.signature = signature;
+	edits.begin("Time Signature").set(&Project::tempo, tempo);
+}
+
+void AppContext::undo()
+{
+	edits.undo();
+	selection.forget_missing(project);
+}
+
+void AppContext::redo()
+{
+	edits.redo();
+	selection.forget_missing(project);
 }

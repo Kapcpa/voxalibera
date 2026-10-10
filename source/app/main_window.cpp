@@ -11,7 +11,7 @@ namespace
 	constexpr int MAX_SIZE = 10000;
 }
 
-MainWindow::MainWindow(const juce::String& name, AppContext& context) : DocumentWindow(name, theme::WINDOW_BACKGROUND, allButtons), context(context), main_view(context), settings_view(context), settings_overlay("Settings", settings_view)
+MainWindow::MainWindow(const juce::String& name, AppContext& context) : DocumentWindow(name, theme::WINDOW_BACKGROUND, allButtons), context(context), main_view(context), settings_view(context), new_track_dialog(context)
 {
 	actions = {
 		{command::QUIT, [] { juce::JUCEApplication::getInstance()->systemRequestedQuit(); }},
@@ -19,6 +19,13 @@ MainWindow::MainWindow(const juce::String& name, AppContext& context) : Document
 		{command::PLAY_STOP, [this] { this->context.toggle_playback(); }},
 		{command::RETURN_TO_START, [this] { this->context.return_to_start(); }},
 		{command::TOGGLE_METRONOME, [this] { this->context.toggle_metronome(); }},
+		{command::UNDO, [this] { this->context.undo(); }},
+		{command::REDO, [this] { this->context.redo(); }},
+		{command::NEW_TRACK, [this] { show_new_track_dialog(); }},
+		{command::DELETE_TRACKS, [this] { this->context.tracks.remove_selected(); }},
+		{command::ARM_TRACKS, [this] { this->context.tracks.toggle_selected(&Track::armed, "Arm Track"); }},
+		{command::MUTE_TRACKS, [this] { this->context.tracks.toggle_selected(&Track::mute, "Mute Track"); }},
+		{command::SOLO_TRACKS, [this] { this->context.tracks.toggle_selected(&Track::solo, "Solo Track"); }},
 		{command::AUDIO_SETTINGS, [this] { show_settings(SettingsView::AUDIO_PAGE); }},
 		{command::INTERFACE_SETTINGS, [this] { show_settings(SettingsView::INTERFACE_PAGE); }},
 		{command::ABOUT, [this] { show_about(); }},
@@ -34,7 +41,9 @@ MainWindow::MainWindow(const juce::String& name, AppContext& context) : Document
 	setResizeLimits(MIN_WIDTH, MIN_HEIGHT, MAX_SIZE, MAX_SIZE);
 	centreWithSize(getWidth(), getHeight());
 
-	settings_overlay.on_close = [this] { command_manager.commandStatusChanged(); };
+	overlay.on_close = [this] { command_manager.commandStatusChanged(); };
+	new_track_dialog.on_finished = [this] { close_overlay(); };
+	main_view.track_area.on_add_track = [this] { show_new_track_dialog(); };
 
 	setVisible(true);
 
@@ -58,7 +67,7 @@ void MainWindow::timerCallback()
 	main_view.update();
 	release_focus_outside_text_fields();
 
-	if (settings_overlay.is_open())
+	if (overlay.is_open())
 		settings_view.update();
 }
 
@@ -74,7 +83,42 @@ void MainWindow::release_focus_outside_text_fields()
 
 bool MainWindow::is_allowed_now(juce::CommandID id) const
 {
-	return !settings_overlay.is_open() || id == command::QUIT;
+	return !overlay.is_open() || id == command::QUIT;
+}
+
+bool MainWindow::is_available(juce::CommandID id) const
+{
+	switch (id) {
+		case command::UNDO:
+			return context.edits.can_undo();
+		case command::REDO:
+			return context.edits.can_redo();
+		case command::DELETE_TRACKS:
+		case command::ARM_TRACKS:
+		case command::MUTE_TRACKS:
+		case command::SOLO_TRACKS:
+			return !context.selection.tracks.empty();
+		default:
+			return true;
+	}
+}
+
+void MainWindow::describe_dynamic_command(juce::CommandID id, juce::ApplicationCommandInfo& info) const
+{
+	if (id == command::UNDO && context.edits.can_undo())
+		info.shortName = "Undo " + context.edits.undo_name();
+
+	if (id == command::REDO && context.edits.can_redo())
+		info.shortName = "Redo " + context.edits.redo_name();
+
+	if (id == command::DELETE_TRACKS && context.selection.tracks.size() > 1)
+		info.shortName = "Delete Tracks";
+
+	if (id == command::TOGGLE_MIXER)
+		info.setTicked(main_view.is_mixer_visible());
+
+	if (id == command::TOGGLE_METRONOME)
+		info.setTicked(context.project.metronome);
 }
 
 juce::ApplicationCommandTarget* MainWindow::getNextCommandTarget()
@@ -96,23 +140,19 @@ void MainWindow::getCommandInfo(juce::CommandID id, juce::ApplicationCommandInfo
 		return;
 
 	info.setInfo(definition->name, definition->name, definition->category, juce::ApplicationCommandInfo::dontTriggerVisualFeedback);
-	info.setActive(actions.contains(id) && is_allowed_now(id));
+	info.setActive(actions.contains(id) && is_allowed_now(id) && is_available(id));
 
 	if (definition->key != 0)
 		info.addDefaultKeypress(definition->key, definition->modifiers);
 
-	if (id == command::TOGGLE_MIXER)
-		info.setTicked(main_view.is_mixer_visible());
-
-	if (id == command::TOGGLE_METRONOME)
-		info.setTicked(context.project.metronome);
+	describe_dynamic_command(id, info);
 }
 
 bool MainWindow::perform(const InvocationInfo& info)
 {
 	const auto action = actions.find(info.commandID);
 
-	if (action == actions.end() || !is_allowed_now(info.commandID))
+	if (action == actions.end() || !is_allowed_now(info.commandID) || !is_available(info.commandID))
 		return false;
 
 	action->second();
@@ -128,8 +168,20 @@ void MainWindow::toggle_mixer()
 void MainWindow::show_settings(int page)
 {
 	settings_view.show_page(page);
-	settings_overlay.open();
+	overlay.open("Settings", settings_view);
 	command_manager.commandStatusChanged();
+}
+
+void MainWindow::show_new_track_dialog()
+{
+	overlay.open("New Track", new_track_dialog);
+	new_track_dialog.prepare();
+	command_manager.commandStatusChanged();
+}
+
+void MainWindow::close_overlay()
+{
+	overlay.close();
 }
 
 void MainWindow::show_about()

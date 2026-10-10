@@ -2,6 +2,7 @@
 
 #include "core/app_context.h"
 #include "ui/panel_view.h"
+#include "ui/tracks/track_area_view.h"
 #include "ui/transport_bar.h"
 
 #include <juce_gui_basics/juce_gui_basics.h>
@@ -21,6 +22,10 @@ public:
 
 private:
 	TransportBar transport_bar;
-	PanelView track_area{"Tracks"};
+
+public:
+	TrackAreaView track_area;
+
+private:
 	PanelView mixer{"Mixer"};
 };

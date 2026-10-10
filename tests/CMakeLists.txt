@@ -9,6 +9,9 @@ juce_add_console_app(voxalibera_tests PRODUCT_NAME "voxalibera-tests")
 file(GLOB VOXALIBERA_TEST_SOURCES CONFIGURE_DEPENDS *_tests.cpp)
 target_sources(voxalibera_tests PRIVATE
     ${VOXALIBERA_TEST_SOURCES}
+    ${PROJECT_SOURCE_DIR}/source/core/project/edit_history.cpp
+    ${PROJECT_SOURCE_DIR}/source/core/project/project.cpp
+    ${PROJECT_SOURCE_DIR}/source/core/project/track.cpp
     ${PROJECT_SOURCE_DIR}/source/engine/musical_time.cpp
     ${PROJECT_SOURCE_DIR}/source/engine/passthrough.cpp
     ${PROJECT_SOURCE_DIR}/source/platform/alsa_cards.cpp

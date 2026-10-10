@@ -13,16 +13,23 @@ namespace
 	constexpr float TITLE_FONT_SIZE = 16.0f;
 }
 
-ModalOverlay::ModalOverlay(const juce::String& title, juce::Component& content) : title(title), content(content), content_size(content.getLocalBounds())
+ModalOverlay::ModalOverlay()
 {
 	close_button.onClick = [this] { close(); };
-	addAndMakeVisible(content);
 	addAndMakeVisible(close_button);
 	setWantsKeyboardFocus(true);
 }
 
-void ModalOverlay::open()
+void ModalOverlay::open(const juce::String& new_title, juce::Component& new_content)
 {
+	if (content != nullptr)
+		removeChildComponent(content);
+
+	title = new_title;
+	content = &new_content;
+	content_size = new_content.getLocalBounds();
+	addAndMakeVisible(new_content);
+	resized();
 	setVisible(true);
 	toFront(true);
 	grabKeyboardFocus();
@@ -65,7 +72,8 @@ void ModalOverlay::resized()
 	auto header = dialog.removeFromTop(HEADER_HEIGHT).reduced(HEADER_PADDING, 0);
 
 	close_button.setBounds(header.removeFromRight(CLOSE_BUTTON_WIDTH).withSizeKeepingCentre(CLOSE_BUTTON_WIDTH, CLOSE_BUTTON_HEIGHT));
-	content.setBounds(dialog);
+	if (content != nullptr)
+		content->setBounds(dialog);
 }
 
 bool ModalOverlay::keyPressed(const juce::KeyPress& key)

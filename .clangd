@@ -1,0 +1,6 @@
+CompileFlags:
+  CompilationDatabase: build
+  Remove: [-Wshadow=local, -Wno-maybe-uninitialized]
+Diagnostics:
+  UnusedIncludes: None
+  MissingIncludes: None

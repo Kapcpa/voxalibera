@@ -78,9 +78,17 @@ The audio callback (`AudioEngine::audioDeviceIOCallbackWithContext`) and everyth
 
 The UI writes those atomics and saves `Settings`; the engine never sees `Settings`.
 
+### Project model and edits
+
+- `core/project/` holds the model as plain data: `Project` has `Track`s; ids (`TrackId`, later `ClipId`...) are separate types so they can't be mixed up, never reused, and are how everything refers to everything.
+- The model is only changed through `EditHistory`: `auto edit = context.edits.begin("Rename Track"); edit.set(id, &Track::name, name);`. Every operation records how to undo itself; everything in one `edit` is one undo step; edits with the same merge key (e.g. `"volume:7"`) within 1.5 s become one step (fader drags).
+- Adding a property to a track or the project: add the field. It's immediately editable and undoable with `edit.set`, nothing else to write. Structural changes (add/remove things) get one pair of operations in `Edit`, written once.
+- Higher-level actions live in editors like `TrackEditor` (`add`, `remove_selected`, `toggle_selected`...), which commands and views call. Views never touch the model directly.
+- Selection lives in `core/Selection`, outside the model and outside undo.
+- `project.revision` and `selection.revision` change with every edit; views compare them each frame and refresh only when they changed. Per-object views (track headers) are kept by id, so they survive reordering and keep their state.
+
 ### Engine snapshots and transport
 
-- `core/Project` is the model; every change goes through its methods, which bump `revision`.
 - `EnginePublisher` notices a new revision once per frame, builds an `EngineSnapshot` (a read-only copy of what the audio thread needs) and publishes it through `SnapshotExchange`: an atomic pointer swap. Replaced snapshots are freed on the message thread once the audio thread has finished a block that started after the swap, never on the audio thread.
 - `Transport` takes play/stop/locate from the UI through a `LockFreeQueue` and publishes its state and position through atomics. Positions inside the engine are in samples; `engine/musical_time` converts to bars, beats and ticks.
 

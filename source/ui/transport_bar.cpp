@@ -84,7 +84,7 @@ TransportBar::TransportBar(AppContext& context) : context(context), start_button
 	tempo_field.setColour(juce::Slider::trackColourId, juce::Colours::transparentBlack);
 	tempo_field.setWantsKeyboardFocus(false);
 	tempo_field.setColour(juce::Slider::backgroundColourId, theme::WIDGET_BACKGROUND);
-	tempo_field.onValueChange = [this] { this->context.project.set_tempo(tempo_field.getValue()); };
+	tempo_field.onValueChange = [this] { this->context.set_tempo(tempo_field.getValue()); };
 
 	for (size_t position = 0; position < SIGNATURES.size(); ++position)
 		signature_box.addItem(format_time_signature(SIGNATURES[position]), (int) position + 1);
@@ -148,7 +148,7 @@ void TransportBar::show_project_values()
 void TransportBar::choose_signature()
 {
 	if (const auto signature = parse_time_signature(signature_box.getText()))
-		context.project.set_time_signature(*signature);
+		context.set_time_signature(*signature);
 
 	signature_box.setText(format_time_signature(context.project.tempo.signature), juce::dontSendNotification);
 	shown_signature = context.project.tempo.signature;

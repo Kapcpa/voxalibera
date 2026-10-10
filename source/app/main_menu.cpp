@@ -20,6 +20,7 @@ namespace
 		{"Edit", {command::UNDO, command::REDO}},
 		{"View", {command::TOGGLE_MIXER}},
 		{"Transport", {command::PLAY_STOP, command::RETURN_TO_START, command::TOGGLE_METRONOME}},
+		{"Track", {command::NEW_TRACK, command::DELETE_TRACKS, SEPARATOR, command::ARM_TRACKS, command::MUTE_TRACKS, command::SOLO_TRACKS}},
 		{"Settings", {command::AUDIO_SETTINGS, command::INTERFACE_SETTINGS}},
 		{"Help", {command::ABOUT}},
 	};

@@ -1,0 +1,40 @@
+{
+	"clangd.arguments": [
+		"--query-driver=/usr/bin/c++,/usr/bin/g++",
+		"--background-index",
+		"--header-insertion=never"
+	],
+	"C_Cpp.intelliSenseEngine": "disabled",
+	"C_Cpp.debugShortcut": false,
+
+	"[cpp]": {
+		"editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd",
+		"editor.formatOnSave": true,
+		"editor.insertSpaces": false,
+		"editor.tabSize": 4,
+		"editor.detectIndentation": false
+	},
+
+	"cmake.buildDirectory": "${workspaceFolder}/build",
+	"cmake.generator": "Ninja",
+	"cmake.configureSettings": {
+		"CMAKE_BUILD_TYPE": "Release"
+	},
+	"cmake.configureOnOpen": false,
+
+	"files.associations": {
+		"*.h": "cpp"
+	},
+	"files.exclude": {
+		"build-debug": true,
+		".cache": true
+	},
+	"search.exclude": {
+		"build": true,
+		"build-debug": true
+	},
+	"files.watcherExclude": {
+		"**/build/**": true,
+		"**/build-debug/**": true
+	}
+}

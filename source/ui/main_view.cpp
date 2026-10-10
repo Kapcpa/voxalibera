@@ -11,7 +11,7 @@ namespace
 	constexpr int GAP = 2;
 }
 
-MainView::MainView(AppContext& context) : transport_bar(context)
+MainView::MainView(AppContext& context) : transport_bar(context), track_area(context)
 {
 	addAndMakeVisible(transport_bar);
 	addAndMakeVisible(track_area);
@@ -23,6 +23,7 @@ MainView::MainView(AppContext& context) : transport_bar(context)
 void MainView::update()
 {
 	transport_bar.update();
+	track_area.update();
 }
 
 void MainView::set_mixer_visible(bool visible)

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/project.h"
+#include "core/project/project.h"
 #include "engine/audio_engine.h"
 
 class EnginePublisher

@@ -17,6 +17,11 @@ namespace command
 	constexpr juce::CommandID PLAY_STOP = 25;
 	constexpr juce::CommandID RETURN_TO_START = 26;
 	constexpr juce::CommandID TOGGLE_METRONOME = 27;
+	constexpr juce::CommandID NEW_TRACK = 60;
+	constexpr juce::CommandID DELETE_TRACKS = 61;
+	constexpr juce::CommandID ARM_TRACKS = 62;
+	constexpr juce::CommandID MUTE_TRACKS = 63;
+	constexpr juce::CommandID SOLO_TRACKS = 64;
 	constexpr juce::CommandID AUDIO_SETTINGS = 30;
 	constexpr juce::CommandID INTERFACE_SETTINGS = 31;
 	constexpr juce::CommandID ABOUT = 40;

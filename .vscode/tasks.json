@@ -1,0 +1,25 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Build",
+			"type": "shell",
+			"command": "bash -c 'source ./build_options.sh && configure_if_needed && cmake --build \"$build_directory\" --target voxalibera'",
+			"group": { "kind": "build", "isDefault": true },
+			"problemMatcher": ["$gcc"]
+		},
+		{
+			"label": "Build debug",
+			"type": "shell",
+			"command": "bash -c 'source ./build_options.sh --debug && configure_if_needed && cmake --build \"$build_directory\" --target voxalibera'",
+			"problemMatcher": ["$gcc"]
+		},
+		{
+			"label": "Test",
+			"type": "shell",
+			"command": "./test.sh",
+			"group": "test",
+			"problemMatcher": ["$gcc"]
+		}
+	]
+}

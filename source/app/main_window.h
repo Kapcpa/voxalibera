@@ -6,6 +6,7 @@
 #include "ui/main_view.h"
 #include "ui/modal_overlay.h"
 #include "ui/settings/settings_view.h"
+#include "ui/tracks/new_track_dialog.h"
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
@@ -29,6 +30,10 @@ public:
 private:
 	void timerCallback() override;
 	bool is_allowed_now(juce::CommandID id) const;
+	bool is_available(juce::CommandID id) const;
+	void describe_dynamic_command(juce::CommandID id, juce::ApplicationCommandInfo& info) const;
+	void show_new_track_dialog();
+	void close_overlay();
 	void release_focus_outside_text_fields();
 	void toggle_mixer();
 	void show_settings(int page);
@@ -39,7 +44,8 @@ private:
 	MainMenu main_menu{command_manager};
 	MainView main_view;
 	SettingsView settings_view;
-	ModalOverlay settings_overlay;
-	WindowContent content{main_menu, main_view, settings_overlay};
+	NewTrackDialog new_track_dialog;
+	ModalOverlay overlay;
+	WindowContent content{main_menu, main_view, overlay};
 	std::map<juce::CommandID, std::function<void()>> actions;
 };
