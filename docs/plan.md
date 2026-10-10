@@ -81,6 +81,10 @@ The core loop: arm a track, record, hear it back, record again.
 - Plugin windows, bypass, presets.
 - Sends, buses, groups; latency compensation across all of them.
 - Monitoring through effects while recording (amp simulators for guitar).
+- CPU: effect chains run per track inside `MixRenderer::render_track` (after clips and input, before volume and pan). From the start, chains sleep when the track is silent and their tail has ended. Then, in order of need:
+  - freeze: render a track with its effects to a file in the background and play that instead, until it's unfrozen;
+  - spread independent tracks across processor cores;
+  - anticipative processing: render tracks that aren't live ahead of time on worker threads, keeping only live tracks at low latency.
 
 ### 3. Edit and arrange
 
