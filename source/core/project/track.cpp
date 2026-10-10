@@ -18,3 +18,13 @@ juce::String describe_input(const TrackInput& input, TrackChannels channels)
 	const auto first = input.first_channel + 1;
 	return channels == TrackChannels::stereo ? "In " + juce::String(first) + "+" + juce::String(first + 1) : "In " + juce::String(first);
 }
+
+bool any_solo(const std::vector<Track>& tracks)
+{
+	return std::any_of(tracks.begin(), tracks.end(), [](const Track& track) { return track.solo; });
+}
+
+bool is_audible(const Track& track, bool solo_active)
+{
+	return !track.mute && (!solo_active || track.solo);
+}

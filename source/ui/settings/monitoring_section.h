@@ -20,8 +20,8 @@ private:
 	void set_routing(InputRouting routing);
 
 	AppContext& context;
-	juce::Label monitoring_label{{}, "Monitor"};
-	juce::ToggleButton monitoring_toggle{"Hear the input through the output"};
+	juce::Label monitoring_label{{}, "Test monitor"};
+	juce::ToggleButton monitoring_toggle{"Input straight to output, bypassing tracks"};
 	juce::Label routing_label{{}, "Source"};
 	juce::ComboBox routing_box;
 	juce::Label meter_label{{}, "Input level"};

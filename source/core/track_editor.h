@@ -20,6 +20,8 @@ public:
 	void rename(TrackId id, const juce::String& name);
 	void set_colour(TrackId id, std::uint32_t colour);
 	void set_volume(TrackId id, float volume_db);
+	void set_pan(TrackId id, float pan);
+	void set_master_volume(float volume_db);
 	void toggle(TrackId id, bool Track::* flag, const juce::String& action_name);
 	void toggle_selected(bool Track::* flag, const juce::String& action_name);
 	juce::String next_default_name() const;

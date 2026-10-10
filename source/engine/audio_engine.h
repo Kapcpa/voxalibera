@@ -3,6 +3,7 @@
 #include "engine/engine_snapshot.h"
 #include "engine/level_meter.h"
 #include "engine/metronome.h"
+#include "engine/mix_renderer.h"
 #include "engine/passthrough.h"
 #include "engine/recording_session.h"
 #include "engine/snapshot_exchange.h"
@@ -25,6 +26,7 @@ public:
 	juce::AudioDeviceManager device_manager;
 	Passthrough passthrough;
 	LevelMeter input_meter;
+	MixRenderer mixer;
 	Transport transport;
 	SnapshotExchange<const EngineSnapshot> snapshots;
 	SnapshotExchange<RecordingSession> recording;

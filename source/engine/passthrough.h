@@ -12,9 +12,9 @@ enum class InputRouting
 class Passthrough
 {
 public:
-	void process(const float* const* inputs, int input_count, float* const* outputs, int output_count, int sample_count) const;
+	void add_to(const float* const* inputs, int input_count, float* const* outputs, int output_count, int sample_count) const;
 
-	std::atomic<bool> monitoring{true};
+	std::atomic<bool> monitoring{false};
 	std::atomic<InputRouting> routing{InputRouting::left_to_both};
 
 private:

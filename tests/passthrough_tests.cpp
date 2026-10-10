@@ -19,7 +19,7 @@ namespace
 		StereoBlock output;
 		const float* inputs[]{left_input.data(), right_input.data()};
 		float* outputs[]{output.left.data(), output.right.data()};
-		passthrough.process(inputs, input_count, outputs, 2, (int) Block{}.size());
+		passthrough.add_to(inputs, input_count, outputs, 2, (int) Block{}.size());
 		return output;
 	}
 
@@ -31,6 +31,7 @@ namespace
 TEST_CASE("left input reaches both outputs")
 {
 	Passthrough passthrough;
+	passthrough.monitoring = true;
 	passthrough.routing = InputRouting::left_to_both;
 
 	const auto output = run(passthrough, LEFT_SIGNAL, RIGHT_SIGNAL, 2);
@@ -42,6 +43,7 @@ TEST_CASE("left input reaches both outputs")
 TEST_CASE("stereo keeps channels apart")
 {
 	Passthrough passthrough;
+	passthrough.monitoring = true;
 	passthrough.routing = InputRouting::stereo;
 
 	const auto output = run(passthrough, LEFT_SIGNAL, RIGHT_SIGNAL, 2);
@@ -53,6 +55,7 @@ TEST_CASE("stereo keeps channels apart")
 TEST_CASE("missing right input gives silence instead of garbage")
 {
 	Passthrough passthrough;
+	passthrough.monitoring = true;
 	passthrough.routing = InputRouting::right_to_both;
 
 	const auto output = run(passthrough, LEFT_SIGNAL, RIGHT_SIGNAL, 1);
@@ -61,7 +64,7 @@ TEST_CASE("missing right input gives silence instead of garbage")
 	CHECK(output.right == SILENCE);
 }
 
-TEST_CASE("disabled monitoring outputs silence")
+TEST_CASE("a disabled test monitor outputs silence")
 {
 	Passthrough passthrough;
 	passthrough.monitoring = false;

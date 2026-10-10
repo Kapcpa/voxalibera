@@ -14,15 +14,13 @@ namespace
 	}
 }
 
-void Passthrough::process(const float* const* inputs, int input_count, float* const* outputs, int output_count, int sample_count) const
+void Passthrough::add_to(const float* const* inputs, int input_count, float* const* outputs, int output_count, int sample_count) const
 {
 	for (int output = 0; output < output_count; ++output) {
 		const auto source = source_for(output, input_count);
 
-		if (source == SILENCE)
-			juce::FloatVectorOperations::clear(outputs[output], sample_count);
-		else
-			juce::FloatVectorOperations::copy(outputs[output], inputs[source], sample_count);
+		if (source != SILENCE)
+			juce::FloatVectorOperations::add(outputs[output], inputs[source], sample_count);
 	}
 }
 

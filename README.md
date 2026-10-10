@@ -14,7 +14,7 @@ Add `--debug` to any of them for a debug build with sanitizers.
 
 Requires `cmake`, `ninja`, `alsa-lib`, `libsystemd` and `pipewire-jack`.
 
-Code rules and architecture: [AGENTS.md](AGENTS.md).
+Code rules and architecture: [AGENTS.md](AGENTS.md). Where things live in the code: [docs/code.md](docs/code.md).
 
 ## License
 

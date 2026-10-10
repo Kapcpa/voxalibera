@@ -20,4 +20,7 @@ namespace theme
 	inline const juce::Colour GRID_BEAT{0xff2a2c31};
 	inline const juce::Colour LANE_SELECTED{0xff24262b};
 	inline const juce::Colour BACKDROP{0x99000000};
+	inline const juce::Colour GROOVE{0xff141518};
+	inline const juce::Colour FADER_CAP{0xffc9ccd2};
+	inline const juce::Colour FADER_CAP_LINE{0xff4a4d53};
 }

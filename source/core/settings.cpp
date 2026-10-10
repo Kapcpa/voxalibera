@@ -91,7 +91,7 @@ Settings Settings::load()
 	settings.sample_rate = read(*root, "sample-rate", settings.sample_rate);
 	settings.buffer_size = read(*root, "buffer-size", settings.buffer_size);
 	settings.jack_buffer_size = read(*root, "jack-buffer-size", settings.jack_buffer_size);
-	settings.monitoring = read(*root, "monitoring", settings.monitoring);
+	settings.test_monitor = read(*root, "test-monitor", settings.test_monitor);
 	settings.input_routing = routing_from_name(read(*root, "input-routing", "").toString(), settings.input_routing);
 	settings.hardware_controls = read_hardware_controls(read(*root, "hardware-controls", {}));
 	return settings;
@@ -106,7 +106,7 @@ void Settings::save() const
 	root->setProperty("sample-rate", sample_rate);
 	root->setProperty("buffer-size", buffer_size);
 	root->setProperty("jack-buffer-size", jack_buffer_size);
-	root->setProperty("monitoring", monitoring);
+	root->setProperty("test-monitor", test_monitor);
 	root->setProperty("input-routing", routing_name(input_routing));
 	root->setProperty("hardware-controls", write_hardware_controls(hardware_controls));
 

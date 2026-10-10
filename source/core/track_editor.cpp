@@ -73,6 +73,16 @@ void TrackEditor::set_volume(TrackId id, float volume_db)
 	edits.begin("Track Volume", "volume:" + juce::String(id.value)).set(id, &Track::volume_db, std::clamp(volume_db, MIN_VOLUME_DB, MAX_VOLUME_DB));
 }
 
+void TrackEditor::set_pan(TrackId id, float pan)
+{
+	edits.begin("Track Pan", "pan:" + juce::String(id.value)).set(id, &Track::pan, std::clamp(pan, -1.0f, 1.0f));
+}
+
+void TrackEditor::set_master_volume(float volume_db)
+{
+	edits.begin("Master Volume", "master-volume").set(&Project::master_volume_db, std::clamp(volume_db, MIN_VOLUME_DB, MAX_VOLUME_DB));
+}
+
 void TrackEditor::toggle(TrackId id, bool Track::* flag, const juce::String& action_name)
 {
 	if (const auto* track = project.find_track(id))

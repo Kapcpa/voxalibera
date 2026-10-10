@@ -38,6 +38,8 @@ Needs `cmake`, `ninja`, `alsa-lib`, `libsystemd` and `pipewire-jack`. JUCE and C
 
 ## Architecture
 
+A file-by-file map with the most useful functions is in [docs/code.md](docs/code.md). Adding, removing or renaming a file means updating its one line there.
+
 ```
 source/
   main.cpp     starts the application
@@ -99,6 +101,14 @@ The UI writes those atomics and saves `Settings`; the engine never sees `Setting
 - On stop, `Recorder` waits until the engine has really stopped recording, then adds all takes as clips in one "Record" edit, shifted by the device's reported latency (`source_offset`).
 - Takes go to the project's folder; before the first save that's a temporary folder under `~/.local/share/voxalibera/unsaved/`. Files are never deleted silently (see `docs/projects.md`).
 - Clip `file` paths are relative to the project folder; never build a `juce::File` from them directly, resolve them against `project.folder`.
+
+### Playback and mixing
+
+- `EnginePublisher` builds each track's playback data for the snapshot: linear gains with pan already applied, whether it's audible (solo resolved here, not on the audio thread), whether it monitors its input (armed tracks do: arming is monitoring), and its clips with their opened files.
+- Audio files are memory-mapped (`engine/AudioFile`); the audio thread copies samples straight from mapped memory. `ReadAhead` on the disk thread touches the next seconds of every clip so the pages are in memory before they're played.
+- `MixRenderer` renders in chunks of up to 2048 samples into preallocated buffers: clips and monitored input per track, then gain and pan, then the master gain. Mono clips on stereo tracks play on both sides; stereo clips on mono tracks are summed.
+- Track meters live in `engine.mixer.track_meters`; the publisher gives each track a slot (`publisher.meter_of(id)`).
+- Clips whose file sample rate differs from the device stay silent and are logged once (resampling comes with saved projects).
 
 ### Devices
 

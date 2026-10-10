@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/app_context.h"
-#include "ui/panel_view.h"
+#include "ui/mixer/mixer_view.h"
 #include "ui/tracks/track_area_view.h"
 #include "ui/transport_bar.h"
 
@@ -27,5 +27,5 @@ public:
 	TrackAreaView track_area;
 
 private:
-	PanelView mixer{"Mixer"};
+	MixerView mixer;
 };

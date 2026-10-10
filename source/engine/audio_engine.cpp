@@ -28,7 +28,14 @@ void AudioEngine::audioDeviceIOCallbackWithContext(const float* const* inputs, i
 		session->write(inputs, input_count, sample_count, block.start);
 
 	recording.end_block();
-	passthrough.process(inputs, input_count, outputs, output_count, sample_count);
+
+	if (snapshot != nullptr)
+		mixer.render(*snapshot, {inputs, input_count}, outputs, output_count, sample_count, block);
+	else
+		for (int channel = 0; channel < output_count; ++channel)
+			juce::FloatVectorOperations::clear(outputs[channel], sample_count);
+
+	passthrough.add_to(inputs, input_count, outputs, output_count, sample_count);
 
 	if (snapshot != nullptr && snapshot->metronome && block.playing)
 		metronome.render(outputs, output_count, sample_count, block.start, snapshot->tempo);

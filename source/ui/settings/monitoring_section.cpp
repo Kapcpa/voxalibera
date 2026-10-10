@@ -27,7 +27,7 @@ namespace
 
 MonitoringSection::MonitoringSection(AppContext& context) : context(context), level_meter_view(context.engine.input_meter)
 {
-	monitoring_toggle.setToggleState(context.settings.monitoring, juce::dontSendNotification);
+	monitoring_toggle.setToggleState(context.settings.test_monitor, juce::dontSendNotification);
 	monitoring_toggle.onClick = [this] { set_monitoring(monitoring_toggle.getToggleState()); };
 
 	for (const auto& [routing, text] : ROUTING_CHOICES)
@@ -57,7 +57,7 @@ void MonitoringSection::update()
 void MonitoringSection::set_monitoring(bool monitoring)
 {
 	context.engine.passthrough.monitoring = monitoring;
-	context.settings.monitoring = monitoring;
+	context.settings.test_monitor = monitoring;
 	context.settings.save();
 }
 

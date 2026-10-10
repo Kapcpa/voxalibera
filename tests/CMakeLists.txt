@@ -12,6 +12,10 @@ target_sources(voxalibera_tests PRIVATE
     ${PROJECT_SOURCE_DIR}/source/core/project/edit_history.cpp
     ${PROJECT_SOURCE_DIR}/source/core/project/project.cpp
     ${PROJECT_SOURCE_DIR}/source/core/project/track.cpp
+    ${PROJECT_SOURCE_DIR}/source/engine/audio_file.cpp
+    ${PROJECT_SOURCE_DIR}/source/engine/gain.cpp
+    ${PROJECT_SOURCE_DIR}/source/engine/level_meter.cpp
+    ${PROJECT_SOURCE_DIR}/source/engine/mix_renderer.cpp
     ${PROJECT_SOURCE_DIR}/source/engine/musical_time.cpp
     ${PROJECT_SOURCE_DIR}/source/engine/passthrough.cpp
     ${PROJECT_SOURCE_DIR}/source/platform/alsa_cards.cpp
@@ -21,7 +25,7 @@ target_compile_definitions(voxalibera_tests PRIVATE ${VOXALIBERA_DEFINITIONS})
 
 target_link_libraries(voxalibera_tests
     PRIVATE
-        juce::juce_audio_basics
+        juce::juce_audio_formats
         PkgConfig::ALSA
         Catch2::Catch2WithMain
     PUBLIC

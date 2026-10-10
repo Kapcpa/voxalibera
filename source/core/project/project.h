@@ -24,6 +24,7 @@ struct Project
 	juce::File folder;
 	Tempo tempo;
 	bool metronome = true;
+	float master_volume_db = 0.0f;
 	std::vector<Track> tracks;
 	int next_id = 1;
 	int revision = 0;

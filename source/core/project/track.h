@@ -42,3 +42,5 @@ struct Track
 int channel_count(TrackChannels channels);
 juce::String describe_channels(TrackChannels channels);
 juce::String describe_input(const TrackInput& input, TrackChannels channels);
+bool any_solo(const std::vector<Track>& tracks);
+bool is_audible(const Track& track, bool solo_active);

@@ -2,10 +2,16 @@
 
 AppContext::AppContext() : settings(Settings::load()), devices(engine, settings)
 {
-	engine.passthrough.monitoring = settings.monitoring;
+	engine.passthrough.monitoring = settings.test_monitor;
 	engine.passthrough.routing = settings.input_routing;
+	disk_thread.addTimeSliceClient(&read_ahead);
 	disk_thread.startThread();
 	devices.open();
+}
+
+AppContext::~AppContext()
+{
+	disk_thread.removeTimeSliceClient(&read_ahead);
 }
 
 void AppContext::update()
@@ -14,7 +20,7 @@ void AppContext::update()
 	devices.update(now);
 	xrun_watch.update(engine.device_manager.getCurrentAudioDevice(), now);
 	recorder.update();
-	publisher.update();
+	publisher.update(now);
 }
 
 void AppContext::toggle_playback()
@@ -52,6 +58,11 @@ void AppContext::return_to_start()
 void AppContext::toggle_metronome()
 {
 	edits.begin(project.metronome ? "Metronome Off" : "Metronome On").set(&Project::metronome, !project.metronome);
+}
+
+void AppContext::set_master_volume(float volume_db)
+{
+	tracks.set_master_volume(volume_db);
 }
 
 void AppContext::set_tempo(double quarter_notes_per_minute)
