@@ -151,6 +151,7 @@ juce::String write_project(const Project& project, const juce::String& app_versi
 	root->setProperty("sample-rate", project.sample_rate);
 	root->setProperty("tempo", tempo.get());
 	root->setProperty("metronome", project.metronome);
+	root->setProperty("count-in", project.count_in);
 	root->setProperty("master-volume-db", project.master_volume_db);
 	root->setProperty("next-id", project.next_id);
 	root->setProperty("tracks", tracks);
@@ -177,6 +178,7 @@ std::optional<LoadedProject> read_project(const juce::String& text)
 		project.tempo.signature = parse_time_signature(juce::String((int) (*parts)[0]) + "/" + juce::String((int) (*parts)[1])).value_or(TimeSignature{});
 
 	project.metronome = (bool) read(json, "metronome", true);
+	project.count_in = (bool) read(json, "count-in", false);
 	project.master_volume_db = (float) read(json, "master-volume-db", 0.0);
 	project.next_id = (int) read(json, "next-id", 1);
 

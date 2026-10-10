@@ -92,6 +92,13 @@ public:
 	void redo();
 	void clear();
 
+	template <typename Value>
+	void set_without_undo(Value Project::* field, Value value)
+	{
+		project.*field = value;
+		++project.revision;
+	}
+
 private:
 	friend class Edit;
 

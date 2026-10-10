@@ -13,6 +13,7 @@ struct ClipAppearance
 	const Peaks* peaks = nullptr;
 	std::int64_t source_offset = 0;
 	std::int64_t length = 0;
+	double timeline_rate = 0.0;
 	bool selected = false;
 	bool recording = false;
 };

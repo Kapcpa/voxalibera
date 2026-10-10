@@ -1,5 +1,6 @@
 #include "engine/recording_session.h"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 
@@ -7,13 +8,18 @@ RecordingSession::RecordingSession() : silence((size_t) SILENCE_SAMPLES, 0.0f)
 {
 }
 
-void RecordingSession::write(const float* const* inputs, int input_count, int sample_count, std::int64_t block_start)
+void RecordingSession::write(const float* const* inputs, int input_count, int sample_count, std::int64_t block_start, std::int64_t record_from)
 {
+	const auto first = (int) std::clamp<std::int64_t>(record_from - block_start, 0, sample_count);
+
+	if (first == sample_count)
+		return;
+
 	auto expected = NOT_STARTED;
-	start_sample.compare_exchange_strong(expected, block_start, std::memory_order_acq_rel);
+	start_sample.compare_exchange_strong(expected, block_start + first, std::memory_order_acq_rel);
 
 	for (auto& take : takes)
-		for (int offset = 0; offset < sample_count; offset += SILENCE_SAMPLES)
+		for (int offset = first; offset < sample_count; offset += SILENCE_SAMPLES)
 			write_take(*take, inputs, input_count, offset, std::min(SILENCE_SAMPLES, sample_count - offset));
 }
 

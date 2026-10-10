@@ -52,6 +52,7 @@ MainWindow::MainWindow(const juce::String& name, AppContext& context) : Document
 		{command::PLAY_STOP, [this] { this->context.toggle_playback(); }},
 		{command::RETURN_TO_START, [this] { this->context.return_to_start(); }},
 		{command::TOGGLE_METRONOME, [this] { this->context.toggle_metronome(); }},
+		{command::TOGGLE_COUNT_IN, [this] { this->context.toggle_count_in(); }},
 		{command::UNDO, [this] { this->context.undo(); }},
 		{command::REDO, [this] { this->context.redo(); }},
 		{command::NEW_TRACK, [this] { show_new_track_dialog(); }},
@@ -199,6 +200,9 @@ void MainWindow::describe_dynamic_command(juce::CommandID id, juce::ApplicationC
 
 	if (id == command::TOGGLE_METRONOME)
 		info.setTicked(context.project.metronome);
+
+	if (id == command::TOGGLE_COUNT_IN)
+		info.setTicked(context.project.count_in);
 }
 
 juce::ApplicationCommandTarget* MainWindow::getNextCommandTarget()

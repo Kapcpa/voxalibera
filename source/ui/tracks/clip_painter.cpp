@@ -28,13 +28,15 @@ namespace
 
 	void paint_channel(juce::Graphics& graphics, juce::Rectangle<float> band, const std::vector<float>& levels, int samples_per_peak, const ClipAppearance& clip)
 	{
-		const auto samples_per_pixel = (double) clip.length / band.getWidth();
+		const auto to_file = clip.peaks->sample_rate > 0.0 && clip.timeline_rate > 0.0 ? clip.peaks->sample_rate / clip.timeline_rate : 1.0;
+		const auto file_offset = (double) clip.source_offset * to_file;
+		const auto samples_per_pixel = (double) clip.length * to_file / band.getWidth();
 		const auto centre = band.getCentreY();
 		const auto half_height = band.getHeight() / 2.0f;
 
 		for (int pixel = 0; pixel < (int) band.getWidth(); ++pixel) {
-			const auto from = clip.source_offset + (std::int64_t) (pixel * samples_per_pixel);
-			const auto to = clip.source_offset + (std::int64_t) ((pixel + 1) * samples_per_pixel);
+			const auto from = (std::int64_t) (file_offset + pixel * samples_per_pixel);
+			const auto to = (std::int64_t) (file_offset + (pixel + 1) * samples_per_pixel);
 			const auto extent = std::min(1.0f, peak_between(levels, samples_per_peak, from, to)) * half_height;
 			graphics.drawVerticalLine((int) band.getX() + pixel, centre - extent, centre + extent);
 		}
@@ -70,7 +72,7 @@ void paint_clip(juce::Graphics& graphics, juce::Rectangle<float> bounds, const C
 
 	auto content = bounds;
 	const auto name_area = content.removeFromTop(NAME_HEIGHT);
-	paint_waveform(graphics, content, {clip.name, colour, clip.peaks, clip.source_offset, clip.length});
+	paint_waveform(graphics, content, {clip.name, colour, clip.peaks, clip.source_offset, clip.length, clip.timeline_rate});
 
 	graphics.setColour(theme::TEXT);
 	graphics.setFont(juce::FontOptions(NAME_FONT_SIZE));

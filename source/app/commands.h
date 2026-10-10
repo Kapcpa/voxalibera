@@ -19,6 +19,7 @@ namespace command
 	constexpr juce::CommandID RETURN_TO_START = 26;
 	constexpr juce::CommandID TOGGLE_METRONOME = 27;
 	constexpr juce::CommandID RECORD = 28;
+	constexpr juce::CommandID TOGGLE_COUNT_IN = 29;
 	constexpr juce::CommandID NEW_TRACK = 60;
 	constexpr juce::CommandID DELETE_SELECTION = 61;
 	constexpr juce::CommandID ARM_TRACKS = 62;

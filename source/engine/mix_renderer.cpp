@@ -1,5 +1,7 @@
 #include "engine/mix_renderer.h"
 
+#include <cmath>
+
 namespace
 {
 	constexpr int LEFT = 0;
@@ -64,9 +66,7 @@ void MixRenderer::add_clip(const TrackPlayback& track, const ClipPlayback& clip,
 	const auto destination = (int) (from - position);
 	const auto count = (int) (to - from);
 	const auto file_channels = clip.file->channels();
-	float* const targets[]{clip_buffer.getWritePointer(LEFT, destination), clip_buffer.getWritePointer(RIGHT, destination)};
-
-	clip.file->read(targets, clip.source_offset + (from - clip.start), count);
+	read_clip(clip, from, count, destination);
 
 	if (file_channels == 1) {
 		track_buffer.addFrom(LEFT, destination, clip_buffer, LEFT, destination, count, clip.gain);
@@ -85,6 +85,39 @@ void MixRenderer::add_clip(const TrackPlayback& track, const ClipPlayback& clip,
 
 	track_buffer.addFrom(LEFT, destination, clip_buffer, LEFT, destination, count, clip.gain);
 	track_buffer.addFrom(RIGHT, destination, clip_buffer, RIGHT, destination, count, clip.gain);
+}
+
+void MixRenderer::read_clip(const ClipPlayback& clip, std::int64_t from, int count, int destination)
+{
+	if (clip.resampler != nullptr) {
+		read_resampled(clip, from, count, destination);
+		return;
+	}
+
+	float* const targets[]{clip_buffer.getWritePointer(LEFT, destination), clip_buffer.getWritePointer(RIGHT, destination)};
+	clip.file->read(targets, std::llround(clip.file_position(from)), count);
+}
+
+void MixRenderer::read_resampled(const ClipPlayback& clip, std::int64_t from, int count, int destination)
+{
+	const auto first = clip.file_position(from);
+	const auto last = clip.file_position(from + count - 1);
+	const auto lowest = (std::int64_t) std::floor(first) - ResamplingKernel::HALF_TAPS + 1;
+	const auto highest = (std::int64_t) std::floor(last) + ResamplingKernel::HALF_TAPS;
+	const auto needed = (int) std::min<std::int64_t>(highest - lowest + 1, RESAMPLE_SAMPLES);
+	const auto readable_from = std::max<std::int64_t>(lowest, 0);
+	const auto readable_to = std::min<std::int64_t>(lowest + needed, clip.file->length());
+
+	resample_buffer.clear(0, needed);
+
+	if (readable_from < readable_to) {
+		const auto skip = (int) (readable_from - lowest);
+		float* const targets[]{resample_buffer.getWritePointer(LEFT, skip), resample_buffer.getWritePointer(RIGHT, skip)};
+		clip.file->read(targets, readable_from, (int) (readable_to - readable_from));
+	}
+
+	for (int channel = 0; channel < std::min(clip.file->channels(), 2); ++channel)
+		clip.resampler->render(resample_buffer.getReadPointer(channel), first - (double) lowest, count, clip_buffer.getWritePointer(channel, destination));
 }
 
 void MixRenderer::add_input(const TrackPlayback& track, Inputs inputs, int offset, int sample_count)

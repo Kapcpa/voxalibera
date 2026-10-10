@@ -9,7 +9,7 @@ class Metronome
 public:
 	void prepare(double new_sample_rate);
 	void reset();
-	void render(float* const* outputs, int output_count, int sample_count, std::int64_t block_start, const Tempo& tempo);
+	void render(float* const* outputs, int output_count, int sample_count, std::int64_t block_start, std::int64_t clicks_until, const Tempo& tempo);
 
 private:
 	void start_click(bool accent);

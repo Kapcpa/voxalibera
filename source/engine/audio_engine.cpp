@@ -2,6 +2,8 @@
 
 #include "platform/system.h"
 
+#include <limits>
+
 AudioEngine::AudioEngine()
 {
 	device_manager.addAudioCallback(this);
@@ -25,7 +27,7 @@ void AudioEngine::audioDeviceIOCallbackWithContext(const float* const* inputs, i
 	const auto block = transport.advance(sample_count);
 
 	if (auto* session = recording.begin_block(); session != nullptr && block.recording)
-		session->write(inputs, input_count, sample_count, block.start);
+		session->write(inputs, input_count, sample_count, block.start, block.record_from);
 
 	recording.end_block();
 
@@ -37,8 +39,10 @@ void AudioEngine::audioDeviceIOCallbackWithContext(const float* const* inputs, i
 
 	passthrough.add_to(inputs, input_count, outputs, output_count, sample_count);
 
-	if (snapshot != nullptr && snapshot->metronome && block.playing)
-		metronome.render(outputs, output_count, sample_count, block.start, snapshot->tempo);
+	const auto metronome_on = snapshot != nullptr && snapshot->metronome && block.playing;
+
+	if (metronome_on || (snapshot != nullptr && block.is_counting_in()))
+		metronome.render(outputs, output_count, sample_count, block.start, metronome_on ? std::numeric_limits<std::int64_t>::max() : block.record_from, snapshot->tempo);
 	else
 		metronome.reset();
 

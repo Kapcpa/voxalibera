@@ -3,6 +3,7 @@
 namespace
 {
 	const juce::ModifierKeys NO_MODIFIERS;
+	const juce::ModifierKeys SHIFT{juce::ModifierKeys::shiftModifier};
 	const juce::ModifierKeys CONTROL{juce::ModifierKeys::commandModifier};
 	const juce::ModifierKeys CONTROL_SHIFT{juce::ModifierKeys::commandModifier | juce::ModifierKeys::shiftModifier};
 
@@ -20,6 +21,7 @@ namespace
 		{command::RETURN_TO_START, "Return to Start", "Transport", juce::KeyPress::returnKey, NO_MODIFIERS},
 		{command::RECORD, "Record", "Transport", 'r', CONTROL},
 		{command::TOGGLE_METRONOME, "Metronome", "Transport", 'k', NO_MODIFIERS},
+		{command::TOGGLE_COUNT_IN, "Count-in", "Transport", 'k', SHIFT},
 		{command::NEW_TRACK, "New Track...", "Track", 't', CONTROL},
 		{command::DELETE_SELECTION, "Delete", "Edit", juce::KeyPress::deleteKey, NO_MODIFIERS},
 		{command::ARM_TRACKS, "Arm", "Track", 'r', NO_MODIFIERS},

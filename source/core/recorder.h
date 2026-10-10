@@ -28,6 +28,7 @@ public:
 	void update();
 
 	bool is_recording() const { return state != State::idle; }
+	bool is_counting_in() const;
 	std::int64_t start_sample() const;
 	const std::vector<LiveTake>& live_takes() const { return live; }
 
@@ -46,6 +47,7 @@ private:
 	void finish();
 	void add_recorded_clips(std::int64_t start);
 	std::int64_t device_latency() const;
+	std::int64_t count_in_samples(double sample_rate) const;
 
 	AudioEngine& engine;
 	Project& project;

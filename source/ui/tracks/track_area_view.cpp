@@ -48,8 +48,11 @@ void TrackAreaView::update()
 		return;
 	}
 
-	if (const auto position = context.engine.transport.position(); position != shown_position) {
+	const auto position = context.engine.transport.position();
+
+	if (position != shown_position || context.peaks.revision != shown_peaks_revision) {
 		shown_position = position;
+		shown_peaks_revision = context.peaks.revision;
 		timeline.repaint();
 	}
 }

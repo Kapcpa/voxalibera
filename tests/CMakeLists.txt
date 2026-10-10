@@ -17,6 +17,8 @@ target_sources(voxalibera_tests PRIVATE
     ${PROJECT_SOURCE_DIR}/source/engine/mix_renderer.cpp
     ${PROJECT_SOURCE_DIR}/source/engine/musical_time.cpp
     ${PROJECT_SOURCE_DIR}/source/engine/passthrough.cpp
+    ${PROJECT_SOURCE_DIR}/source/engine/resampler.cpp
+    ${PROJECT_SOURCE_DIR}/source/engine/transport.cpp
     ${PROJECT_SOURCE_DIR}/source/platform/alsa_cards.cpp
     ${PROJECT_SOURCE_DIR}/source/platform/pipewire_properties.cpp)
 target_include_directories(voxalibera_tests PRIVATE ${PROJECT_SOURCE_DIR}/source)

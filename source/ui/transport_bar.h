@@ -30,6 +30,7 @@ private:
 	juce::Slider tempo_field{juce::Slider::LinearBarVertical, juce::Slider::TextBoxBelow};
 	juce::ComboBox signature_box;
 	juce::TextButton metronome_button{"Click"};
+	juce::TextButton count_in_button{"Count-in"};
 	juce::Label rate_warning;
 	bool shown_playing = true;
 	bool shown_recording = true;

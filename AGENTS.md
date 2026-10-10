@@ -59,7 +59,7 @@ Dependencies only point down: `app -> ui -> core -> engine -> platform`. Nothing
 
 ### Frame loop
 
-`MainWindow` runs a 30 Hz timer, the equivalent of a game loop: `context.update()` first, then the views that need it (the audio settings view while its overlay is open). Views poll state (meters, device starts, active card) instead of subscribing to events. There is no event bus. Anything that must happen regardless of which windows are open (like restoring hardware controls after a device starts) belongs in `core/`, not in a view.
+`MainWindow` runs a 30 Hz timer, the equivalent of a game loop: `context.update()` first, then the views that need it (the audio settings view while its overlay is open). Views poll state (meters, device starts, active card) instead of subscribing to events. There is no event bus. Anything that must happen regardless of which windows are open (like restoring hardware controls after a device starts) belongs in `core/`, not in a view. Views redraw only when something they show changed, so any state they draw needs a `revision` counter they compare each frame; that includes data arriving from background threads (`peaks.revision` for waveforms built after opening a project).
 
 ### Dialogs
 
@@ -88,6 +88,7 @@ The UI writes those atomics and saves `Settings`; the engine never sees `Setting
 
 - `core/project/` holds the model as plain data: `Project` has `Track`s; ids (`TrackId`, later `ClipId`...) are separate types so they can't be mixed up, never reused, and are how everything refers to everything.
 - The model is only changed through `EditHistory`: `auto edit = context.edits.begin("Rename Track"); edit.set(id, &Track::name, name);`. Every operation records how to undo itself; everything in one `edit` is one undo step; edits with the same merge key (e.g. `"volume:7"`) within 1.5 s become one step (fader drags).
+- Switches that aren't part of the song (metronome, count-in) use `edits.set_without_undo(&Project::field, value)`: saved and marked as a change, but no undo step.
 - Adding a property to a track or the project: add the field. It's immediately editable and undoable with `edit.set`, nothing else to write. Structural changes (add/remove things) get one pair of operations in `Edit`, written once.
 - Higher-level actions live in editors like `TrackEditor` (`add`, `remove_selected`, `toggle_selected`...), which commands and views call. Views never touch the model directly.
 - Selection lives in `core/Selection`, outside the model and outside undo.
@@ -102,7 +103,7 @@ The UI writes those atomics and saves `Settings`; the engine never sees `Setting
 - While a project has a folder, `ProjectRecovery` keeps a `.lock` with our process id in it; a lock whose process isn't a running `voxalibera` means a crash. Autosave runs every 5 minutes when there are changes: the JSON is built on the message thread and written to `autosave/autosave.vxl` on the disk thread, so it never touches the audio thread or the real `.vxl`. Saving or "Don't Save" removes the autosave.
 - At startup `ProjectDialogs::check_recovery` offers to reopen a crashed project (restoring its autosave if it's newer than the saved file), then each leftover unsaved session (Recover / Delete / Later). A recovered session without an autosave gets one track per take at the start.
 - File > Clean Up Project deletes takes no clip uses, after listing them; it clears the undo history (undo could bring back a clip whose file is gone) and asks to save first so the saved file never points at deleted takes. Closing a saved project with over 100 MB of unused takes hints once, then again after another 100 MB.
-- A project's sample rate is the rate of its first recording. In JACK mode `DeviceSession::use_project_rate` asks PipeWire for it (`node.force-rate`) when the card can run it (the UX1 only runs 44.1 kHz); otherwise, and in ALSA mode, a different device rate leaves clips silent and the transport bar says why.
+- A project's sample rate is the rate of its first recording. In JACK mode `DeviceSession::use_project_rate` asks PipeWire for it (`node.force-rate`) when the card can run it (the UX1 only runs 44.1 kHz); otherwise, and in ALSA mode, clips are resampled in real time.
 
 ### Engine snapshots and transport
 
@@ -113,6 +114,7 @@ The UI writes those atomics and saves `Settings`; the engine never sees `Setting
 
 - `core/Recorder` runs a take from the message thread: it arms the selected track if nothing is armed, creates one WAV writer per armed track (`juce::AudioFormatWriter::ThreadedWriter` on the `disk_thread`), and hands a `RecordingSession` to the engine through `SnapshotExchange`, so it's only freed after the audio thread is done with it.
 - The audio thread only copies input samples into each writer's lock-free buffer and collects waveform peaks into a `LockFreeQueue`; the disk thread writes the files and refreshes the WAV header every couple of seconds, so a crash leaves a valid file.
+- Count-in (`project.count_in`, only when starting from a stop): `transport.record(count_in_samples)` moves the playhead one bar back and keeps `record_from` at the start point. Blocks before it are pre-roll: clips play, the metronome clicks even when it's off, and `RecordingSession::write` skips everything before `record_from`, to the sample.
 - On stop, `Recorder` waits until the engine has really stopped recording, then adds all takes as clips in one "Record" edit, shifted by the device's reported latency (`source_offset`).
 - Takes go to the project's folder; before the first save that's a temporary folder under `~/.local/share/voxalibera/unsaved/`. Files are never deleted silently (see `docs/projects.md`).
 - Clip `file` paths are relative to the project folder; never build a `juce::File` from them directly, resolve them against `project.folder`.
@@ -123,7 +125,8 @@ The UI writes those atomics and saves `Settings`; the engine never sees `Setting
 - Audio files are memory-mapped (`engine/AudioFile`); the audio thread copies samples straight from mapped memory. `ReadAhead` on the disk thread touches the next seconds of every clip so the pages are in memory before they're played.
 - `MixRenderer` renders in chunks of up to 2048 samples into preallocated buffers: clips and monitored input per track, then gain and pan, then the master gain. Mono clips on stereo tracks play on both sides; stereo clips on mono tracks are summed.
 - Track meters live in `engine.mixer.track_meters`; the publisher gives each track a slot (`publisher.meter_of(id)`).
-- Clips whose file sample rate differs from the device stay silent, are logged once and shown in the transport bar (`publisher.mismatched_file_rate()`). Real-time resampling is a planned task.
+- Positions in the project (clip start, length, source offset) are samples at the project's rate (`timeline_rate(project, device_rate)`); the transport, the playhead and recording work in device samples. Convert at the edges with `convert_samples`: the publisher for clips, the timeline for the playhead and live takes, the recorder for new clips. Peaks carry their file's rate.
+- A clip whose file rate differs from the device plays through `ResamplingKernel` (32-tap windowed sinc, built once per rate ratio on the message thread and shared through the snapshot); matching files keep the direct path. Ratios beyond 4x stay silent, logged and shown in the transport bar (`publisher.mismatched_file_rate()`).
 
 ### Devices
 

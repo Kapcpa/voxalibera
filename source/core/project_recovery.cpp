@@ -86,10 +86,12 @@ Project project_from_takes(const juce::File& folder)
 		Clip clip;
 		clip.id = project.allocate_clip_id();
 		clip.file = relative_media_path(folder, take);
-		clip.length = file->length();
+		if (project.sample_rate <= 0.0)
+			project.sample_rate = file->sample_rate();
+
+		clip.length = convert_samples(file->length(), file->sample_rate(), project.sample_rate);
 		track.clips.push_back(clip);
 
-		project.sample_rate = file->sample_rate();
 		project.tracks.push_back(track);
 	}
 

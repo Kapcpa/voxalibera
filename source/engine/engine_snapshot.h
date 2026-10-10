@@ -3,6 +3,7 @@
 #include "engine/audio_file.h"
 #include "engine/levels.h"
 #include "engine/musical_time.h"
+#include "engine/resampler.h"
 
 #include <cstdint>
 #include <memory>
@@ -14,9 +15,12 @@ struct ClipPlayback
 {
 	std::shared_ptr<const AudioFile> file;
 	std::int64_t start = 0;
-	std::int64_t source_offset = 0;
 	std::int64_t length = 0;
+	double file_start = 0.0;
 	float gain = 1.0f;
+	std::shared_ptr<const ResamplingKernel> resampler;
+
+	double file_position(std::int64_t position) const { return file_start + (double) (position - start) * (resampler != nullptr ? resampler->step() : 1.0); }
 };
 
 struct TrackPlayback

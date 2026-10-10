@@ -35,7 +35,7 @@ public:
 
 	RecordingSession();
 
-	void write(const float* const* inputs, int input_count, int sample_count, std::int64_t block_start);
+	void write(const float* const* inputs, int input_count, int sample_count, std::int64_t block_start, std::int64_t record_from);
 
 	std::vector<std::unique_ptr<RecordingTake>> takes;
 	std::atomic<std::int64_t> start_sample{NOT_STARTED};

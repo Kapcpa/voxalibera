@@ -41,4 +41,5 @@ private:
 	int shown_selection_revision = -1;
 	int shown_viewport_revision = -1;
 	std::int64_t shown_position = -1;
+	int shown_peaks_revision = -1;
 };

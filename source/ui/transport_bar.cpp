@@ -3,6 +3,7 @@
 #include "ui/theme.h"
 
 #include <array>
+#include <cmath>
 
 namespace
 {
@@ -16,6 +17,7 @@ namespace
 	constexpr int TEMPO_WIDTH = 96;
 	constexpr int SIGNATURE_WIDTH = 72;
 	constexpr int METRONOME_WIDTH = 64;
+	constexpr int COUNT_IN_WIDTH = 80;
 	constexpr int CONTROL_HEIGHT = 28;
 	constexpr float POSITION_FONT_SIZE = 22.0f;
 	constexpr float CLOCK_FONT_SIZE = 14.0f;
@@ -97,12 +99,18 @@ TransportBar::TransportBar(AppContext& context) : context(context), start_button
 	metronome_button.setColour(juce::TextButton::buttonOnColourId, theme::ACCENT);
 	metronome_button.setWantsKeyboardFocus(false);
 	metronome_button.onClick = [this] { this->context.toggle_metronome(); };
+	metronome_button.setTooltip("Metronome (K)");
+
+	count_in_button.setColour(juce::TextButton::buttonOnColourId, theme::ACCENT);
+	count_in_button.setWantsKeyboardFocus(false);
+	count_in_button.onClick = [this] { this->context.toggle_count_in(); };
+	count_in_button.setTooltip("Count in one bar before recording (Shift+K)");
 
 	rate_warning.setColour(juce::Label::textColourId, theme::RECORD);
 	rate_warning.setJustificationType(juce::Justification::centredRight);
 	rate_warning.setMinimumHorizontalScale(1.0f);
 
-	for (auto* child : std::initializer_list<juce::Component*>{&start_button, &play_button, &record_button, &musical_position, &clock_position, &tempo_field, &signature_box, &metronome_button, &rate_warning})
+	for (auto* child : std::initializer_list<juce::Component*>{&start_button, &play_button, &record_button, &musical_position, &clock_position, &tempo_field, &signature_box, &metronome_button, &count_in_button, &rate_warning})
 		addAndMakeVisible(child);
 
 	update();
@@ -121,7 +129,7 @@ void TransportBar::show_rate_warning()
 {
 	const auto file_rate = context.publisher.mismatched_file_rate();
 	const auto device_rate = context.engine.sample_rate.load();
-	const auto text = file_rate > 0.0 && device_rate > 0.0 ? "Clips at " + juce::String(file_rate, 0) + " Hz are silent: the device runs at " + juce::String(device_rate, 0) + " Hz" : juce::String();
+	const auto text = file_rate > 0.0 && device_rate > 0.0 ? "Clips at " + juce::String(file_rate, 0) + " Hz are silent: too far from the device rate of " + juce::String(device_rate, 0) + " Hz" : juce::String();
 
 	if (rate_warning.getText() == text)
 		return;
@@ -156,6 +164,14 @@ void TransportBar::show_position()
 {
 	const auto sample = context.engine.transport.position();
 	const auto rate = context.engine.sample_rate.load();
+
+	if (context.recorder.is_counting_in() && rate > 0.0) {
+		const auto beats_left = (int) std::ceil((double) (context.engine.transport.record_from() - sample) / samples_per_beat(context.project.tempo, rate));
+		musical_position.setText(juce::String(beats_left), juce::dontSendNotification);
+		clock_position.setText("Count-in", juce::dontSendNotification);
+		return;
+	}
+
 	const auto musical = rate > 0.0 ? to_musical_position(sample, context.project.tempo, rate) : MusicalPosition{};
 
 	musical_position.setText(format_musical_position(musical), juce::dontSendNotification);
@@ -175,6 +191,7 @@ void TransportBar::show_project_values()
 	}
 
 	metronome_button.setToggleState(context.project.metronome, juce::dontSendNotification);
+	count_in_button.setToggleState(context.project.count_in, juce::dontSendNotification);
 }
 
 void TransportBar::choose_signature()
@@ -213,6 +230,8 @@ void TransportBar::resized()
 	signature_box.setBounds(centred(area.removeFromLeft(SIGNATURE_WIDTH), CONTROL_HEIGHT));
 	area.removeFromLeft(GROUP_GAP);
 	metronome_button.setBounds(centred(area.removeFromLeft(METRONOME_WIDTH), CONTROL_HEIGHT));
+	area.removeFromLeft(GAP);
+	count_in_button.setBounds(centred(area.removeFromLeft(COUNT_IN_WIDTH), CONTROL_HEIGHT));
 	area.removeFromLeft(GROUP_GAP);
 	rate_warning.setBounds(area.getWidth() >= WARNING_MIN_WIDTH ? area : juce::Rectangle<int>());
 }

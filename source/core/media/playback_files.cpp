@@ -1,5 +1,7 @@
 #include "core/media/playback_files.h"
 
+#include "engine/resampler.h"
+
 namespace
 {
 	constexpr double SECONDS_AHEAD = 5.0;
@@ -38,7 +40,7 @@ int ReadAhead::useTimeSlice()
 		const auto overlap_end = std::min(to, region.start + region.length);
 
 		if (overlap_start < overlap_end)
-			region.file->touch(region.source_offset + overlap_start - region.start, overlap_end - overlap_start);
+			region.file->touch((std::int64_t) (region.file_start + (double) (overlap_start - region.start) * region.file_step), (std::int64_t) ((double) (overlap_end - overlap_start) * region.file_step) + ResamplingKernel::TAPS);
 	}
 
 	return MILLISECONDS_BETWEEN_PASSES;

@@ -33,7 +33,7 @@ Application state: the project, edits, devices, recording, settings.
 - `media/peaks` - waveform overviews per file for drawing clips (`PeakStore`), and `PeakBuilder`, which builds them on a background thread after opening a project, cached in the project's `cache/` folder.
 - `media/playback_files` - `AudioFilePool` opens each audio file once and shares it between snapshots (reopening a take once it's finished); `ReadAhead`, on the disk thread, loads the next few seconds of every clip into memory before the audio thread needs it.
 - `device_session` - opening devices, borrowing them from PipeWire, PipeWire properties for JACK, re-applying saved interface settings (input source, hardware monitor).
-- `engine_publisher` - turns the project into engine snapshots when it changes: solo, gains, pan, opened files, meter slots.
+- `engine_publisher` - turns the project into engine snapshots when it changes: solo, gains, pan, opened files, meter slots, project positions converted to device samples, resamplers.
 - `settings` - `settings.json`: device, test monitor, hardware controls.
 - `log` - the log file under `~/.local/state/voxalibera/`, and `XrunWatch`, which logs dropouts at most every two seconds.
 
@@ -58,10 +58,11 @@ Everything the audio thread touches. Nothing here allocates, locks or touches fi
 - `audio_engine` - `AudioEngine`: the audio callback; owns the device manager, transport, metronome, meters and snapshots.
 - `engine_snapshot` - `EngineSnapshot`: the read-only copy of the project the audio thread plays from (tracks, clips, gains).
 - `mix_renderer` - plays clips and monitored inputs through each track's gain and pan into the master, fills the meters.
+- `resampler` - `ResamplingKernel`: plays a file at another sample rate in real time (windowed sinc, a table per rate ratio).
 - `audio_file` - a memory-mapped WAV file the audio thread can read from without system calls.
 - `levels` - fader decibels to gain, the mono pan law and stereo balance; `LevelMeter`, peak meters filled by the audio thread and read by the UI.
 - `lock_free` - `SnapshotExchange` swaps snapshots in atomically and frees old ones only after the audio thread is done; `LockFreeQueue` is a fixed-size single-producer single-consumer queue.
-- `transport` - play, stop, record, locate; commands in through a queue, position out through atomics.
+- `transport` - play, stop, record (with an optional count-in), locate; commands in through a queue, position out through atomics.
 - `recording_session` - the audio thread side of recording: writes inputs into each take's writer, collects peaks.
 - `metronome` - a sample-accurate synthesized click.
 - `musical_time` - samples to bars, beats and ticks and back; time signature parsing.
@@ -88,7 +89,7 @@ Views. They read state every frame and call into `core/` on user input; they nev
 - `main_view` - the main window's zones: transport bar, tracks area, mixer.
 - `mixer/mixer_view` - the master strip on the left, then one strip per track, scrolling sideways.
 - `mixer/mixer_strip` - pan, values, fader with meter, mute, solo and a colour name plate; the master keeps the same sections so all faders line up.
-- `transport_bar` - play, stop, record, position, tempo, time signature, metronome, and a warning when clips don't match the device's sample rate.
+- `transport_bar` - play, stop, record, position (or the count-in beats), tempo, time signature, metronome, count-in, and a warning when clips don't match the device's sample rate.
 - `modal_overlay` - dims the window and shows a dialog in the middle.
 - `message_dialog` - a message with a row of buttons (Save changes, problems, About), shown in the overlay.
 - `theme` / `theme_look_and_feel` - all colours, applied to every JUCE widget; draws our own faders and knobs.
@@ -109,4 +110,4 @@ Views. They read state every frame and call into `core/` on user input; they nev
 
 ## tests/
 
-Base tests for things that must never silently break: musical time, edit history, playback and mixing, the test monitor, device matching, PipeWire properties, the project file. Run with `./test.sh`.
+Base tests for things that must never silently break: musical time, edit history, playback and mixing, the test monitor, device matching, PipeWire properties, the project file, the count-in, resampling. Run with `./test.sh`.

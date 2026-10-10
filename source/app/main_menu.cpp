@@ -62,7 +62,7 @@ namespace
 		{"File", {command::NEW_PROJECT, command::OPEN_PROJECT, RECENT_MENU, SEPARATOR, command::SAVE_PROJECT, command::SAVE_PROJECT_AS, SEPARATOR, command::CLEAN_UP_PROJECT, SEPARATOR, command::QUIT}},
 		{"Edit", {command::UNDO, command::REDO, SEPARATOR, command::DELETE_SELECTION}},
 		{"View", {command::TOGGLE_MIXER}},
-		{"Transport", {command::PLAY_STOP, command::RECORD, command::RETURN_TO_START, command::TOGGLE_METRONOME}},
+		{"Transport", {command::PLAY_STOP, command::RECORD, command::RETURN_TO_START, SEPARATOR, command::TOGGLE_METRONOME, command::TOGGLE_COUNT_IN}},
 		{"Track", {command::NEW_TRACK, SEPARATOR, command::ARM_TRACKS, command::MUTE_TRACKS, command::SOLO_TRACKS}},
 		{"Settings", {command::AUDIO_SETTINGS, command::INTERFACE_SETTINGS}},
 		{"Help", {command::ABOUT}},

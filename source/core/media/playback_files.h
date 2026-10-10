@@ -24,8 +24,9 @@ struct ReadAheadRegion
 {
 	std::shared_ptr<const AudioFile> file;
 	std::int64_t start = 0;
-	std::int64_t source_offset = 0;
 	std::int64_t length = 0;
+	double file_start = 0.0;
+	double file_step = 1.0;
 };
 
 class ReadAhead : public juce::TimeSliceClient

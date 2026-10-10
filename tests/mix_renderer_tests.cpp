@@ -37,7 +37,7 @@ TEST_CASE("a clip plays the right part of its file at the right place and level"
 	TrackPlayback track;
 	track.channels = 1;
 	track.gains = {0.5f, 1.0f};
-	track.clips.push_back({AudioFile::open(file), 100, 200, 500, 1.0f});
+	track.clips.push_back({AudioFile::open(file), 100, 500, 200.0, 1.0f});
 
 	EngineSnapshot snapshot;
 	snapshot.tracks.push_back(track);
@@ -60,7 +60,7 @@ TEST_CASE("nothing plays from clips while the transport is stopped")
 	const auto file = write_ramp_file();
 
 	TrackPlayback track;
-	track.clips.push_back({AudioFile::open(file), 0, 0, FILE_LENGTH, 1.0f});
+	track.clips.push_back({AudioFile::open(file), 0, FILE_LENGTH, 0.0, 1.0f});
 
 	EngineSnapshot snapshot;
 	snapshot.tracks.push_back(track);
@@ -71,5 +71,28 @@ TEST_CASE("nothing plays from clips while the transport is stopped")
 
 	CHECK(near(left[63], 0.0f));
 	CHECK(near(right[63], 0.0f));
+	file.deleteFile();
+}
+
+TEST_CASE("a clip at another sample rate is resampled to the device")
+{
+	const auto file = write_ramp_file();
+	const auto step = SAMPLE_RATE / 44100.0;
+
+	TrackPlayback track;
+	track.channels = 1;
+	track.gains = {1.0f, 1.0f};
+	track.clips.push_back({AudioFile::open(file), 0, 900, 0.0, 1.0f, std::make_shared<const ResamplingKernel>(step)});
+
+	EngineSnapshot snapshot;
+	snapshot.tracks.push_back(track);
+
+	std::vector<float> left(1024), right(1024);
+	float* outputs[]{left.data(), right.data()};
+	MixRenderer().render(snapshot, {}, outputs, 2, 1024, {true, false, 0});
+
+	CHECK(std::abs(right[400] - (float) (400.0 * step / FILE_LENGTH)) < 0.005f);
+	CHECK(std::abs(right[800] - (float) (800.0 * step / FILE_LENGTH)) < 0.005f);
+	CHECK(near(right[950], 0.0f));
 	file.deleteFile();
 }

@@ -59,7 +59,12 @@ void AppContext::return_to_start()
 
 void AppContext::toggle_metronome()
 {
-	edits.begin(project.metronome ? "Metronome Off" : "Metronome On").set(&Project::metronome, !project.metronome);
+	edits.set_without_undo(&Project::metronome, !project.metronome);
+}
+
+void AppContext::toggle_count_in()
+{
+	edits.set_without_undo(&Project::count_in, !project.count_in);
 }
 
 void AppContext::set_master_volume(float volume_db)

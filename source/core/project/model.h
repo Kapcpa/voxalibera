@@ -108,8 +108,11 @@ struct Project
 	double sample_rate = 0.0;
 	Tempo tempo;
 	bool metronome = true;
+	bool count_in = false;
 	float master_volume_db = 0.0f;
 	std::vector<Track> tracks;
 	int next_id = 1;
 	int revision = 0;
 };
+
+double timeline_rate(const Project& project, double device_rate);

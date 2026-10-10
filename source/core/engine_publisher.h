@@ -5,6 +5,7 @@
 #include "engine/audio_engine.h"
 
 #include <map>
+#include <optional>
 #include <set>
 
 class EnginePublisher
@@ -19,7 +20,8 @@ public:
 private:
 	void publish(double now);
 	TrackPlayback build_track(const Track& track, bool solo_active, double sample_rate, std::vector<ReadAheadRegion>& regions);
-	std::shared_ptr<const AudioFile> open_clip_file(const Clip& clip, double sample_rate);
+	std::optional<ClipPlayback> build_clip(const Clip& clip, double device_rate);
+	std::shared_ptr<const ResamplingKernel> resampler_for(double step);
 	int assign_meter(TrackId id);
 	void forget_removed_tracks();
 
@@ -34,4 +36,5 @@ private:
 	double next_retry = 0.0;
 	std::map<TrackId, int> meters;
 	std::set<juce::String> reported_rate_mismatches;
+	std::map<std::int64_t, std::shared_ptr<const ResamplingKernel>> resamplers;
 };

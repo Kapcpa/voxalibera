@@ -36,12 +36,12 @@ TimelineView::TimelineView(AppContext& context, const TimelineViewport& viewport
 
 double TimelineView::sample_rate() const
 {
-	return context.engine.sample_rate.load();
+	return timeline_rate(context.project, context.engine.sample_rate.load());
 }
 
 double TimelineView::playhead_beat() const
 {
-	const auto rate = sample_rate();
+	const auto rate = context.engine.sample_rate.load();
 	return rate > 0.0 ? (double) context.engine.transport.position() / samples_per_beat(context.project.tempo, rate) : 0.0;
 }
 
@@ -142,7 +142,7 @@ void TimelineView::paint_clips(juce::Graphics& graphics)
 			if (area.getRight() < 0.0f || area.getX() > (float) getWidth())
 				continue;
 
-			paint_clip(graphics, area, {media_display_name(clip.file), juce::Colour(tracks[index].colour), context.peaks.find(clip.file), clip.source_offset, clip.length, context.selection.contains(clip.id), false});
+			paint_clip(graphics, area, {media_display_name(clip.file), juce::Colour(tracks[index].colour), context.peaks.find(clip.file), clip.source_offset, clip.length, sample_rate(), context.selection.contains(clip.id), false});
 		}
 }
 
@@ -153,11 +153,13 @@ void TimelineView::paint_live_takes(juce::Graphics& graphics)
 	if (start == RecordingSession::NOT_STARTED || sample_rate() <= 0.0)
 		return;
 
-	const auto length = context.engine.transport.position() - start;
+	const auto device_rate = context.engine.sample_rate.load();
+	const auto timeline_start = convert_samples(start, device_rate, sample_rate());
+	const auto length = convert_samples(context.engine.transport.position() - start, device_rate, sample_rate());
 
 	for (const auto& take : context.recorder.live_takes())
 		if (const auto index = context.project.index_of(take.track); index != Project::NOT_FOUND)
-			paint_clip(graphics, clip_area((size_t) index, start, length), {take.file.getFileNameWithoutExtension(), theme::RECORD, &take.peaks, 0, length, false, true});
+			paint_clip(graphics, clip_area((size_t) index, timeline_start, length), {take.file.getFileNameWithoutExtension(), theme::RECORD, &take.peaks, 0, length, sample_rate(), false, true});
 }
 
 std::optional<ClipId> TimelineView::clip_at(juce::Point<int> position) const

@@ -10,7 +10,7 @@
 namespace
 {
 	constexpr auto CACHE_EXTENSION = ".peaks";
-	constexpr int CACHE_MAGIC = 0x4b505856;
+	constexpr int CACHE_MAGIC = 0x3250584b;
 	constexpr int PEAKS_PER_READ = 256;
 	constexpr int MAX_CHANNELS = RecordingTake::MAX_CHANNELS;
 
@@ -26,10 +26,11 @@ namespace
 
 		Peaks peaks;
 		peaks.samples_per_peak = stream.readInt();
+		peaks.sample_rate = stream.readDouble();
 		const auto channels = stream.readInt();
 		const auto count = stream.readInt();
 
-		if (peaks.samples_per_peak <= 0 || channels < 1 || channels > MAX_CHANNELS || count < 0 || stream.getNumBytesRemaining() != (juce::int64) channels * count * (juce::int64) sizeof(float))
+		if (peaks.samples_per_peak <= 0 || peaks.sample_rate <= 0.0 || channels < 1 || channels > MAX_CHANNELS || count < 0 || stream.getNumBytesRemaining() != (juce::int64) channels * count * (juce::int64) sizeof(float))
 			return std::nullopt;
 
 		for (int channel = 0; channel < channels; ++channel) {
@@ -52,6 +53,7 @@ namespace
 		stream.truncate();
 		stream.writeInt(CACHE_MAGIC);
 		stream.writeInt(peaks.samples_per_peak);
+		stream.writeDouble(peaks.sample_rate);
 		stream.writeInt((int) peaks.channels.size());
 		stream.writeInt((int) peaks.channels.front().size());
 
@@ -69,11 +71,13 @@ const Peaks* PeakStore::find(const juce::String& file) const
 void PeakStore::store(const juce::String& file, Peaks peaks)
 {
 	peaks_by_file[file] = std::move(peaks);
+	++revision;
 }
 
 void PeakStore::clear()
 {
 	peaks_by_file.clear();
+	++revision;
 }
 
 juce::File peak_cache_file(const juce::File& project_folder, const juce::String& file)
@@ -169,7 +173,7 @@ std::optional<Peaks> PeakBuilder::build(const Job& job)
 	juce::AudioBuffer<float> buffer(file->channels(), block);
 	const auto pointers = buffer.getArrayOfWritePointers();
 
-	Peaks peaks{RecordingTake::SAMPLES_PER_PEAK, std::vector<std::vector<float>>((size_t) channels)};
+	Peaks peaks{RecordingTake::SAMPLES_PER_PEAK, std::vector<std::vector<float>>((size_t) channels), file->sample_rate()};
 
 	for (std::int64_t start = 0; start < file->length(); start += block) {
 		if (threadShouldExit())

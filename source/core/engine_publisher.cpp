@@ -7,6 +7,8 @@
 namespace
 {
 	constexpr double MISSING_FILE_RETRY_SECONDS = 0.25;
+	constexpr std::int64_t ROUNDING_SAMPLES = 2;
+	constexpr double STEP_KEY_SCALE = 1.0e9;
 
 	bool same_rate(double first, double second)
 	{
@@ -75,36 +77,65 @@ TrackPlayback EnginePublisher::build_track(const Track& track, bool solo_active,
 	playback.gains = {gain * pan.left, gain * pan.right};
 
 	for (const auto& clip : track.clips) {
-		auto file = open_clip_file(clip, sample_rate);
+		const auto built = build_clip(clip, sample_rate);
 
-		if (file == nullptr)
+		if (!built)
 			continue;
 
-		playback.clips.push_back({file, clip.start, clip.source_offset, clip.length, fader_gain(clip.gain_db)});
-		regions.push_back({file, clip.start, clip.source_offset, clip.length});
+		playback.clips.push_back(*built);
+		regions.push_back({built->file, built->start, built->length, built->file_start, built->resampler != nullptr ? built->resampler->step() : 1.0});
 	}
 
 	return playback;
 }
 
-std::shared_ptr<const AudioFile> EnginePublisher::open_clip_file(const Clip& clip, double sample_rate)
+std::optional<ClipPlayback> EnginePublisher::build_clip(const Clip& clip, double device_rate)
 {
-	auto file = files.get(project.folder.getChildFile(clip.file), clip.source_offset + clip.length);
+	if (device_rate <= 0.0)
+		return std::nullopt;
+
+	const auto path = project.folder.getChildFile(clip.file);
+	const auto timeline = timeline_rate(project, device_rate);
+	auto file = files.get(path, 0);
+
+	if (file != nullptr)
+		file = files.get(path, std::max<std::int64_t>(0, convert_samples(clip.source_offset + clip.length, timeline, file->sample_rate()) - ROUNDING_SAMPLES));
 
 	if (file == nullptr) {
 		files_missing = true;
-		return nullptr;
+		return std::nullopt;
 	}
 
-	if (same_rate(file->sample_rate(), sample_rate))
-		return file;
+	const auto file_rate = file->sample_rate();
+	const auto step = file_rate / device_rate;
 
-	mismatched_rate = file->sample_rate();
+	if (step > ResamplingKernel::MAX_STEP) {
+		mismatched_rate = file_rate;
 
-	if (reported_rate_mismatches.insert(clip.file).second)
-		log_event(clip.file + " is at " + juce::String(file->sample_rate(), 0) + " Hz but the device runs at " + juce::String(sample_rate, 0) + " Hz; it stays silent until they match");
+		if (reported_rate_mismatches.insert(clip.file).second)
+			log_event(clip.file + " is at " + juce::String(file_rate, 0) + " Hz, too far from the device's " + juce::String(device_rate, 0) + " Hz to play");
 
-	return nullptr;
+		return std::nullopt;
+	}
+
+	ClipPlayback playback;
+	playback.file = file;
+	playback.start = convert_samples(clip.start, timeline, device_rate);
+	playback.length = convert_samples(clip.length, timeline, device_rate);
+	playback.file_start = (double) clip.source_offset * file_rate / timeline;
+	playback.gain = fader_gain(clip.gain_db);
+	playback.resampler = same_rate(file_rate, device_rate) ? nullptr : resampler_for(step);
+	return playback;
+}
+
+std::shared_ptr<const ResamplingKernel> EnginePublisher::resampler_for(double step)
+{
+	auto& kernel = resamplers[std::llround(step * STEP_KEY_SCALE)];
+
+	if (kernel == nullptr)
+		kernel = std::make_shared<const ResamplingKernel>(step);
+
+	return kernel;
 }
 
 int EnginePublisher::assign_meter(TrackId id)

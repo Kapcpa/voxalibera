@@ -25,6 +25,7 @@ struct AppContext
 	void delete_selection();
 	void return_to_start();
 	void toggle_metronome();
+	void toggle_count_in();
 	void set_master_volume(float volume_db);
 	void set_tempo(double quarter_notes_per_minute);
 	void set_time_signature(TimeSignature signature);

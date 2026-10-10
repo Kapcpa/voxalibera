@@ -3,6 +3,8 @@
 #include "core/log.h"
 #include "core/media/project_folders.h"
 
+#include <cmath>
+
 namespace
 {
 	constexpr int BITS_PER_SAMPLE = 24;
@@ -12,6 +14,11 @@ namespace
 
 Recorder::Recorder(AudioEngine& engine, Project& project, EditHistory& edits, Selection& selection, PeakStore& peak_store, juce::TimeSliceThread& disk_thread) : engine(engine), project(project), edits(edits), selection(selection), peak_store(peak_store), disk_thread(disk_thread)
 {
+}
+
+bool Recorder::is_counting_in() const
+{
+	return state == State::recording && engine.transport.position() < engine.transport.record_from();
 }
 
 std::int64_t Recorder::start_sample() const
@@ -78,7 +85,7 @@ std::unique_ptr<RecordingSession> Recorder::create_session(const std::vector<Tra
 			return nullptr;
 		}
 
-		live.push_back({id, file, {RecordingTake::SAMPLES_PER_PEAK, std::vector<std::vector<float>>((size_t) take->channels)}});
+		live.push_back({id, file, {RecordingTake::SAMPLES_PER_PEAK, std::vector<std::vector<float>>((size_t) take->channels), sample_rate}});
 		new_session->takes.push_back(std::move(take));
 	}
 
@@ -112,9 +119,17 @@ void Recorder::start()
 
 	session = new_session.get();
 	engine.recording.publish(std::move(new_session));
-	engine.transport.record();
+	engine.transport.record(count_in_samples(sample_rate));
 	state = State::recording;
 	log_event("Recording " + juce::String((int) tracks.size()) + " track(s) into " + project.folder.getFullPathName());
+}
+
+std::int64_t Recorder::count_in_samples(double sample_rate) const
+{
+	if (!project.count_in || engine.transport.is_playing())
+		return 0;
+
+	return std::llround(samples_per_beat(project.tempo, sample_rate) * project.tempo.signature.beats_per_bar);
 }
 
 void Recorder::stop()
@@ -174,6 +189,8 @@ void Recorder::finish()
 void Recorder::add_recorded_clips(std::int64_t start)
 {
 	const auto latency = device_latency();
+	const auto device_rate = engine.sample_rate.load();
+	const auto timeline = timeline_rate(project, device_rate);
 	auto edit = edits.begin("Record");
 
 	for (size_t position = 0; position < live.size(); ++position) {
@@ -183,14 +200,18 @@ void Recorder::add_recorded_clips(std::int64_t start)
 		if (take.dropped_blocks.load() > 0)
 			log_event("Recording dropped " + juce::String(take.dropped_blocks.load()) + " blocks: the disk could not keep up");
 
-		if (written <= latency)
+		if (written <= latency) {
+			if (written == 0)
+				live[position].file.deleteFile();
+
 			continue;
+		}
 
 		Clip clip;
 		clip.file = relative_media_path(project.folder, live[position].file);
-		clip.start = start;
-		clip.source_offset = latency;
-		clip.length = written - latency;
+		clip.start = convert_samples(start, device_rate, timeline);
+		clip.source_offset = convert_samples(latency, device_rate, timeline);
+		clip.length = convert_samples(written - latency, device_rate, timeline);
 
 		peak_store.store(clip.file, std::move(live[position].peaks));
 		edit.add_clip(live[position].track, clip);

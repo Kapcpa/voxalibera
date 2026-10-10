@@ -18,6 +18,14 @@ double samples_per_beat(const Tempo& tempo, double sample_rate)
 	return sample_rate * SECONDS_PER_MINUTE / tempo.quarter_notes_per_minute * quarter_notes_per_beat;
 }
 
+std::int64_t convert_samples(std::int64_t samples, double from_rate, double to_rate)
+{
+	if (from_rate <= 0.0 || to_rate <= 0.0 || std::lround(from_rate) == std::lround(to_rate))
+		return samples;
+
+	return std::llround((double) samples * to_rate / from_rate);
+}
+
 std::int64_t beat_start_sample(std::int64_t beat_index, const Tempo& tempo, double sample_rate)
 {
 	return std::llround((double) beat_index * samples_per_beat(tempo, sample_rate));
