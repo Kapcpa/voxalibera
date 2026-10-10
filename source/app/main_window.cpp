@@ -11,11 +11,14 @@ namespace
 	constexpr int MAX_SIZE = 10000;
 }
 
-MainWindow::MainWindow(const juce::String& name, AppContext& context) : DocumentWindow(name, theme::WINDOW_BACKGROUND, allButtons), context(context), settings_view(context), settings_overlay("Settings", settings_view)
+MainWindow::MainWindow(const juce::String& name, AppContext& context) : DocumentWindow(name, theme::WINDOW_BACKGROUND, allButtons), context(context), main_view(context), settings_view(context), settings_overlay("Settings", settings_view)
 {
 	actions = {
 		{command::QUIT, [] { juce::JUCEApplication::getInstance()->systemRequestedQuit(); }},
 		{command::TOGGLE_MIXER, [this] { toggle_mixer(); }},
+		{command::PLAY_STOP, [this] { this->context.toggle_playback(); }},
+		{command::RETURN_TO_START, [this] { this->context.return_to_start(); }},
+		{command::TOGGLE_METRONOME, [this] { this->context.toggle_metronome(); }},
 		{command::AUDIO_SETTINGS, [this] { show_settings(SettingsView::AUDIO_PAGE); }},
 		{command::INTERFACE_SETTINGS, [this] { show_settings(SettingsView::INTERFACE_PAGE); }},
 		{command::ABOUT, [this] { show_about(); }},
@@ -52,9 +55,21 @@ void MainWindow::closeButtonPressed()
 void MainWindow::timerCallback()
 {
 	context.update();
+	main_view.update();
+	release_focus_outside_text_fields();
 
 	if (settings_overlay.is_open())
 		settings_view.update();
+}
+
+void MainWindow::release_focus_outside_text_fields()
+{
+	auto* focused = juce::Component::getCurrentlyFocusedComponent();
+
+	if (focused == nullptr || !main_view.isParentOf(focused) || dynamic_cast<juce::TextEditor*>(focused) != nullptr)
+		return;
+
+	focused->giveAwayKeyboardFocus();
 }
 
 bool MainWindow::is_allowed_now(juce::CommandID id) const
@@ -88,6 +103,9 @@ void MainWindow::getCommandInfo(juce::CommandID id, juce::ApplicationCommandInfo
 
 	if (id == command::TOGGLE_MIXER)
 		info.setTicked(main_view.is_mixer_visible());
+
+	if (id == command::TOGGLE_METRONOME)
+		info.setTicked(context.project.metronome);
 }
 
 bool MainWindow::perform(const InvocationInfo& info)

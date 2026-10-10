@@ -18,12 +18,26 @@ void AudioEngine::audioDeviceIOCallbackWithContext(const float* const* inputs, i
 	if (!audio_thread_prepared.exchange(true, std::memory_order_relaxed))
 		running_realtime = make_current_thread_realtime();
 
+	const auto* snapshot = snapshots.begin_block();
+
 	input_meter.measure(inputs, input_count, sample_count);
 	passthrough.process(inputs, input_count, outputs, output_count, sample_count);
+
+	const auto block = transport.advance(sample_count);
+
+	if (snapshot != nullptr && snapshot->metronome && block.playing)
+		metronome.render(outputs, output_count, sample_count, block.start, snapshot->tempo);
+	else
+		metronome.reset();
+
+	snapshots.end_block();
 }
 
-void AudioEngine::audioDeviceAboutToStart(juce::AudioIODevice*)
+void AudioEngine::audioDeviceAboutToStart(juce::AudioIODevice* device)
 {
+	metronome.prepare(device->getCurrentSampleRate());
+	sample_rate = device->getCurrentSampleRate();
+	running = true;
 	audio_thread_prepared = false;
 	running_realtime = false;
 	++device_starts;
@@ -31,5 +45,6 @@ void AudioEngine::audioDeviceAboutToStart(juce::AudioIODevice*)
 
 void AudioEngine::audioDeviceStopped()
 {
+	running = false;
 	running_realtime = false;
 }

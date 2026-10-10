@@ -29,6 +29,7 @@ public:
 private:
 	void timerCallback() override;
 	bool is_allowed_now(juce::CommandID id) const;
+	void release_focus_outside_text_fields();
 	void toggle_mixer();
 	void show_settings(int page);
 	void show_about();

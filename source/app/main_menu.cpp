@@ -1,6 +1,7 @@
 #include "app/main_menu.h"
 
 #include "app/commands.h"
+#include "app/shortcut_text.h"
 
 #include <vector>
 
@@ -18,6 +19,7 @@ namespace
 		{"File", {command::NEW_PROJECT, command::OPEN_PROJECT, SEPARATOR, command::SAVE_PROJECT, command::SAVE_PROJECT_AS, SEPARATOR, command::QUIT}},
 		{"Edit", {command::UNDO, command::REDO}},
 		{"View", {command::TOGGLE_MIXER}},
+		{"Transport", {command::PLAY_STOP, command::RETURN_TO_START, command::TOGGLE_METRONOME}},
 		{"Settings", {command::AUDIO_SETTINGS, command::INTERFACE_SETTINGS}},
 		{"Help", {command::ABOUT}},
 	};
@@ -46,10 +48,25 @@ juce::PopupMenu MainMenu::getMenuForIndex(int menu_index, const juce::String&)
 		if (item == SEPARATOR)
 			popup.addSeparator();
 		else
-			popup.addCommandItem(&command_manager, item);
+			popup.addItem(command_item(item));
 	}
 
 	return popup;
+}
+
+juce::PopupMenu::Item MainMenu::command_item(juce::CommandID id)
+{
+	juce::ApplicationCommandInfo info(id);
+	const auto* target = command_manager.getTargetForCommand(id, info);
+	const auto keys = command_manager.getKeyMappings()->getKeyPressesAssignedToCommand(id);
+
+	juce::PopupMenu::Item item(info.shortName);
+	item.itemID = id;
+	item.commandManager = &command_manager;
+	item.isEnabled = target != nullptr && (info.flags & juce::ApplicationCommandInfo::isDisabled) == 0;
+	item.isTicked = (info.flags & juce::ApplicationCommandInfo::isTicked) != 0;
+	item.shortcutKeyDescription = keys.isEmpty() ? juce::String() : describe_shortcut(keys.getFirst());
+	return item;
 }
 
 void MainMenu::menuItemSelected(int, int)

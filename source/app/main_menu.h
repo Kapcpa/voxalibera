@@ -12,5 +12,7 @@ public:
 	void menuItemSelected(int item_id, int menu_index) override;
 
 private:
+	juce::PopupMenu::Item command_item(juce::CommandID id);
+
 	juce::ApplicationCommandManager& command_manager;
 };

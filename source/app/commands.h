@@ -14,6 +14,9 @@ namespace command
 	constexpr juce::CommandID UNDO = 10;
 	constexpr juce::CommandID REDO = 11;
 	constexpr juce::CommandID TOGGLE_MIXER = 20;
+	constexpr juce::CommandID PLAY_STOP = 25;
+	constexpr juce::CommandID RETURN_TO_START = 26;
+	constexpr juce::CommandID TOGGLE_METRONOME = 27;
 	constexpr juce::CommandID AUDIO_SETTINGS = 30;
 	constexpr juce::CommandID INTERFACE_SETTINGS = 31;
 	constexpr juce::CommandID ABOUT = 40;

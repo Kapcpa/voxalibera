@@ -13,5 +13,6 @@ namespace theme
 	inline const juce::Colour DIM_TEXT{0xff6c7078};
 	inline const juce::Colour ACCENT{0xff5b8def};
 	inline const juce::Colour ACCENT_TEXT{0xffffffff};
+	inline const juce::Colour RECORD{0xffe5484d};
 	inline const juce::Colour BACKDROP{0x99000000};
 }

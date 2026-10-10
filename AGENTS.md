@@ -65,6 +65,8 @@ All colours live in `ui/theme.h`; `ThemeLookAndFeel` applies them to every JUCE 
 
 ### Commands
 
+Keyboard shortcuts always win in the main window: only a text field being typed into may hold keyboard focus there. `MainWindow` takes focus away from any other control (sliders, lists, buttons) each frame, so arrow keys, Space and Enter never get captured by whatever was clicked last. Dialogs in the overlay keep their own focus.
+
 Every user action is a command: an id in `app/commands.h`, one line in the definitions table (name, menu category, default key), and a handler in `MainWindow`'s `actions` map. Menus, keyboard shortcuts and later a command palette and scripts all go through JUCE's `ApplicationCommandManager`. A command without a handler shows up greyed out, so planned features can sit in the menus before they exist.
 
 ### Real-time rules
@@ -75,6 +77,12 @@ The audio callback (`AudioEngine::audioDeviceIOCallbackWithContext`) and everyth
 - publishes results only through atomics (`LevelMeter`, `running_realtime`, `device_starts`).
 
 The UI writes those atomics and saves `Settings`; the engine never sees `Settings`.
+
+### Engine snapshots and transport
+
+- `core/Project` is the model; every change goes through its methods, which bump `revision`.
+- `EnginePublisher` notices a new revision once per frame, builds an `EngineSnapshot` (a read-only copy of what the audio thread needs) and publishes it through `SnapshotExchange`: an atomic pointer swap. Replaced snapshots are freed on the message thread once the audio thread has finished a block that started after the swap, never on the audio thread.
+- `Transport` takes play/stop/locate from the UI through a `LockFreeQueue` and publishes its state and position through atomics. Positions inside the engine are in samples; `engine/musical_time` converts to bars, beats and ticks.
 
 ### Devices
 

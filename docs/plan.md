@@ -42,7 +42,7 @@ Short design notes, decided once and then followed everywhere.
 
 - The audio thread copies armed inputs into lock-free ring buffers; the disk write thread turns them into WAV files in the project's `audio/` folder.
 - Recorded clips are placed compensating for the device's reported input and output latency, so takes line up with what was heard.
-- Monitoring of armed tracks happens in the engine (with their effects, once effects exist).
+- Monitoring follows the armed track: arming a track means hearing its input through that track's own effect chain; arming a different track switches to its chain. The global monitoring switch in settings is temporary (it may stay as a test or direct monitor).
 
 ### Project files
 
