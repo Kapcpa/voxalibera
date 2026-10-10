@@ -10,6 +10,8 @@
 #include <memory>
 #include <optional>
 
+int restore_saved_hardware_controls(const Settings& settings, int card_index);
+
 class DeviceSession
 {
 public:

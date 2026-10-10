@@ -1,6 +1,6 @@
-#include "core/media/take_files.h"
+#include "core/media/project_folders.h"
 
-#include "platform/paths.h"
+#include "platform/system.h"
 
 namespace
 {

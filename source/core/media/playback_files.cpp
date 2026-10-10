@@ -1,9 +1,19 @@
-#include "core/media/read_ahead.h"
+#include "core/media/playback_files.h"
 
 namespace
 {
 	constexpr double SECONDS_AHEAD = 5.0;
 	constexpr int MILLISECONDS_BETWEEN_PASSES = 50;
+}
+
+std::shared_ptr<const AudioFile> AudioFilePool::get(const juce::File& file, std::int64_t required_length)
+{
+	auto& entry = open_files[file.getFullPathName()];
+
+	if (entry == nullptr || entry->length() < required_length)
+		entry = AudioFile::open(file);
+
+	return entry != nullptr && entry->length() >= required_length ? entry : nullptr;
 }
 
 ReadAhead::ReadAhead(const Transport& transport) : transport(transport)

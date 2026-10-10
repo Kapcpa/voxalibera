@@ -1,7 +1,6 @@
 #pragma once
 
-#include "core/media/audio_file_pool.h"
-#include "core/media/read_ahead.h"
+#include "core/media/playback_files.h"
 #include "core/project/model.h"
 #include "engine/audio_engine.h"
 

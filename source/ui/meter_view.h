@@ -1,6 +1,6 @@
 #pragma once
 
-#include "engine/level_meter.h"
+#include "engine/levels.h"
 
 #include <juce_gui_basics/juce_gui_basics.h>
 

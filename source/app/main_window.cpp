@@ -23,6 +23,22 @@ namespace
 	const juce::String UNSAVED_MARK = juce::String::fromUTF8(" \xe2\x80\xa2");
 }
 
+WindowContent::WindowContent(juce::MenuBarModel& menu, MainView& main_view, ModalOverlay& overlay) : menu_bar(&menu), main_view(main_view), overlay(overlay)
+{
+	addAndMakeVisible(menu_bar);
+	addAndMakeVisible(main_view);
+	addChildComponent(overlay);
+	setSize(main_view.getWidth(), main_view.getHeight() + getLookAndFeel().getDefaultMenuBarHeight());
+}
+
+void WindowContent::resized()
+{
+	auto area = getLocalBounds();
+	overlay.setBounds(area);
+	menu_bar.setBounds(area.removeFromTop(getLookAndFeel().getDefaultMenuBarHeight()));
+	main_view.setBounds(area);
+}
+
 MainWindow::MainWindow(const juce::String& name, AppContext& context) : DocumentWindow(name, theme::WINDOW_BACKGROUND, allButtons), context(context), main_view(context), settings_view(context), new_track_dialog(context)
 {
 	actions = {

@@ -13,8 +13,7 @@ target_sources(voxalibera_tests PRIVATE
     ${PROJECT_SOURCE_DIR}/source/core/project/model.cpp
     ${PROJECT_SOURCE_DIR}/source/core/project/project_file.cpp
     ${PROJECT_SOURCE_DIR}/source/engine/audio_file.cpp
-    ${PROJECT_SOURCE_DIR}/source/engine/gain.cpp
-    ${PROJECT_SOURCE_DIR}/source/engine/level_meter.cpp
+    ${PROJECT_SOURCE_DIR}/source/engine/levels.cpp
     ${PROJECT_SOURCE_DIR}/source/engine/mix_renderer.cpp
     ${PROJECT_SOURCE_DIR}/source/engine/musical_time.cpp
     ${PROJECT_SOURCE_DIR}/source/engine/passthrough.cpp

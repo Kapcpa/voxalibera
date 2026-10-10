@@ -1,20 +1,17 @@
 #pragma once
 
-#include "core/clip_editor.h"
 #include "core/device_session.h"
+#include "core/editors.h"
 #include "core/engine_publisher.h"
-#include "core/media/audio_file_pool.h"
-#include "core/media/peak_builder.h"
-#include "core/media/peak_store.h"
-#include "core/media/read_ahead.h"
+#include "core/log.h"
+#include "core/media/peaks.h"
+#include "core/media/playback_files.h"
 #include "core/project/edit_history.h"
 #include "core/project/model.h"
 #include "core/project_session.h"
 #include "core/recorder.h"
 #include "core/selection.h"
 #include "core/settings.h"
-#include "core/track_editor.h"
-#include "core/xrun_watch.h"
 #include "engine/audio_engine.h"
 
 struct AppContext

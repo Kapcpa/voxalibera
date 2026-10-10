@@ -1,4 +1,7 @@
-#include "platform/paths.h"
+#include "platform/system.h"
+
+#include <pthread.h>
+#include <sched.h>
 
 namespace
 {
@@ -16,6 +19,13 @@ namespace
 
 		return juce::File::getSpecialLocation(juce::File::userHomeDirectory).getChildFile(default_relative_to_home);
 	}
+
+	constexpr int AUDIO_THREAD_PRIORITY = 80;
+
+	bool is_realtime_policy(int policy)
+	{
+		return policy == SCHED_FIFO || policy == SCHED_RR;
+	}
 }
 
 juce::File state_directory()
@@ -26,4 +36,17 @@ juce::File state_directory()
 juce::File data_directory()
 {
 	return xdg_directory(DATA_HOME_VARIABLE, DEFAULT_DATA_HOME);
+}
+
+bool make_current_thread_realtime()
+{
+	sched_param parameters{};
+	int policy = SCHED_OTHER;
+	pthread_getschedparam(pthread_self(), &policy, &parameters);
+
+	if (is_realtime_policy(policy))
+		return true;
+
+	parameters.sched_priority = AUDIO_THREAD_PRIORITY;
+	return pthread_setschedparam(pthread_self(), SCHED_FIFO, &parameters) == 0;
 }

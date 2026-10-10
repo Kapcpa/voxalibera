@@ -39,7 +39,7 @@ Where an installed Voxalibera keeps its files, where it keeps the user's files, 
 
 ## Other systems
 
-Not a goal now, but the same three kinds of files map cleanly onto Windows and macOS. Code never builds these paths itself: it asks `platform/paths` for "the settings folder", "the cache folder", "the resources folder", and a port only adds a new implementation there.
+Not a goal now, but the same three kinds of files map cleanly onto Windows and macOS. Code never builds these paths itself: it asks `platform/system` for "the settings folder", "the cache folder", "the resources folder", and a port only adds a new implementation there.
 
 | What | Linux | Windows | macOS |
 |---|---|---|---|

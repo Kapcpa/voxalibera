@@ -1,12 +1,24 @@
 #pragma once
 
 #include "core/device_session.h"
-#include "core/media/peak_builder.h"
-#include "core/media/peak_store.h"
+#include "core/media/peaks.h"
 #include "core/project/edit_history.h"
-#include "core/recent_projects.h"
 #include "core/selection.h"
 #include "engine/audio_engine.h"
+
+#include <juce_core/juce_core.h>
+
+struct RecentProjects
+{
+	static constexpr int MAX_FILES = 10;
+
+	static RecentProjects load();
+	void add(const juce::File& file);
+	void remove(const juce::File& file);
+	void save() const;
+
+	juce::Array<juce::File> files;
+};
 
 class ProjectSession
 {

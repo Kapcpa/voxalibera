@@ -1,6 +1,6 @@
 #include "engine/audio_engine.h"
 
-#include "platform/realtime_priority.h"
+#include "platform/system.h"
 
 AudioEngine::AudioEngine()
 {

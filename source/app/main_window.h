@@ -2,7 +2,6 @@
 
 #include "app/main_menu.h"
 #include "app/project_dialogs.h"
-#include "app/window_content.h"
 #include "core/app_context.h"
 #include "ui/main_view.h"
 #include "ui/message_dialog.h"
@@ -15,6 +14,19 @@
 #include <functional>
 #include <map>
 #include <memory>
+
+class WindowContent : public juce::Component
+{
+public:
+	WindowContent(juce::MenuBarModel& menu, MainView& main_view, ModalOverlay& overlay);
+
+	void resized() override;
+
+private:
+	juce::MenuBarComponent menu_bar;
+	MainView& main_view;
+	ModalOverlay& overlay;
+};
 
 class MainWindow : public juce::DocumentWindow, public juce::ApplicationCommandTarget, private juce::Timer
 {

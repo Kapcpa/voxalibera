@@ -1,7 +1,7 @@
 #include "core/recorder.h"
 
 #include "core/log.h"
-#include "core/media/take_files.h"
+#include "core/media/project_folders.h"
 
 namespace
 {

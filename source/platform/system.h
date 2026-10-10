@@ -4,3 +4,5 @@
 
 juce::File state_directory();
 juce::File data_directory();
+
+bool make_current_thread_realtime();

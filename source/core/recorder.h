@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/media/peak_store.h"
+#include "core/media/peaks.h"
 #include "core/project/edit_history.h"
 #include "core/selection.h"
 #include "engine/audio_engine.h"

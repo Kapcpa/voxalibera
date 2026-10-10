@@ -4,6 +4,8 @@
 
 #include <functional>
 
+juce::String describe_shortcut(const juce::KeyPress& key);
+
 class MainMenu : public juce::MenuBarModel
 {
 public:

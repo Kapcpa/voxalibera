@@ -1,4 +1,4 @@
-#include "core/media/peak_builder.h"
+#include "core/media/peaks.h"
 
 #include "core/log.h"
 #include "engine/audio_file.h"
@@ -58,6 +58,22 @@ namespace
 		for (const auto& values : peaks.channels)
 			stream.write(values.data(), values.size() * sizeof(float));
 	}
+}
+
+const Peaks* PeakStore::find(const juce::String& file) const
+{
+	const auto found = peaks_by_file.find(file);
+	return found == peaks_by_file.end() ? nullptr : &found->second;
+}
+
+void PeakStore::store(const juce::String& file, Peaks peaks)
+{
+	peaks_by_file[file] = std::move(peaks);
+}
+
+void PeakStore::clear()
+{
+	peaks_by_file.clear();
 }
 
 PeakBuilder::PeakBuilder() : juce::Thread("Peak builder")

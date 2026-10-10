@@ -1,7 +1,8 @@
 #include "core/device_session.h"
 
-#include "core/hardware_restore.h"
 #include "core/log.h"
+#include "platform/alsa_cards.h"
+#include "platform/alsa_controls.h"
 #include "platform/pipewire_properties.h"
 
 #include <cmath>
@@ -13,6 +14,29 @@ namespace
 	constexpr int INPUT_CHANNELS = 2;
 	constexpr int OUTPUT_CHANNELS = 2;
 	constexpr double RESCAN_DELAY_SECONDS = 1.5;
+}
+
+int restore_saved_hardware_controls(const Settings& settings, int card_index)
+{
+	const auto saved_card = settings.hardware_controls.find(find_card_name(list_alsa_cards(), card_index));
+
+	if (saved_card == settings.hardware_controls.end())
+		return 0;
+
+	AlsaControls controls(card_index);
+	int restored = 0;
+
+	for (const auto& control : controls.controls) {
+		const auto saved = saved_card->second.find(control.key);
+
+		if (saved == saved_card->second.end())
+			continue;
+
+		controls.write(control, saved->second);
+		++restored;
+	}
+
+	return restored;
 }
 
 DeviceSession::DeviceSession(AudioEngine& engine, Settings& settings) : engine(engine), settings(settings)

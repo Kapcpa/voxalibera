@@ -1,9 +1,10 @@
 #include "ui/tracks/timeline_view.h"
 
-#include "core/media/take_files.h"
+#include "core/media/project_folders.h"
 #include "ui/theme.h"
 #include "ui/tracks/clip_painter.h"
 
+#include <algorithm>
 #include <cmath>
 
 namespace
@@ -13,6 +14,20 @@ namespace
 	constexpr float HINT_FONT_SIZE = 14.0f;
 	constexpr auto EMPTY_HINT = "No tracks yet. Press Ctrl+T or + Track to add one.";
 	constexpr float CLIP_MARGIN = 3.0f;
+}
+
+void TimelineViewport::zoom_around(double x, double factor)
+{
+	const auto anchor_beat = x_to_beat(x);
+	pixels_per_beat = std::clamp(pixels_per_beat * factor, MIN_PIXELS_PER_BEAT, MAX_PIXELS_PER_BEAT);
+	first_beat = std::max(0.0, anchor_beat - x / pixels_per_beat);
+	++revision;
+}
+
+void TimelineViewport::scroll_beats(double beats)
+{
+	first_beat = std::max(0.0, first_beat + beats);
+	++revision;
 }
 
 TimelineView::TimelineView(AppContext& context, const TimelineViewport& viewport) : context(context), viewport(viewport)

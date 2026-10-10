@@ -1,7 +1,7 @@
 #pragma once
 
 #include "engine/audio_file.h"
-#include "engine/gain.h"
+#include "engine/levels.h"
 #include "engine/musical_time.h"
 
 #include <cstdint>

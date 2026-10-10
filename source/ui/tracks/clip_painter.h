@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/media/peak_store.h"
+#include "core/media/peaks.h"
 
 #include <juce_gui_basics/juce_gui_basics.h>
 

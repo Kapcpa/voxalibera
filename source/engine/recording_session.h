@@ -1,6 +1,6 @@
 #pragma once
 
-#include "engine/lock_free_queue.h"
+#include "engine/lock_free.h"
 
 #include <juce_audio_formats/juce_audio_formats.h>
 

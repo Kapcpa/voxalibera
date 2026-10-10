@@ -7,12 +7,10 @@ What lives where in `source/`, and the functions worth knowing. Rules and archit
 Starting the program, windows, commands and menus.
 
 - `application` - the JUCE application: creates the log, theme, `AppContext` and the main window; `--list-devices` prints every audio device JUCE can see.
-- `main_window` - the main window; owns commands, the 30 Hz frame loop and the modal overlay.
-- `window_content` - lays out the menu bar, the main view and the overlay inside the window.
+- `main_window` - the main window; owns commands, the 30 Hz frame loop and the modal overlay. `WindowContent` lays out the menu bar, the main view and the overlay inside it.
 - `commands` - every command id with its name, menu and default shortcut.
-- `main_menu` - builds the menu bar from the command table, plus File > Open Recent.
+- `main_menu` - builds the menu bar from the command table, plus File > Open Recent; `describe_shortcut` turns key presses into readable text (`Ctrl+S`, `Space`).
 - `project_dialogs` - New, Open, Save and Save As with their file choosers, and the Save / Don't Save / Cancel question.
-- `shortcut_text` - turns key presses into readable text (`Ctrl+S`, `Space`).
 
 `MainWindow::actions` - map from command id to what it does; a command without an entry shows up greyed out.
 `describe_shortcut(key)` - text for a shortcut, used by menus.
@@ -22,26 +20,20 @@ Starting the program, windows, commands and menus.
 Application state: the project, edits, devices, recording, settings.
 
 - `app_context` - `AppContext`, the one shared object: settings, engine, devices, project, edits, selection, recorder, project session.
-- `project_session` - the open project's file: new, open, save, save as (moves or copies the recordings), backups, unsaved changes.
-- `recent_projects` - the last opened projects, in `~/.local/state/voxalibera/recent.json`.
+- `project_session` - the open project's file: new, open, save, save as (moves or copies the recordings), backups, unsaved changes; `RecentProjects`, the last opened projects in `~/.local/state/voxalibera/recent.json`.
 - `project/model` - the whole project as plain data: `Project` (tempo, tracks, folder, change counter), `Track`, `Clip`, the id types `TrackId` and `ClipId`, the track colour palette, and the solo rules.
 - `project/project_file` - the `.vxl` format: a project to JSON and back; skips broken parts instead of refusing the file.
 - `project/edit_history` - `Edit` and `EditHistory`: every change to the project, with undo and redo.
-- `track_editor` - track actions: add, delete, rename, colour, volume, arm, mute, solo.
-- `clip_editor` - clip actions: move the selection (in time and across tracks), delete.
+- `editors` - `TrackEditor` (add, delete, rename, colour, volume, arm, mute, solo) and `ClipEditor` (move the selection in time and across tracks, delete).
 - `selection` - which tracks and clips are selected; outside undo.
 - `recorder` - runs a recording: arms, creates take files, hands them to the engine, turns them into clips.
-- `media/take_files` - where takes go and how they're named.
-- `media/peak_store` - waveform overviews per file, for drawing clips.
-- `media/peak_builder` - after opening a project, builds waveform overviews on a background thread, cached in the project's `cache/` folder.
-- `media/audio_file_pool` - opens each audio file once and shares it between snapshots; reopens a take once it's finished.
-- `media/read_ahead` - on the disk thread, loads the next few seconds of every clip into memory before the audio thread needs it.
-- `device_session` - opening devices, borrowing them from PipeWire, PipeWire properties for JACK.
+- `media/project_folders` - where takes go and how they're named; the temporary folders of unsaved projects.
+- `media/peaks` - waveform overviews per file for drawing clips (`PeakStore`), and `PeakBuilder`, which builds them on a background thread after opening a project, cached in the project's `cache/` folder.
+- `media/playback_files` - `AudioFilePool` opens each audio file once and shares it between snapshots (reopening a take once it's finished); `ReadAhead`, on the disk thread, loads the next few seconds of every clip into memory before the audio thread needs it.
+- `device_session` - opening devices, borrowing them from PipeWire, PipeWire properties for JACK, re-applying saved interface settings (input source, hardware monitor).
 - `engine_publisher` - turns the project into engine snapshots when it changes: solo, gains, pan, opened files, meter slots.
-- `hardware_restore` - re-applies saved interface settings (input source, hardware monitor).
 - `settings` - `settings.json`: device, test monitor, hardware controls.
-- `log` - the log file under `~/.local/state/voxalibera/`.
-- `xrun_watch` - logs dropouts, at most every two seconds.
+- `log` - the log file under `~/.local/state/voxalibera/`, and `XrunWatch`, which logs dropouts at most every two seconds.
 
 `context.edits.begin(name, merge_key)` - starts an undoable change; everything until it goes out of scope is one undo step.
 `edit.set(id, &Track::field, value)` - changes any track, clip or project field and remembers the old value.
@@ -65,15 +57,13 @@ Everything the audio thread touches. Nothing here allocates, locks or touches fi
 - `engine_snapshot` - `EngineSnapshot`: the read-only copy of the project the audio thread plays from (tracks, clips, gains).
 - `mix_renderer` - plays clips and monitored inputs through each track's gain and pan into the master, fills the meters.
 - `audio_file` - a memory-mapped WAV file the audio thread can read from without system calls.
-- `gain` - fader decibels to gain, the mono pan law and stereo balance.
-- `snapshot_exchange` - swaps snapshots in atomically and frees old ones only after the audio thread is done.
+- `levels` - fader decibels to gain, the mono pan law and stereo balance; `LevelMeter`, peak meters filled by the audio thread and read by the UI.
+- `lock_free` - `SnapshotExchange` swaps snapshots in atomically and frees old ones only after the audio thread is done; `LockFreeQueue` is a fixed-size single-producer single-consumer queue.
 - `transport` - play, stop, record, locate; commands in through a queue, position out through atomics.
 - `recording_session` - the audio thread side of recording: writes inputs into each take's writer, collects peaks.
 - `metronome` - a sample-accurate synthesized click.
 - `musical_time` - samples to bars, beats and ticks and back; time signature parsing.
-- `level_meter` - peak meters filled by the audio thread and read by the UI.
 - `passthrough` - the test monitor: input straight to output, bypassing tracks.
-- `lock_free_queue` - a fixed-size single-producer single-consumer queue.
 
 `transport.play()` / `stop()` / `record()` / `locate(sample)` - safe to call from the UI; applied at the next audio block.
 `snapshots.publish(snapshot)` - hands a new snapshot to the audio thread.
@@ -87,8 +77,7 @@ Linux specifics. The only place that includes ALSA, sd-bus or PipeWire.
 - `alsa_controls` - reads and writes a card's hardware controls.
 - `device_reservation` - borrows a card from PipeWire over D-Bus and gives it back.
 - `pipewire_properties` - the properties our JACK client asks PipeWire for (buffer size, sample rate).
-- `realtime_priority` - puts the current thread at real-time priority.
-- `paths` - the XDG folders for state and data.
+- `system` - the XDG folders for state and data, and putting the current thread at real-time priority.
 
 ## ui/
 
@@ -104,8 +93,7 @@ Views. They read state every frame and call into `core/` on user input; they nev
 - `meter_view` - draws a `LevelMeter`, horizontally with labels (settings) or vertically (mixer).
 - `tracks/track_area_view` - headers, ruler and timeline together; scrolling, zoom, following the playhead.
 - `tracks/track_header` - one track's name, colour, arm, mute, solo and volume.
-- `tracks/timeline_view` - lanes, grid, clips, live takes, playhead; clip selection and dragging.
-- `tracks/timeline_viewport` - zoom and scroll state shared by ruler and timeline.
+- `tracks/timeline_view` - lanes, grid, clips, live takes, playhead; clip selection and dragging. `TimelineViewport` holds the zoom and scroll state shared by ruler and timeline.
 - `tracks/ruler_view` - bar numbers; click or drag to move the playhead.
 - `tracks/clip_painter` - draws a clip with its waveform (one band per channel).
 - `tracks/new_track_dialog` - the New Track dialog.

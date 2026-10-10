@@ -3,7 +3,6 @@
 #include "core/app_context.h"
 #include "ui/tracks/ruler_view.h"
 #include "ui/tracks/timeline_view.h"
-#include "ui/tracks/timeline_viewport.h"
 #include "ui/tracks/track_header.h"
 
 #include <juce_gui_basics/juce_gui_basics.h>
