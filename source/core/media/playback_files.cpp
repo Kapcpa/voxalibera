@@ -31,17 +31,30 @@ void ReadAhead::set_regions(std::vector<ReadAheadRegion> new_regions, double sam
 
 int ReadAhead::useTimeSlice()
 {
-	const std::scoped_lock guard(lock);
+	const auto [current, current_rate] = copy_regions();
 	const auto from = transport.position();
-	const auto to = from + (std::int64_t) (SECONDS_AHEAD * rate);
+	touch(current, from, from + (std::int64_t) (SECONDS_AHEAD * current_rate));
+	return MILLISECONDS_BETWEEN_PASSES;
+}
 
-	for (const auto& region : regions) {
+void ReadAhead::load_now(std::int64_t from, std::int64_t length)
+{
+	touch(copy_regions().first, from, from + length);
+}
+
+std::pair<std::vector<ReadAheadRegion>, double> ReadAhead::copy_regions()
+{
+	const std::scoped_lock guard(lock);
+	return {regions, rate};
+}
+
+void ReadAhead::touch(const std::vector<ReadAheadRegion>& targets, std::int64_t from, std::int64_t to)
+{
+	for (const auto& region : targets) {
 		const auto overlap_start = std::max(from, region.start);
 		const auto overlap_end = std::min(to, region.start + region.length);
 
 		if (overlap_start < overlap_end)
 			region.file->touch((std::int64_t) (region.file_start + (double) (overlap_start - region.start) * region.file_step), (std::int64_t) ((double) (overlap_end - overlap_start) * region.file_step) + ResamplingKernel::TAPS);
 	}
-
-	return MILLISECONDS_BETWEEN_PASSES;
 }

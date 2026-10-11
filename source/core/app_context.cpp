@@ -1,11 +1,17 @@
 #include "core/app_context.h"
 
+namespace
+{
+	constexpr double LOAD_SECONDS = 0.5;
+}
+
 AppContext::AppContext() : settings(Settings::load()), devices(engine, settings)
 {
 	engine.passthrough.monitoring = settings.test_monitor;
 	engine.passthrough.routing = settings.input_routing;
 	disk_thread.addTimeSliceClient(&read_ahead);
 	disk_thread.startThread();
+	recording_thread.startThread(juce::Thread::Priority::high);
 	devices.open();
 }
 
@@ -27,20 +33,29 @@ void AppContext::update()
 
 void AppContext::toggle_playback()
 {
-	if (recorder.is_recording())
+	if (recorder.is_recording()) {
 		recorder.stop();
-	else if (engine.transport.is_playing())
+		return;
+	}
+
+	if (engine.transport.is_playing()) {
 		engine.transport.stop();
-	else
-		engine.transport.play();
+		return;
+	}
+
+	load_ahead_of(engine.transport.position());
+	engine.transport.play();
 }
 
 void AppContext::toggle_recording()
 {
-	if (recorder.is_recording())
+	if (recorder.is_recording()) {
 		recorder.stop();
-	else
-		recorder.start();
+		return;
+	}
+
+	load_ahead_of(engine.transport.position() - recorder.count_in_samples(engine.sample_rate.load()));
+	recorder.start();
 }
 
 void AppContext::delete_selection()
@@ -54,7 +69,18 @@ void AppContext::delete_selection()
 void AppContext::return_to_start()
 {
 	if (!recorder.is_recording())
-		engine.transport.locate(0);
+		locate(0);
+}
+
+void AppContext::locate(std::int64_t sample)
+{
+	load_ahead_of(sample);
+	engine.transport.locate(sample);
+}
+
+void AppContext::load_ahead_of(std::int64_t sample)
+{
+	read_ahead.load_now(sample, (std::int64_t) (LOAD_SECONDS * engine.sample_rate.load()));
 }
 
 void AppContext::toggle_metronome()

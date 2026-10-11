@@ -20,10 +20,12 @@ struct AppContext
 	~AppContext();
 
 	void update();
+	void load_ahead_of(std::int64_t sample);
 	void toggle_playback();
 	void toggle_recording();
 	void delete_selection();
 	void return_to_start();
+	void locate(std::int64_t sample);
 	void toggle_metronome();
 	void toggle_count_in();
 	void set_master_volume(float volume_db);
@@ -33,7 +35,8 @@ struct AppContext
 	void redo();
 
 	Settings settings;
-	juce::TimeSliceThread disk_thread{"Disk writer"};
+	juce::TimeSliceThread disk_thread{"Disk"};
+	juce::TimeSliceThread recording_thread{"Recording writer"};
 	AudioEngine engine;
 	DeviceSession devices;
 	XrunWatch xrun_watch;
@@ -45,7 +48,7 @@ struct AppContext
 	PeakStore peaks;
 	PeakBuilder peak_builder;
 	ProjectSession session{engine, devices, project, edits, selection, peaks, peak_builder, disk_thread};
-	Recorder recorder{engine, project, edits, selection, peaks, disk_thread};
+	Recorder recorder{engine, project, edits, selection, peaks, recording_thread};
 	AudioFilePool files;
 	ReadAhead read_ahead{engine.transport};
 	EnginePublisher publisher{engine, project, files, read_ahead};

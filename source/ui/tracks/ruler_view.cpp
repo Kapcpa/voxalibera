@@ -70,5 +70,5 @@ void RulerView::locate_to(int x)
 		return;
 
 	const auto beat = std::max(0.0, std::round(viewport.x_to_beat(x)));
-	context.engine.transport.locate(beat_start_sample((std::int64_t) beat, context.project.tempo, rate));
+	context.locate(beat_start_sample((std::int64_t) beat, context.project.tempo, rate));
 }
