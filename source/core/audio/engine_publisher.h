@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/media/audio_plugin_pool.h"
 #include "core/media/playback_files.h"
 #include "core/project/model.h"
 #include "engine/audio_engine.h"
@@ -11,7 +12,7 @@
 class EnginePublisher
 {
 public:
-	EnginePublisher(AudioEngine& engine, const Project& project, AudioFilePool& files, ReadAhead& read_ahead);
+	EnginePublisher(AudioEngine& engine, const Project& project, AudioFilePool& files, AudioPluginPool& plugins, ReadAhead& read_ahead);
 
 	void update(double now);
 	int meter_of(TrackId id) const;
@@ -28,6 +29,7 @@ private:
 	AudioEngine& engine;
 	const Project& project;
 	AudioFilePool& files;
+	AudioPluginPool& plugins;
 	ReadAhead& read_ahead;
 	int published_revision = -1;
 	double published_rate = 0.0;

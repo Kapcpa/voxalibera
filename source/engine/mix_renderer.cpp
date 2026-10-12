@@ -42,6 +42,9 @@ void MixRenderer::render_track(const TrackPlayback& track, Inputs inputs, int of
 	if (track.monitors_input)
 		add_input(track, inputs, offset, sample_count);
 
+	if (track.plugins != nullptr)
+		track.plugins->process(track_buffer, sample_count);
+
 	if (track.channels == 1)
 		track_buffer.copyFrom(RIGHT, 0, track_buffer, LEFT, 0, sample_count);
 

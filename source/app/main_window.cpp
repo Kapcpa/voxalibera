@@ -3,6 +3,9 @@
 #include "app/commands.h"
 #include "ui/theme.h"
 
+// temp
+#include "engine/plugins/test_processor.h"
+
 namespace
 {
 	juce::String describe_deletion(const Selection& selection)
@@ -77,7 +80,20 @@ MainWindow::MainWindow(const juce::String& name, AppContext& context) : Document
 	centreWithSize(getWidth(), getHeight());
 
 	overlay.on_close = [this] { command_manager.commandStatusChanged(); };
-	new_track_dialog.on_finished = [this] { close_overlay(); };
+	// temp, remove the if after tests
+	new_track_dialog.on_finished = [this] {
+		close_overlay();
+
+		if (!this->context.project.tracks.empty()) {
+			const auto test_id = this->context.project.tracks.front().id;
+			auto chain = this->context.plugins.obtain_chain(test_id);
+			chain->add_processor(std::make_shared<TestDriveProcessor>());
+
+			const auto rate = this->context.engine.sample_rate.load();
+			const auto buffer_size = this->context.engine.buffer_size.load();
+			chain->prepare(PluginProcessContext(rate, buffer_size));
+		}
+	};
 	message_dialog.on_finished = [this] { close_overlay(); };
 	main_view.track_area.on_add_track = [this] { show_new_track_dialog(); };
 	main_menu.recent_files = [this] { return this->context.session.recent.files; };
@@ -258,7 +274,7 @@ void MainWindow::show_settings(int page)
 
 void MainWindow::show_new_track_dialog()
 {
-	overlay.open("New Track", new_track_dialog);
+	overlay.open("New Track", new_track_dialog, false);
 	new_track_dialog.prepare();
 	command_manager.commandStatusChanged();
 }

@@ -16,7 +16,7 @@ namespace
 	}
 }
 
-EnginePublisher::EnginePublisher(AudioEngine& engine, const Project& project, AudioFilePool& files, ReadAhead& read_ahead) : engine(engine), project(project), files(files), read_ahead(read_ahead)
+EnginePublisher::EnginePublisher(AudioEngine& engine, const Project& project, AudioFilePool& files, AudioPluginPool& plugins, ReadAhead& read_ahead) : engine(engine), project(project), files(files), plugins(plugins), read_ahead(read_ahead)
 {
 }
 
@@ -75,6 +75,8 @@ TrackPlayback EnginePublisher::build_track(const Track& track, bool solo_active,
 	const auto gain = fader_gain(track.volume_db);
 	const auto pan = playback.channels == 1 ? mono_pan_gains(track.pan) : stereo_balance_gains(track.pan);
 	playback.gains = {gain * pan.left, gain * pan.right};
+
+	playback.plugins = plugins.get_chain(track.id);
 
 	for (const auto& clip : track.clips) {
 		const auto built = build_clip(clip, sample_rate);

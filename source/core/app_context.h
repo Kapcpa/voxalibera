@@ -5,6 +5,7 @@
 #include "core/audio/recorder.h"
 #include "core/editors.h"
 #include "core/log.h"
+#include "core/media/audio_plugin_pool.h"
 #include "core/media/peaks.h"
 #include "core/media/playback_files.h"
 #include "core/project/edit_history.h"
@@ -50,6 +51,7 @@ struct AppContext
 	ProjectSession session{engine, devices, project, edits, selection, peaks, peak_builder, disk_thread};
 	Recorder recorder{engine, project, edits, selection, peaks, recording_thread};
 	AudioFilePool files;
+	AudioPluginPool plugins;
 	ReadAhead read_ahead{engine.transport};
-	EnginePublisher publisher{engine, project, files, read_ahead};
+	EnginePublisher publisher{engine, project, files, plugins, read_ahead};
 };

@@ -31,6 +31,7 @@ public:
 	SnapshotExchange<const EngineSnapshot> snapshots;
 	SnapshotExchange<RecordingSession> recording;
 	std::atomic<double> sample_rate{0.0};
+	std::atomic<int> buffer_size{0};
 	std::atomic<bool> running{false};
 	std::atomic<bool> running_realtime{false};
 	std::atomic<int> device_starts{0};

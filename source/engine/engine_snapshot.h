@@ -3,6 +3,7 @@
 #include "engine/audio_file.h"
 #include "engine/levels.h"
 #include "engine/musical_time.h"
+#include "engine/plugins/plugin_chain.h"
 #include "engine/resampler.h"
 
 #include <cstdint>
@@ -32,6 +33,7 @@ struct TrackPlayback
 	bool audible = true;
 	StereoGains gains;
 	std::vector<ClipPlayback> clips;
+	std::shared_ptr<PluginChain> plugins;
 };
 
 struct EngineSnapshot
