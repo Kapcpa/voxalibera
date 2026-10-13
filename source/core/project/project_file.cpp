@@ -43,12 +43,27 @@ namespace
 		return object.get();
 	}
 
+	juce::var write_plugin(const Plugin& plugin)
+	{
+		Object object = new juce::DynamicObject();
+		object->setProperty("id", plugin.id.value);
+		object->setProperty("name", plugin.name);
+		object->setProperty("format", plugin.format);
+		object->setProperty("bypass", plugin.bypass);
+		return object.get();
+	}
+
 	juce::var write_track(const Track& track)
 	{
 		juce::Array<juce::var> clips;
 
 		for (const auto& clip : track.clips)
 			clips.add(write_clip(clip));
+
+		juce::Array<juce::var> plugins;
+
+		for (const auto& plugin : track.plugins)
+			plugins.add(write_plugin(plugin));
 
 		Object object = new juce::DynamicObject();
 		object->setProperty("id", track.id.value);
@@ -62,6 +77,7 @@ namespace
 		object->setProperty("volume-db", track.volume_db);
 		object->setProperty("pan", track.pan);
 		object->setProperty("clips", clips);
+		object->setProperty("plugins", plugins);
 		return object.get();
 	}
 
@@ -76,6 +92,16 @@ namespace
 		clip.gain_db = (float) read(json, "gain-db", 0.0);
 		clip.lane = (int) read(json, "lane", 0);
 		return clip;
+	}
+
+	Plugin read_plugin(const juce::var& json)
+	{
+		Plugin plugin;
+		plugin.id = PluginId{(int) read(json, "id", 0)};
+		plugin.name = read(json, "name", "").toString();
+		plugin.format = read(json, "format", "").toString();
+		plugin.bypass = (bool) read(json, "bypass", false);
+		return plugin;
 	}
 
 	Track read_track(const juce::var& json)
@@ -98,12 +124,21 @@ namespace
 			for (const auto& clip : *clips)
 				track.clips.push_back(read_clip(clip));
 
+		if (const auto* plugins = read(json, "plugins", juce::var()).getArray())
+			for (const auto& plugin : *plugins)
+				track.plugins.push_back(read_plugin(plugin));
+
 		return track;
 	}
 
 	bool is_usable(const Clip& clip)
 	{
 		return clip.id.is_valid() && clip.file.isNotEmpty() && clip.length > 0 && clip.start >= 0 && clip.source_offset >= 0;
+	}
+
+	bool is_usable(const Plugin& plugin)
+	{
+		return plugin.id.is_valid() && plugin.name.isNotEmpty();
 	}
 
 	void keep_valid_parts(Project& project, juce::StringArray& problems)
@@ -120,7 +155,7 @@ namespace
 			return true;
 		});
 
-		for (auto& track : project.tracks)
+		for (auto& track : project.tracks) {
 			std::erase_if(track.clips, [&](const Clip& clip) {
 				if (is_usable(clip) && claim(clip.id.value))
 					return false;
@@ -128,6 +163,15 @@ namespace
 				problems.add("Skipped a broken clip on track \"" + track.name + "\"");
 				return true;
 			});
+
+			std::erase_if(track.plugins, [&](const Plugin& plugin) {
+				if (is_usable(plugin) && claim(plugin.id.value))
+					return false;
+
+				problems.add("Skipped a broken plugin on track \"" + track.name + "\"");
+				return true;
+			});
+		}
 
 		const auto highest = ids.empty() ? 0 : *ids.rbegin();
 		project.next_id = std::max(project.next_id, highest + 1);

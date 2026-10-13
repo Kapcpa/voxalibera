@@ -104,6 +104,36 @@ void TrackEditor::toggle_selected(bool Track::* flag, const juce::String& action
 		edit.set(id, flag, value);
 }
 
+PluginId TrackEditor::add_plugin(TrackId id, const juce::String& name, const juce::String& format)
+{
+	Plugin plugin;
+	plugin.name = name;
+	plugin.format = format;
+	plugin.bypass = false;
+
+	return edits.begin("Add Plugin").add_plugin(id, plugin);
+}
+
+void TrackEditor::remove_plugin(TrackId track_id, PluginId plugin_id)
+{
+	edits.begin("Remove Plugin").remove_plugin(track_id, plugin_id);
+}
+
+void TrackEditor::toggle_plugin_bypass(TrackId track_id, PluginId plugin_id)
+{
+	const auto* track = project.find_track(track_id);
+
+	if (track == nullptr)
+		return;
+
+	const auto it = std::find_if(track->plugins.begin(), track->plugins.end(), [plugin_id](const Plugin& p) { return p.id == plugin_id; });
+
+	if (it == track->plugins.end())
+		return;
+
+	edits.begin("Toggle Plugin Bypass").set(track_id, plugin_id, &Plugin::bypass, !it->bypass);
+}
+
 ClipEditor::ClipEditor(Project& project, EditHistory& edits, Selection& selection) : project(project), edits(edits), selection(selection)
 {
 }

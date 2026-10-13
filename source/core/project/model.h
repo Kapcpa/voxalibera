@@ -19,6 +19,7 @@ struct Id
 };
 
 using TrackId = Id<struct TrackTag>;
+using PluginId = Id<struct PluginTag>;
 using ClipId = Id<struct ClipTag>;
 
 struct Clip
@@ -67,6 +68,14 @@ struct TrackInput
 	bool operator==(const TrackInput&) const = default;
 };
 
+struct Plugin
+{
+	PluginId id;
+	juce::String name;
+	juce::String format;
+	bool bypass = false;
+};
+
 struct Track
 {
 	TrackId id;
@@ -80,6 +89,7 @@ struct Track
 	float volume_db = 0.0f;
 	float pan = 0.0f;
 	std::vector<Clip> clips;
+	std::vector<Plugin> plugins;
 };
 
 int channel_count(TrackChannels channels);
@@ -103,6 +113,7 @@ struct Project
 	const Track* find_track_of(ClipId id) const;
 	TrackId allocate_track_id();
 	ClipId allocate_clip_id();
+	PluginId allocate_plugin_id();
 
 	juce::File folder;
 	double sample_rate = 0.0;

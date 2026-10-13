@@ -20,7 +20,7 @@ public:
 
 private:
 	void publish(double now);
-	TrackPlayback build_track(const Track& track, bool solo_active, double sample_rate, std::vector<ReadAheadRegion>& regions);
+	TrackPlayback build_track(const Track& track, bool solo_active, double sample_rate, int buffer_size, std::vector<ReadAheadRegion>& regions);
 	std::optional<ClipPlayback> build_clip(const Clip& clip, double device_rate);
 	std::shared_ptr<const ResamplingKernel> resampler_for(double step);
 	int assign_meter(TrackId id);

@@ -40,6 +40,7 @@ int EnginePublisher::meter_of(TrackId id) const
 void EnginePublisher::publish(double now)
 {
 	const auto rate = engine.sample_rate.load();
+	const auto buffer = engine.buffer_size.load();
 	const auto solo_active = any_solo(project.tracks);
 	std::vector<ReadAheadRegion> regions;
 
@@ -53,7 +54,7 @@ void EnginePublisher::publish(double now)
 	snapshot->master_gain = fader_gain(project.master_volume_db);
 
 	for (const auto& track : project.tracks)
-		snapshot->tracks.push_back(build_track(track, solo_active, rate, regions));
+		snapshot->tracks.push_back(build_track(track, solo_active, rate, buffer, regions));
 
 	engine.snapshots.publish(std::move(snapshot));
 	read_ahead.set_regions(std::move(regions), rate);
@@ -63,7 +64,7 @@ void EnginePublisher::publish(double now)
 	next_retry = now + MISSING_FILE_RETRY_SECONDS;
 }
 
-TrackPlayback EnginePublisher::build_track(const Track& track, bool solo_active, double sample_rate, std::vector<ReadAheadRegion>& regions)
+TrackPlayback EnginePublisher::build_track(const Track& track, bool solo_active, double sample_rate, int buffer_size, std::vector<ReadAheadRegion>& regions)
 {
 	TrackPlayback playback;
 	playback.meter = assign_meter(track.id);
@@ -76,6 +77,7 @@ TrackPlayback EnginePublisher::build_track(const Track& track, bool solo_active,
 	const auto pan = playback.channels == 1 ? mono_pan_gains(track.pan) : stereo_balance_gains(track.pan);
 	playback.gains = {gain * pan.left, gain * pan.right};
 
+	plugins.sync_track_plugins(track, sample_rate, buffer_size);
 	playback.plugins = plugins.get_chain(track.id);
 
 	for (const auto& clip : track.clips) {
@@ -160,4 +162,11 @@ int EnginePublisher::assign_meter(TrackId id)
 void EnginePublisher::forget_removed_tracks()
 {
 	std::erase_if(meters, [&](const auto& entry) { return project.find_track(entry.first) == nullptr; });
+	std::erase_if(meters, [&](const auto& entry) {
+		if (project.find_track(entry.first) == nullptr) {
+			plugins.remove_track(entry.first);
+			return true;
+		}
+		return false;
+	});
 }

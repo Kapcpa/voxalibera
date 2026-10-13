@@ -102,6 +102,11 @@ ClipId Project::allocate_clip_id()
 	return ClipId{next_id++};
 }
 
+PluginId Project::allocate_plugin_id()
+{
+	return PluginId{next_id++};
+}
+
 double timeline_rate(const Project& project, double device_rate)
 {
 	return project.sample_rate > 0.0 ? project.sample_rate : device_rate;

@@ -8,6 +8,7 @@ namespace
 	constexpr int HEIGHT = 880;
 	constexpr int TRANSPORT_HEIGHT = 48;
 	constexpr int MIXER_HEIGHT = 260;
+	// constexpr int PLUGINCHAIN_HEIGHT = 130;
 	constexpr int GAP = 2;
 }
 

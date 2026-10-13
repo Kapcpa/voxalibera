@@ -85,13 +85,8 @@ MainWindow::MainWindow(const juce::String& name, AppContext& context) : Document
 		close_overlay();
 
 		if (!this->context.project.tracks.empty()) {
-			const auto test_id = this->context.project.tracks.front().id;
-			auto chain = this->context.plugins.obtain_chain(test_id);
-			chain->add_processor(std::make_shared<TestDriveProcessor>());
-
-			const auto rate = this->context.engine.sample_rate.load();
-			const auto buffer_size = this->context.engine.buffer_size.load();
-			chain->prepare(PluginProcessContext(rate, buffer_size));
+			auto track_id = this->context.project.tracks.front().id;
+			this->context.tracks.add_plugin(track_id, "Test Overdrive", "Builtin");
 		}
 	};
 	message_dialog.on_finished = [this] { close_overlay(); };
