@@ -12,6 +12,8 @@ namespace
 	constexpr auto DEFAULT_STATE_HOME = ".local/state";
 	constexpr auto DATA_HOME_VARIABLE = "XDG_DATA_HOME";
 	constexpr auto DEFAULT_DATA_HOME = ".local/share";
+	constexpr auto CACHE_HOME_VARIABLE = "XDG_CACHE_HOME";
+	constexpr auto DEFAULT_CACHE_HOME = ".cache";
 
 	juce::File xdg_directory(const char* variable, const char* default_relative_to_home)
 	{
@@ -44,6 +46,11 @@ juce::File app_state_directory()
 juce::File app_data_directory()
 {
 	return xdg_directory(DATA_HOME_VARIABLE, DEFAULT_DATA_HOME).getChildFile(APPLICATION_NAME);
+}
+
+juce::File app_cache_directory()
+{
+	return xdg_directory(CACHE_HOME_VARIABLE, DEFAULT_CACHE_HOME).getChildFile(APPLICATION_NAME);
 }
 
 bool make_current_thread_realtime()

@@ -6,7 +6,7 @@ What lives where in `source/`, and the functions worth knowing. Rules and archit
 
 Starting the program, windows, commands and menus.
 
-- `application` - the JUCE application: creates the log, theme, `AppContext` and the main window; `--list-devices` prints every audio device JUCE can see.
+- `application` - the JUCE application: creates the log, theme, `AppContext` and the main window; `--list-devices` prints every audio device JUCE can see; `--scan-plugins` is the plugin scanner's child process.
 - `main_window` - the main window; owns commands, the 30 Hz frame loop and the modal overlay. `WindowContent` lays out the menu bar, the main view and the overlay inside it.
 - `commands` - every command id with its name, menu and default shortcut.
 - `main_menu` - builds the menu bar from the command table, plus File > Open Recent; `describe_shortcut` turns key presses into readable text (`Ctrl+S`, `Space`).
@@ -17,14 +17,14 @@ Starting the program, windows, commands and menus.
 
 ## core/
 
-Application state. `project/` is the song document and its files, `audio/` talks to the engine and the devices, `media/` handles audio files and waveforms.
+Application state. `project/` is the song document and its files, `audio/` talks to the engine and the devices, `media/` handles audio files and waveforms, `plugins/` effects.
 
 - `app_context` - `AppContext`, the one shared object: settings, engine, devices, project, edits, selection, recorder, project session.
-- `editors` - `TrackEditor` (add, delete, rename, colour, volume, arm, mute, solo) and `ClipEditor` (move the selection in time and across tracks, delete).
+- `editors` - `TrackEditor` (add, delete, rename, colour, volume, arm, mute, solo, add/insert/move/remove/bypass plugins) and `ClipEditor` (move the selection in time and across tracks, delete).
 - `selection` - which tracks and clips are selected; outside undo.
-- `settings` - `settings.json`: device, test monitor, hardware controls.
+- `settings` - `settings.json`: device, test monitor, hardware controls, extra plugin folders.
 - `log` - the log file under `~/.local/state/voxalibera/`, and `XrunWatch`, which logs dropouts at most every two seconds.
-- `project/model` - the whole project as plain data: `Project` (tempo, tracks, folder, change counter), `Track`, `Clip`, the id types `TrackId` and `ClipId`, the track colour palette, and the solo rules.
+- `project/model` - the whole project as plain data: `Project` (tempo, tracks, folder, change counter), `Track`, `Clip`, `Plugin`, the id types `TrackId`, `ClipId` and `PluginId`, the track colour palette, and the solo rules.
 - `project/edit_history` - `Edit` and `EditHistory`: every change to the project, with undo and redo.
 - `project/project_file` - the `.vxl` format: a project to JSON and back; skips broken parts instead of refusing the file.
 - `project/project_session` - the open project's file: new, open, save, save as (moves or copies the recordings), backups, unsaved changes.
@@ -34,6 +34,9 @@ Application state. `project/` is the song document and its files, `audio/` talks
 - `audio/device_session` - opening devices, borrowing them from PipeWire, PipeWire properties for JACK, re-applying saved interface settings (input source, hardware monitor).
 - `audio/engine_publisher` - turns the project into engine snapshots when it changes: solo, gains, pan, opened files, meter slots, project positions converted to device samples, resamplers.
 - `audio/recorder` - runs a recording: arms, creates take files, hands them to the engine, turns them into clips.
+- `plugins/plugin_pool` - the running plugin instances per `PluginId` and each track's `PluginChain`; recreates them on a rate change, keeps the state of removed ones for undo, copies live states into the model before saving.
+- `plugins/plugin_library` - the format manager and the list of installed plugins with the blacklist (`~/.cache/voxalibera/plugins.xml`); search for the browser; `plugin_from(description)` turns a JUCE description into a `Plugin`.
+- `plugins/plugin_scanner` - finds and scans plugins on a background thread through a child process (`--scan-plugins`), blacklists the ones that crash or hang, reports progress and failures; also the child's side (`run_plugin_scan`).
 - `media/project_folders` - where takes go and how they're named; the temporary folders of unsaved projects.
 - `media/peaks` - waveform overviews per file for drawing clips (`PeakStore`), and `PeakBuilder`, which builds them on a background thread after opening a project, cached in the project's `cache/` folder.
 - `media/playback_files` - `AudioFilePool` opens each audio file once and shares it between snapshots (reopening a take once it's finished); `ReadAhead`, on the disk thread, loads the next few seconds of every clip into memory before the audio thread needs it.
@@ -42,6 +45,10 @@ Application state. `project/` is the song document and its files, `audio/` talks
 `edit.set(id, &Track::field, value)` - changes any track, clip or project field and remembers the old value.
 `edit.add_track(track, position)` / `edit.remove_track(id)` - adds or removes a track.
 `edit.add_clip(track, clip)` / `edit.remove_clip(id)` / `edit.move_clip(id, track)` - adds, removes or moves a clip to another track.
+`edit.add_plugin(track, plugin, position)` / `edit.remove_plugin(id)` / `edit.move_plugin(id, track, position)` - adds, removes or moves an effect, within a chain or to another track.
+`context.library.search(text)` - effects for the browser, ready to pass to `context.tracks.add_plugin` / `insert_plugin`.
+`context.scanner.start(rescan_everything)` / `progress()` / `failures` - plugin scanning for the UI.
+`context.plugins.find_instance(id)` - the running effect for a plugin in the project, or `nullptr` (missing, or no device yet); `is_missing(id)` tells which.
 `context.tracks.add(new_track)` - creates a track below the selected one and selects it.
 `context.clips.move_selected(move)` - moves all selected clips by a time and track offset, kept within limits.
 `context.recorder.start()` / `stop()` - starts and stops recording on the armed (or selected) tracks.
@@ -68,6 +75,10 @@ Everything the audio thread touches. Nothing here allocates, locks or touches fi
 - `metronome` - a sample-accurate synthesized click.
 - `musical_time` - samples to bars, beats and ticks and back; time signature parsing.
 - `passthrough` - the test monitor: input straight to output, bypassing tracks.
+- `plugins/plugin_processor` - `PluginProcessor`, what the engine needs from any effect: prepare, process (with a `PluginPlayhead`), state, latency, tail, its editor, and a change counter (`mark_changed()`) for unsaved changes.
+- `plugins/plugin_chain` - `PluginChain`: a track's effects in order with their bypass flags, immutable once built; sleeps while the input is silent and the tails have ended.
+- `plugins/builtin_plugins` - our own effects (format `builtin`) and `create_builtin_plugin(identifier)`.
+- `plugins/hosted_plugin` - `HostedPlugin`: a VST3 or LV2 plugin behind `PluginProcessor` (channel layout, playhead, state, change notifications, editor).
 
 `transport.play()` / `stop()` / `record()` / `locate(sample)` - safe to call from the UI; applied at the next audio block.
 `snapshots.publish(snapshot)` - hands a new snapshot to the audio thread.
@@ -80,7 +91,7 @@ Linux specifics. The only place that includes ALSA, sd-bus or PipeWire.
 - `alsa_cards` - lists sound cards and matches device names to cards; finds a card's required sample rate and whether it can run a given one.
 - `alsa_controls` - reads and writes a card's hardware controls.
 - `pipewire` - borrows a card from PipeWire over D-Bus and gives it back; the properties our JACK client asks PipeWire for (buffer size, sample rate).
-- `system` - the app's config, state and data folders (XDG), the program name, process checks, and putting the current thread at real-time priority.
+- `system` - the app's config, state, data and cache folders (XDG), the program name, process checks, and putting the current thread at real-time priority.
 
 ## ui/
 
@@ -100,6 +111,11 @@ Views. They read state every frame and call into `core/` on user input; they nev
 - `tracks/ruler_view` - bar numbers; click or drag to move the playhead.
 - `tracks/clip_painter` - draws a clip with its waveform (one band per channel).
 - `tracks/new_track_dialog` - the New Track dialog.
+- `plugins/plugin_chain_view` - the effect chain panel above the mixer: the chain row in a sideways scroll, the side menu (Add, Open, Remove), and the plugin windows.
+- `plugins/plugin_chain_row` - the track node, effect slots, wires with `+` and the Output node; selecting, opening, dragging effects onto wires.
+- `plugins/plugin_slot` - one effect in a chain: name, format or "not available", bypass and remove buttons, selection.
+- `plugins/plugin_browser` - the Add Effect dialog: search, list, scan progress.
+- `plugins/plugin_window` - plugin editor windows, one per effect, closed when the effect's instance goes away.
 - `settings/settings_view` - the settings dialog with its sidebar.
 - `settings/audio_page`, `device_picker`, `monitoring_section`, `status_section` - the Audio page.
 - `settings/interface_page` - the interface's hardware controls.

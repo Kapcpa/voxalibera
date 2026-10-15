@@ -17,6 +17,7 @@ namespace theme
 	inline const juce::Colour RECORD{0xffe5484d};
 	inline const juce::Colour MUTE{0xff5b8def};
 	inline const juce::Colour SOLO{0xffd4b84a};
+	inline const juce::Colour BYPASS{0xffd9813b};
 	inline const juce::Colour GRID_BAR{0xff3a3d43};
 	inline const juce::Colour GRID_BEAT{0xff2a2c31};
 	inline const juce::Colour LANE_SELECTED{0xff24262b};

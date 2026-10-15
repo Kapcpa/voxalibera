@@ -17,6 +17,7 @@ namespace
 		{command::UNDO, "Undo", "Edit", 'z', CONTROL},
 		{command::REDO, "Redo", "Edit", 'z', CONTROL_SHIFT},
 		{command::TOGGLE_MIXER, "Mixer", "View", 'x', NO_MODIFIERS},
+		{command::TOGGLE_PLUGIN_CHAIN, "Plugin Chain", "View", 'v', NO_MODIFIERS},
 		{command::PLAY_STOP, "Play / Stop", "Transport", juce::KeyPress::spaceKey, NO_MODIFIERS},
 		{command::RETURN_TO_START, "Return to Start", "Transport", juce::KeyPress::returnKey, NO_MODIFIERS},
 		{command::RECORD, "Record", "Transport", 'r', CONTROL},
@@ -29,6 +30,7 @@ namespace
 		{command::SOLO_TRACKS, "Solo", "Track", 's', NO_MODIFIERS},
 		{command::AUDIO_SETTINGS, "Audio...", "Settings", ',', CONTROL},
 		{command::INTERFACE_SETTINGS, "Interface...", "Settings", 0, NO_MODIFIERS},
+		{command::PLUGIN_SETTINGS, "Plugin...", "Settings", 0, NO_MODIFIERS},
 		{command::ABOUT, "About Voxalibera", "Help", 0, NO_MODIFIERS},
 	};
 }

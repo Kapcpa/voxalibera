@@ -104,34 +104,52 @@ void TrackEditor::toggle_selected(bool Track::* flag, const juce::String& action
 		edit.set(id, flag, value);
 }
 
-PluginId TrackEditor::add_plugin(TrackId id, const juce::String& name, const juce::String& format)
+PluginId TrackEditor::add_plugin(TrackId id, const Plugin& plugin)
 {
-	Plugin plugin;
-	plugin.name = name;
-	plugin.format = format;
-	plugin.bypass = false;
-
-	return edits.begin("Add Plugin").add_plugin(id, plugin);
+	const auto* track = project.find_track(id);
+	return track == nullptr ? PluginId{} : insert_plugin(id, plugin, track->plugins.size());
 }
 
-void TrackEditor::remove_plugin(TrackId track_id, PluginId plugin_id)
+PluginId TrackEditor::insert_plugin(TrackId id, const Plugin& plugin, size_t position)
 {
-	edits.begin("Remove Plugin").remove_plugin(track_id, plugin_id);
+	return edits.begin("Add " + plugin.name).add_plugin(id, plugin, position);
 }
 
-void TrackEditor::toggle_plugin_bypass(TrackId track_id, PluginId plugin_id)
+void TrackEditor::remove_plugin(PluginId id)
 {
-	const auto* track = project.find_track(track_id);
+	const auto* plugin = project.find_plugin(id);
 
-	if (track == nullptr)
+	if (plugin == nullptr)
 		return;
 
-	const auto it = std::find_if(track->plugins.begin(), track->plugins.end(), [plugin_id](const Plugin& p) { return p.id == plugin_id; });
+	edits.begin("Remove " + plugin->name).remove_plugin(id);
 
-	if (it == track->plugins.end())
+	if (selection.plugin == id)
+		selection.clear_chain();
+}
+
+void TrackEditor::move_plugin(PluginId id, TrackId target, size_t position)
+{
+	const auto* plugin = project.find_plugin(id);
+	const auto* source = project.find_track_of(id);
+
+	if (plugin == nullptr || project.find_track(target) == nullptr)
 		return;
 
-	edits.begin("Toggle Plugin Bypass").set(track_id, plugin_id, &Plugin::bypass, !it->bypass);
+	const auto current_position = (size_t) (plugin - source->plugins.data());
+	const auto last_position = source->id == target ? source->plugins.size() - 1 : project.find_track(target)->plugins.size();
+	position = std::min(position, last_position);
+
+	if (source->id == target && position == current_position)
+		return;
+
+	edits.begin("Move " + plugin->name).move_plugin(id, target, position);
+}
+
+void TrackEditor::toggle_plugin_bypass(PluginId id)
+{
+	if (const auto* plugin = project.find_plugin(id))
+		edits.begin("Bypass " + plugin->name).set(id, &Plugin::bypass, !plugin->bypass);
 }
 
 ClipEditor::ClipEditor(Project& project, EditHistory& edits, Selection& selection) : project(project), edits(edits), selection(selection)

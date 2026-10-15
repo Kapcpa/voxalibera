@@ -50,12 +50,13 @@ source/
   main.cpp     starts the application
   app/         application lifecycle, windows, commands and menus, command-line tools
   ui/          views; read state every frame, call into core/engine on user input
-    tracks/ mixer/ settings/   one folder per screen area
+    tracks/ mixer/ settings/ plugins/   one folder per screen area
     parts/                     pieces several screens reuse (meters, overlay, message dialog)
   core/        app state: AppContext, Settings, editors, selection, log
     project/   the song document and its files: model, edits, .vxl format, session, recovery, cleanup
     audio/     talks to the engine and the devices: device session, engine publisher, recorder
     media/     audio files and waveforms
+    plugins/   effects: the list of installed plugins, the scanner, running instances
   engine/      audio processing; everything the audio thread touches
   platform/    Linux specifics: ALSA cards and controls, PipeWire (device reservation, client properties), app folders, thread priority
 tests/
@@ -133,6 +134,30 @@ The UI writes those atomics and saves `Settings`; the engine never sees `Setting
 - Track meters live in `engine.mixer.track_meters`; the publisher gives each track a slot (`publisher.meter_of(id)`).
 - Positions in the project (clip start, length, source offset) are samples at the project's rate (`timeline_rate(project, device_rate)`); the transport, the playhead and recording work in device samples. Convert at the edges with `convert_samples`: the publisher for clips, the timeline for the playhead and live takes, the recorder for new clips. Peaks carry their file's rate.
 - A clip whose file rate differs from the device plays through `ResamplingKernel` (32-tap windowed sinc, built once per rate ratio on the message thread and shared through the snapshot); matching files keep the direct path. Ratios beyond 4x stay silent, logged and shown in the transport bar (`publisher.mismatched_file_rate()`).
+
+### Plugins
+
+- A track's effects are `Track::plugins` in the model: identity (`format`, `identifier`, name, manufacturer, version), `bypass` and the last stored `state`. They change through edits like everything else (`context.tracks.add_plugin`, `insert_plugin`, `move_plugin` within or across tracks, `remove_plugin`, `toggle_plugin_bypass`; `edit.set(plugin_id, &Plugin::field, value)`). Positions are indexes in the chain; moving to a position counts it after the plugin has left its old place.
+- `PluginPool` (`core/plugins/`) owns the running instances, one `PluginProcessor` per `PluginId`, created and prepared on the message thread at the device rate with `MixRenderer::CHUNK_SAMPLES` as the largest block. A plugin that can't be created has no instance: its track plays without it and its data stays in the model. `is_missing(id)` tells that apart from a plugin that simply isn't running yet (no device), when `find_instance` also returns `nullptr`.
+- The publisher asks the pool for each track's `PluginChain`. A chain is immutable once built (instances plus bypass flags); the pool hands out the same chain while nothing about it changed and builds a new one when it did, so the audio thread never sees a chain change under it and old chains die with their snapshot. Only the chain's own tail counter changes, on the audio thread.
+- When the device rate changes, every instance is retired and recreated at the new rate instead of being prepared again while the audio thread may still be using it. Retiring keeps the instance's state, which is also what brings a plugin back with its sound after undoing its removal.
+- A plugin's own settings (its knobs, its preset) live in the instance, not in the model, and are outside undo. Whatever changes them calls `mark_changed()` on the processor (from any thread: it's an atomic counter); each frame `PluginPool::take_changes` notices it and marks the project changed without an undo step, which is what drives the unsaved mark, the save question and autosave. Restoring a state when an instance is created doesn't count as a change.
+- Plugin windows: `context.plugins.find_instance(id)` gives the running `PluginProcessor`, `create_editor()` its window contents (the plugin's own editor for VST3/LV2, our component for builtin effects, `nullptr` when there is none). Only on the message thread. Whoever shows it holds the processor's `shared_ptr` declared before the editor, so the editor is destroyed first, and closes the window when `find_instance(id)` no longer returns the same processor (plugin removed, rate change, project replaced).
+- Before every save and autosave `PluginPool::store_states` copies the live states into the model. Opening, New and recovery clear the pool, since plugin ids are only unique within one project.
+- `engine/plugins/builtin_plugins.h` lists our own effects (format `builtin`). VST3 and LV2 run through `HostedPlugin` (`engine/plugins/hosted_plugin`), which `PluginPool::create_hosted` makes from the `juce::PluginDescription` that `PluginLibrary::find(plugin)` returns. It asks the plugin for stereo in and out, then mono in and stereo out, then mono; plugins needing more channels are treated as missing. Plugins without their own editor get JUCE's generic one.
+- The app scans for new or changed plugins at startup (`scanner.start(false)` in `AppContext`); it runs in the background and the browser shows its progress.
+- A track's chain always gets two channels: a mono track copies left to right before its effects, so stereo effects (amp simulators, reverbs) keep their stereo output; pan on a mono track then works on both sides like balance.
+- Effects get a `PluginPlayhead` with every block (playing, recording, position in device samples, tempo) for tempo-synced effects.
+- `PluginLibrary` holds JUCE's format manager (VST3, LV2) and the list of installed plugins with the blacklist, cached in `~/.cache/voxalibera/plugins.xml`. `search(text)` gives the browser our effects plus installed ones (no instruments yet) as ready `Plugin` values for `add_plugin`.
+- `PluginScanner` scans on its own thread. It runs the app binary again as `voxalibera --scan-plugins <format> <list file> <output file>`; that child writes a line before and after each plugin, so when it crashes or stops responding for 30 s the parent knows which plugin did it, blacklists it and starts a new child with the rest. Only new or changed plugins are scanned, unless `start(true)` rescans everything (which also retries the blacklist). Default folders per format plus `plugin-folders` from settings. UI polls `scanner.progress()` and reads `scanner.failures` for the report; when new plugins arrive, plugins that were missing get another try (`PluginPool::retry_missing`).
+
+### Effect chain panel
+
+- Above the mixer (View > Plugin Chain, `V`), for the first selected track: the track -> effects -> Output, scrolling sideways. Selecting a track elsewhere clears what's selected in the chain.
+- What's selected in the chain lives in `Selection` like tracks and clips: `selection.plugin` (an effect) or `selection.gap` (the wire before position N).
+- An effect: click selects, clicking it again opens its window; drag it onto a wire to move it. A wire: click selects it, clicking again or on its `+` opens the effect browser for that place. Enter opens whatever is selected in the chain (otherwise it still returns to start); Delete removes the selected effect and selects the wire where it was. The side menu does the same: Add (at the selected wire, after the selected effect, or at the end), Open, Remove.
+- The effect browser is a dialog in the overlay: typing filters, arrows move, Enter or a double click inserts, and the new effect is selected so Enter opens it.
+- Plugin windows are the one exception to "no separate OS windows": a plugin's editor is its own window. `PluginWindows` keeps them by `PluginId`, holds the processor so the editor dies first, and closes a window when its instance goes away (removed, rate change, other project).
 
 ### Devices
 

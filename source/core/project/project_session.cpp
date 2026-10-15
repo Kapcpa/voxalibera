@@ -44,7 +44,7 @@ namespace
 	}
 }
 
-ProjectSession::ProjectSession(AudioEngine& engine, DeviceSession& devices, Project& project, EditHistory& edits, Selection& selection, PeakStore& peaks, PeakBuilder& peak_builder, juce::TimeSliceThread& disk_thread) : engine(engine), devices(devices), project(project), edits(edits), selection(selection), peaks(peaks), peak_builder(peak_builder), recovery(disk_thread)
+ProjectSession::ProjectSession(AudioEngine& engine, DeviceSession& devices, Project& project, EditHistory& edits, Selection& selection, PeakStore& peaks, PeakBuilder& peak_builder, PluginPool& plugins, juce::TimeSliceThread& disk_thread) : engine(engine), devices(devices), project(project), edits(edits), selection(selection), peaks(peaks), peak_builder(peak_builder), plugins(plugins), recovery(disk_thread)
 {
 }
 
@@ -89,6 +89,7 @@ void ProjectSession::autosave_if_due(double now)
 	if (project.folder == juce::File())
 		project.folder = new_unsaved_project_folder();
 
+	plugins.store_states(project);
 	recovery.autosave(project.folder, write_project(project, JUCE_APPLICATION_VERSION_STRING));
 	autosaved_revision = project.revision;
 	autosave_due.reset();
@@ -168,6 +169,7 @@ void ProjectSession::replace_project(Project next)
 	selection.clear();
 	peak_builder.cancel_all();
 	peaks.clear();
+	plugins.clear();
 }
 
 void ProjectSession::request_missing_peaks()
@@ -249,6 +251,7 @@ juce::Result ProjectSession::write_to(const juce::File& target)
 		project.sample_rate = engine.sample_rate.load();
 
 	back_up(target);
+	plugins.store_states(project);
 
 	if (!target.replaceWithText(write_project(project, JUCE_APPLICATION_VERSION_STRING)))
 		return juce::Result::fail("Could not write " + target.getFullPathName());

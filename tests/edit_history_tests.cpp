@@ -22,6 +22,23 @@ namespace
 
 		return result;
 	}
+
+	Plugin plugin_named(const juce::String& name)
+	{
+		Plugin plugin;
+		plugin.name = name;
+		return plugin;
+	}
+
+	juce::StringArray plugin_names(const Track& track)
+	{
+		juce::StringArray result;
+
+		for (const auto& plugin : track.plugins)
+			result.add(plugin.name);
+
+		return result;
+	}
 }
 
 TEST_CASE("adding and removing tracks can be undone and redone")
@@ -144,4 +161,31 @@ TEST_CASE("a clip moved to another track keeps its id and moves back on undo")
 
 	history.undo();
 	CHECK(project.find_track_of(clip)->id == guitar);
+}
+
+TEST_CASE("plugins can be inserted anywhere in a chain and moved, and undone")
+{
+	Project project;
+	EditHistory history(project);
+	const auto guitar = history.begin("Add").add_track(named("Guitar"), 0);
+	const auto bass = history.begin("Add").add_track(named("Bass"), 1);
+	history.begin("Add").add_plugin(guitar, plugin_named("Amp"), 0);
+	const auto reverb = history.begin("Add").add_plugin(guitar, plugin_named("Reverb"), 1);
+	const auto drive = history.begin("Add").add_plugin(guitar, plugin_named("Drive"), 0);
+	CHECK(plugin_names(*project.find_track(guitar)) == juce::StringArray{"Drive", "Amp", "Reverb"});
+
+	history.begin("Move").move_plugin(reverb, guitar, 0);
+	CHECK(plugin_names(*project.find_track(guitar)) == juce::StringArray{"Reverb", "Drive", "Amp"});
+
+	history.begin("Move").move_plugin(drive, bass, 0);
+	CHECK(plugin_names(*project.find_track(guitar)) == juce::StringArray{"Reverb", "Amp"});
+	CHECK(project.find_track_of(drive)->id == bass);
+
+	history.undo();
+	history.undo();
+	CHECK(plugin_names(*project.find_track(guitar)) == juce::StringArray{"Drive", "Amp", "Reverb"});
+
+	history.begin("Remove").remove_plugin(drive);
+	history.undo();
+	CHECK(plugin_names(*project.find_track(guitar)) == juce::StringArray{"Drive", "Amp", "Reverb"});
 }

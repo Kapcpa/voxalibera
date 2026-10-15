@@ -53,7 +53,6 @@ void AudioEngine::audioDeviceAboutToStart(juce::AudioIODevice* device)
 {
 	metronome.prepare(device->getCurrentSampleRate());
 	sample_rate = device->getCurrentSampleRate();
-	buffer_size = device->getCurrentBufferSizeSamples();
 	running = true;
 	audio_thread_prepared = false;
 	running_realtime = false;

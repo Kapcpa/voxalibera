@@ -61,33 +61,15 @@ public:
 	}
 
 	template <typename Value>
-	void set(TrackId track_id, PluginId plugin_id, Value Plugin::* field, Value value)
+	void set(PluginId id, Value Plugin::* field, Value value)
 	{
-		const auto* track = current_project().find_track(track_id);
-		if (track == nullptr)
+		const auto* plugin = current_project().find_plugin(id);
+
+		if (plugin == nullptr)
 			return;
 
-		const auto it = std::find_if(track->plugins.begin(), track->plugins.end(), [plugin_id](const Plugin& p) { return p.id == plugin_id; });
-		if (it == track->plugins.end())
-			return;
-
-		const auto old_value = (*it).*field;
-		record({[track_id, plugin_id, field, value](Project& target) {
-					if (auto* t = target.find_track(track_id))
-						for (auto& p : t->plugins)
-							if (p.id == plugin_id) {
-								p.*field = value;
-								break;
-							}
-				},
-				[track_id, plugin_id, field, old_value](Project& target) {
-					if (auto* t = target.find_track(track_id))
-						for (auto& p : t->plugins)
-							if (p.id == plugin_id) {
-								p.*field = old_value;
-								break;
-							}
-				}});
+		const auto old_value = plugin->*field;
+		record({[id, field, value](Project& target) { target.find_plugin(id)->*field = value; }, [id, field, old_value](Project& target) { target.find_plugin(id)->*field = old_value; }});
 	}
 
 	TrackId add_track(Track track, size_t position);
@@ -95,8 +77,9 @@ public:
 	ClipId add_clip(TrackId track_id, Clip clip);
 	void remove_clip(ClipId id);
 	void move_clip(ClipId id, TrackId target);
-	PluginId add_plugin(TrackId track_id, Plugin plugin);
-	void remove_plugin(TrackId track_id, PluginId plugin_id);
+	PluginId add_plugin(TrackId track_id, Plugin plugin, size_t position);
+	void remove_plugin(PluginId id);
+	void move_plugin(PluginId id, TrackId target, size_t position);
 	void commit();
 
 private:
@@ -130,6 +113,8 @@ public:
 		project.*field = value;
 		++project.revision;
 	}
+
+	void mark_changed_without_undo() { ++project.revision; }
 
 private:
 	friend class Edit;

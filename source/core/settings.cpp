@@ -92,6 +92,11 @@ Settings Settings::load()
 	settings.test_monitor = read(*root, "test-monitor", settings.test_monitor);
 	settings.input_routing = routing_from_name(read(*root, "input-routing", "").toString(), settings.input_routing);
 	settings.hardware_controls = read_hardware_controls(read(*root, "hardware-controls", {}));
+
+	if (const auto* folders = read(*root, "plugin-folders", {}).getArray())
+		for (const auto& folder : *folders)
+			settings.plugin_folders.add(folder.toString());
+
 	return settings;
 }
 
@@ -107,6 +112,7 @@ void Settings::save() const
 	root->setProperty("test-monitor", test_monitor);
 	root->setProperty("input-routing", routing_name(input_routing));
 	root->setProperty("hardware-controls", write_hardware_controls(hardware_controls));
+	root->setProperty("plugin-folders", juce::Array<juce::var>(plugin_folders.begin(), plugin_folders.size()));
 
 	file().getParentDirectory().createDirectory();
 	file().replaceWithText(juce::JSON::toString(root.get()));

@@ -71,9 +71,13 @@ struct TrackInput
 struct Plugin
 {
 	PluginId id;
-	juce::String name;
 	juce::String format;
+	juce::String identifier;
+	juce::String name;
+	juce::String manufacturer;
+	juce::String version;
 	bool bypass = false;
+	juce::MemoryBlock state;
 };
 
 struct Track
@@ -111,6 +115,9 @@ struct Project
 	const Clip* find_clip(ClipId id) const;
 	Track* find_track_of(ClipId id);
 	const Track* find_track_of(ClipId id) const;
+	Plugin* find_plugin(PluginId id);
+	const Plugin* find_plugin(PluginId id) const;
+	Track* find_track_of(PluginId id);
 	TrackId allocate_track_id();
 	ClipId allocate_clip_id();
 	PluginId allocate_plugin_id();

@@ -3,13 +3,13 @@
 #include "app/commands.h"
 #include "ui/theme.h"
 
-// temp
-#include "engine/plugins/test_processor.h"
-
 namespace
 {
 	juce::String describe_deletion(const Selection& selection)
 	{
+		if (selection.plugin.is_valid())
+			return "Delete Effect";
+
 		if (!selection.clips.empty())
 			return selection.clips.size() == 1 ? "Delete Clip" : "Delete Clips";
 
@@ -42,7 +42,7 @@ void WindowContent::resized()
 	main_view.setBounds(area);
 }
 
-MainWindow::MainWindow(const juce::String& name, AppContext& context) : DocumentWindow(name, theme::WINDOW_BACKGROUND, allButtons), context(context), main_view(context), settings_view(context), new_track_dialog(context)
+MainWindow::MainWindow(const juce::String& name, AppContext& context) : DocumentWindow(name, theme::WINDOW_BACKGROUND, allButtons), context(context), main_view(context), settings_view(context), new_track_dialog(context), plugin_browser(context)
 {
 	actions = {
 		{command::NEW_PROJECT, [this] { project_dialogs.new_project(); }},
@@ -52,8 +52,12 @@ MainWindow::MainWindow(const juce::String& name, AppContext& context) : Document
 		{command::CLEAN_UP_PROJECT, [this] { project_dialogs.clean_up(); }},
 		{command::QUIT, [this] { request_quit(); }},
 		{command::TOGGLE_MIXER, [this] { toggle_mixer(); }},
+		{command::TOGGLE_PLUGIN_CHAIN, [this] { toggle_plugin_chain(); }},
 		{command::PLAY_STOP, [this] { this->context.toggle_playback(); }},
-		{command::RETURN_TO_START, [this] { this->context.return_to_start(); }},
+		{command::RETURN_TO_START, [this] {
+			 if (!main_view.plugin_chain.activate_selection())
+				 this->context.return_to_start();
+		 }},
 		{command::TOGGLE_METRONOME, [this] { this->context.toggle_metronome(); }},
 		{command::TOGGLE_COUNT_IN, [this] { this->context.toggle_count_in(); }},
 		{command::UNDO, [this] { this->context.undo(); }},
@@ -66,6 +70,7 @@ MainWindow::MainWindow(const juce::String& name, AppContext& context) : Document
 		{command::SOLO_TRACKS, [this] { this->context.tracks.toggle_selected(&Track::solo, "Solo Track"); }},
 		{command::AUDIO_SETTINGS, [this] { show_settings(SettingsView::AUDIO_PAGE); }},
 		{command::INTERFACE_SETTINGS, [this] { show_settings(SettingsView::INTERFACE_PAGE); }},
+		{command::PLUGIN_SETTINGS, [this] { show_settings(SettingsView::PLUGIN_PAGE); }},
 		{command::ABOUT, [this] { show_about(); }},
 	};
 
@@ -80,16 +85,10 @@ MainWindow::MainWindow(const juce::String& name, AppContext& context) : Document
 	centreWithSize(getWidth(), getHeight());
 
 	overlay.on_close = [this] { command_manager.commandStatusChanged(); };
-	// temp, remove the if after tests
-	new_track_dialog.on_finished = [this] {
-		close_overlay();
-
-		if (!this->context.project.tracks.empty()) {
-			auto track_id = this->context.project.tracks.front().id;
-			this->context.tracks.add_plugin(track_id, "Test Overdrive", "Builtin");
-		}
-	};
+	new_track_dialog.on_finished = [this] { close_overlay(); };
 	message_dialog.on_finished = [this] { close_overlay(); };
+	plugin_browser.on_finished = [this] { close_overlay(); };
+	main_view.plugin_chain.on_browse = [this](TrackId track, size_t position) { show_plugin_browser(track, position); };
 	main_view.track_area.on_add_track = [this] { show_new_track_dialog(); };
 	main_menu.recent_files = [this] { return this->context.session.recent.files; };
 	main_menu.can_open_recent = [this] { return is_allowed_now(command::OPEN_PROJECT) && is_available(command::OPEN_PROJECT); };
@@ -152,8 +151,10 @@ void MainWindow::timerCallback()
 	quit_after_recording();
 	release_focus_outside_text_fields();
 
-	if (overlay.is_open())
+	if (overlay.is_open()) {
 		settings_view.update();
+		plugin_browser.update();
+	}
 }
 
 void MainWindow::release_focus_outside_text_fields()
@@ -185,7 +186,7 @@ bool MainWindow::is_available(juce::CommandID id) const
 		case command::CLEAN_UP_PROJECT:
 			return !context.recorder.is_recording();
 		case command::DELETE_SELECTION:
-			return !context.selection.tracks.empty() || !context.selection.clips.empty();
+			return !context.selection.tracks.empty() || !context.selection.clips.empty() || context.selection.plugin.is_valid();
 		case command::ARM_TRACKS:
 		case command::MUTE_TRACKS:
 		case command::SOLO_TRACKS:
@@ -208,6 +209,9 @@ void MainWindow::describe_dynamic_command(juce::CommandID id, juce::ApplicationC
 
 	if (id == command::TOGGLE_MIXER)
 		info.setTicked(main_view.is_mixer_visible());
+
+	if (id == command::TOGGLE_PLUGIN_CHAIN)
+		info.setTicked(main_view.is_plugin_chain_visible());
 
 	if (id == command::TOGGLE_METRONOME)
 		info.setTicked(context.project.metronome);
@@ -260,6 +264,17 @@ void MainWindow::toggle_mixer()
 	command_manager.commandStatusChanged();
 }
 
+void MainWindow::toggle_plugin_chain()
+{
+	const auto visible = !main_view.is_plugin_chain_visible();
+
+	if (!visible)
+		context.selection.clear_chain();
+
+	main_view.set_plugin_chain_visible(visible);
+	command_manager.commandStatusChanged();
+}
+
 void MainWindow::show_settings(int page)
 {
 	settings_view.show_page(page);
@@ -271,6 +286,13 @@ void MainWindow::show_new_track_dialog()
 {
 	overlay.open("New Track", new_track_dialog, false);
 	new_track_dialog.prepare();
+	command_manager.commandStatusChanged();
+}
+
+void MainWindow::show_plugin_browser(TrackId track, size_t position)
+{
+	overlay.open("Add Effect", plugin_browser, false);
+	plugin_browser.prepare(track, position);
 	command_manager.commandStatusChanged();
 }
 

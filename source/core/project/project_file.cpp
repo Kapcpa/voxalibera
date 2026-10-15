@@ -47,9 +47,16 @@ namespace
 	{
 		Object object = new juce::DynamicObject();
 		object->setProperty("id", plugin.id.value);
-		object->setProperty("name", plugin.name);
 		object->setProperty("format", plugin.format);
+		object->setProperty("identifier", plugin.identifier);
+		object->setProperty("name", plugin.name);
+		object->setProperty("manufacturer", plugin.manufacturer);
+		object->setProperty("version", plugin.version);
 		object->setProperty("bypass", plugin.bypass);
+
+		if (!plugin.state.isEmpty())
+			object->setProperty("state", plugin.state.toBase64Encoding());
+
 		return object.get();
 	}
 
@@ -98,9 +105,13 @@ namespace
 	{
 		Plugin plugin;
 		plugin.id = PluginId{(int) read(json, "id", 0)};
-		plugin.name = read(json, "name", "").toString();
 		plugin.format = read(json, "format", "").toString();
+		plugin.identifier = read(json, "identifier", "").toString();
+		plugin.name = read(json, "name", "").toString();
+		plugin.manufacturer = read(json, "manufacturer", "").toString();
+		plugin.version = read(json, "version", "").toString();
 		plugin.bypass = (bool) read(json, "bypass", false);
+		plugin.state.fromBase64Encoding(read(json, "state", "").toString());
 		return plugin;
 	}
 
@@ -138,7 +149,7 @@ namespace
 
 	bool is_usable(const Plugin& plugin)
 	{
-		return plugin.id.is_valid() && plugin.name.isNotEmpty();
+		return plugin.id.is_valid() && plugin.format.isNotEmpty() && plugin.identifier.isNotEmpty();
 	}
 
 	void keep_valid_parts(Project& project, juce::StringArray& problems)

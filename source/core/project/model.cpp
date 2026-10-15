@@ -97,6 +97,36 @@ const Track* Project::find_track_of(ClipId id) const
 	return nullptr;
 }
 
+Plugin* Project::find_plugin(PluginId id)
+{
+	for (auto& track : tracks)
+		for (auto& plugin : track.plugins)
+			if (plugin.id == id)
+				return &plugin;
+
+	return nullptr;
+}
+
+const Plugin* Project::find_plugin(PluginId id) const
+{
+	for (const auto& track : tracks)
+		for (const auto& plugin : track.plugins)
+			if (plugin.id == id)
+				return &plugin;
+
+	return nullptr;
+}
+
+Track* Project::find_track_of(PluginId id)
+{
+	for (auto& track : tracks)
+		for (const auto& plugin : track.plugins)
+			if (plugin.id == id)
+				return &track;
+
+	return nullptr;
+}
+
 ClipId Project::allocate_clip_id()
 {
 	return ClipId{next_id++};

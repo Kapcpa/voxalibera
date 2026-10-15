@@ -16,12 +16,35 @@ void Selection::select_only(TrackId id)
 {
 	tracks = {id};
 	clips.clear();
-	++revision;
+	clear_chain();
 }
 
 void Selection::select_only(ClipId id)
 {
 	clips = {id};
+	clear_chain();
+}
+
+void Selection::select_only(PluginId id)
+{
+	clips.clear();
+	gap.reset();
+	plugin = id;
+	++revision;
+}
+
+void Selection::select_gap(size_t position)
+{
+	clips.clear();
+	plugin = {};
+	gap = position;
+	++revision;
+}
+
+void Selection::clear_chain()
+{
+	plugin = {};
+	gap.reset();
 	++revision;
 }
 
@@ -32,7 +55,7 @@ void Selection::toggle(TrackId id)
 	else
 		tracks.push_back(id);
 
-	++revision;
+	clear_chain();
 }
 
 void Selection::toggle(ClipId id)
@@ -42,14 +65,14 @@ void Selection::toggle(ClipId id)
 	else
 		clips.push_back(id);
 
-	++revision;
+	clear_chain();
 }
 
 void Selection::clear()
 {
 	tracks.clear();
 	clips.clear();
-	++revision;
+	clear_chain();
 }
 
 void Selection::forget_missing(const Project& project)
@@ -58,5 +81,8 @@ void Selection::forget_missing(const Project& project)
 	const auto removed_clips = std::erase_if(clips, [&](ClipId id) { return project.find_clip(id) == nullptr; });
 
 	if (removed_tracks + removed_clips > 0)
-		++revision;
+		clear_chain();
+
+	if (plugin.is_valid() && project.find_plugin(plugin) == nullptr)
+		clear_chain();
 }

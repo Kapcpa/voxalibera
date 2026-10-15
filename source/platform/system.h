@@ -7,6 +7,7 @@ constexpr auto APPLICATION_NAME = "voxalibera";
 juce::File app_config_directory();
 juce::File app_state_directory();
 juce::File app_data_directory();
+juce::File app_cache_directory();
 
 bool make_current_thread_realtime();
 

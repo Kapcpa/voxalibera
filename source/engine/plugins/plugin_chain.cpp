@@ -1,74 +1,45 @@
 #include "engine/plugins/plugin_chain.h"
 
-void PluginChain::prepare(const PluginProcessContext& context)
+namespace
 {
-	tail_counter_samples = 0;
-	for (auto& slot : slots)
-		if (slot.processor)
-			slot.processor->prepare(context);
+	constexpr float SILENCE = 1.0e-5f;
 }
 
-void PluginChain::reset()
+PluginChain::PluginChain(std::vector<Slot> slots) : chain(std::move(slots)), remaining_tail(longest_tail())
 {
-	tail_counter_samples = 0;
-	for (auto& slot : slots)
-		if (slot.processor)
-			slot.processor->reset();
 }
 
-void PluginChain::add_processor(std::shared_ptr<PluginProcessor> processor)
-{
-	slots.emplace_back(Slot{std::move(processor), false});
-}
-
-void PluginChain::clear()
-{
-	slots.clear();
-	tail_counter_samples = 0;
-}
-
-void PluginChain::set_bypassed(size_t index, bool bypassed)
-{
-	if (index < slots.size())
-		slots[index].bypass.store(bypassed, std::memory_order_relaxed);
-}
-
-bool PluginChain::is_bypassed(size_t index) const noexcept
-{
-	return (index < slots.size()) ? slots[index].bypass.load(std::memory_order_relaxed) : true;
-}
-
-int PluginChain::total_latency() const noexcept
+int PluginChain::total_latency() const
 {
 	int total = 0;
-	for (const auto& slot : slots)
-		if (slot.processor && !slot.bypass.load(std::memory_order_relaxed))
-			total += slot.processor->latency_samples();
+
+	for (const auto& slot : chain)
+		total += slot.processor->latency_samples();
+
 	return total;
 }
 
-void PluginChain::process(juce::AudioBuffer<float>& buffer, int num_samples)
+int PluginChain::longest_tail() const
 {
-	if (slots.empty())
+	int longest = 0;
+
+	for (const auto& slot : chain)
+		if (!slot.bypass)
+			longest = std::max(longest, slot.processor->tail_samples() + slot.processor->latency_samples());
+
+	return longest;
+}
+
+void PluginChain::process(juce::AudioBuffer<float>& buffer, int sample_count, const PluginPlayhead& playhead)
+{
+	const auto silent = buffer.getMagnitude(0, sample_count) < SILENCE;
+
+	if (silent && remaining_tail <= 0)
 		return;
 
-	const float magnitude = buffer.getMagnitude(0, num_samples);
-	const bool is_silent = (magnitude < 1e-5f);
+	remaining_tail = silent ? remaining_tail - sample_count : longest_tail();
 
-	if (is_silent) {
-		if (tail_counter_samples <= 0)
-			return;
-		tail_counter_samples -= num_samples;
-	}
-
-	for (auto& slot : slots) {
-		if (!slot.processor || slot.bypass.load(std::memory_order_relaxed))
-			continue;
-
-		slot.processor->process(buffer, num_samples);
-
-		const int tail = slot.processor->tail_samples();
-		if (!is_silent && tail > tail_counter_samples)
-			tail_counter_samples = tail;
-	}
+	for (const auto& slot : chain)
+		if (!slot.bypass)
+			slot.processor->process(buffer, sample_count, playhead);
 }

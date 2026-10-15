@@ -13,6 +13,7 @@ AppContext::AppContext() : settings(Settings::load()), devices(engine, settings)
 	disk_thread.startThread();
 	recording_thread.startThread(juce::Thread::Priority::high);
 	devices.open();
+	scanner.start(false);
 }
 
 AppContext::~AppContext()
@@ -27,6 +28,13 @@ void AppContext::update()
 	xrun_watch.update(engine.device_manager.getCurrentAudioDevice(), now);
 	recorder.update();
 	peak_builder.deliver_to(peaks);
+
+	if (scanner.update())
+		plugins.retry_missing();
+
+	if (plugins.take_changes())
+		edits.mark_changed_without_undo();
+
 	session.update(now);
 	publisher.update(now);
 }
@@ -60,10 +68,27 @@ void AppContext::toggle_recording()
 
 void AppContext::delete_selection()
 {
+	if (selection.plugin.is_valid()) {
+		remove_selected_plugin();
+		return;
+	}
+
 	if (!selection.clips.empty())
 		clips.remove_selected();
 	else
 		tracks.remove_selected();
+}
+
+void AppContext::remove_selected_plugin()
+{
+	const auto* track = project.find_track_of(selection.plugin);
+
+	if (track == nullptr)
+		return;
+
+	const auto position = (size_t) (project.find_plugin(selection.plugin) - track->plugins.data());
+	tracks.remove_plugin(selection.plugin);
+	selection.select_gap(position);
 }
 
 void AppContext::return_to_start()

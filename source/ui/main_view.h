@@ -2,6 +2,7 @@
 
 #include "core/app_context.h"
 #include "ui/mixer/mixer_view.h"
+#include "ui/plugins/plugin_chain_view.h"
 #include "ui/tracks/track_area_view.h"
 #include "ui/transport_bar.h"
 
@@ -17,6 +18,9 @@ public:
 	bool is_mixer_visible() const { return mixer.isVisible(); }
 	void set_mixer_visible(bool visible);
 
+	bool is_plugin_chain_visible() const { return plugin_chain.isVisible(); }
+	void set_plugin_chain_visible(bool visible);
+
 	void paint(juce::Graphics& graphics) override;
 	void resized() override;
 
@@ -25,6 +29,7 @@ private:
 
 public:
 	TrackAreaView track_area;
+	PluginChainView plugin_chain;
 
 private:
 	MixerView mixer;

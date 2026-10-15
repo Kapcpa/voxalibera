@@ -1,6 +1,7 @@
 #include "app/application.h"
 
 #include "core/log.h"
+#include "core/plugins/plugin_scanner.h"
 
 #include <iostream>
 
@@ -39,11 +40,17 @@ const juce::String Application::getApplicationVersion()
 
 bool Application::moreThanOneInstanceAllowed()
 {
-	return false;
+	return getCommandLineParameters().contains(SCAN_PLUGINS_FLAG);
 }
 
 void Application::initialise(const juce::String& command_line)
 {
+	if (command_line.contains(SCAN_PLUGINS_FLAG)) {
+		setApplicationReturnValue(run_plugin_scan(getCommandLineParameterArray()));
+		quit();
+		return;
+	}
+
 	if (command_line.contains(LIST_DEVICES_FLAG)) {
 		print_audio_devices();
 		quit();
@@ -59,6 +66,9 @@ void Application::initialise(const juce::String& command_line)
 
 void Application::shutdown()
 {
+	if (logger == nullptr)
+		return;
+
 	window.reset();
 	context.reset();
 	juce::LookAndFeel::setDefaultLookAndFeel(nullptr);

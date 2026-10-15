@@ -28,7 +28,7 @@ public:
 
 private:
 	void render_chunk(const EngineSnapshot& snapshot, Inputs inputs, int offset, int sample_count, Transport::Block block);
-	void render_track(const TrackPlayback& track, Inputs inputs, int offset, int sample_count, Transport::Block block);
+	void render_track(const TrackPlayback& track, Inputs inputs, int offset, int sample_count, Transport::Block block, const Tempo& tempo);
 	void add_clip(const TrackPlayback& track, const ClipPlayback& clip, std::int64_t position, int sample_count);
 	void read_clip(const ClipPlayback& clip, std::int64_t from, int count, int destination);
 	void read_resampled(const ClipPlayback& clip, std::int64_t from, int count, int destination);

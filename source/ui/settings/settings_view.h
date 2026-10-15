@@ -3,6 +3,7 @@
 #include "core/app_context.h"
 #include "ui/settings/audio_page.h"
 #include "ui/settings/interface_page.h"
+#include "ui/settings/plugin_page.h"
 #include "ui/settings/settings_parts.h"
 
 #include <juce_gui_basics/juce_gui_basics.h>
@@ -14,6 +15,7 @@ class SettingsView : public juce::Component
 public:
 	static constexpr int AUDIO_PAGE = 0;
 	static constexpr int INTERFACE_PAGE = 1;
+	static constexpr int PLUGIN_PAGE = 2;
 
 	explicit SettingsView(AppContext& context);
 
@@ -26,9 +28,11 @@ public:
 private:
 	AudioPage audio_page;
 	InterfacePage interface_page;
+	PluginPage plugin_page;
 	SidebarButton audio_button{"Audio"};
 	SidebarButton interface_button{"Interface"};
-	std::array<SettingsPage*, 2> pages{&audio_page, &interface_page};
-	std::array<SidebarButton*, 2> buttons{&audio_button, &interface_button};
+	SidebarButton plugin_button{"Plugins"};
+	std::array<SettingsPage*, 3> pages{&audio_page, &interface_page, &plugin_page};
+	std::array<SidebarButton*, 3> buttons{&audio_button, &interface_button, &plugin_button};
 	int current_page = AUDIO_PAGE;
 };

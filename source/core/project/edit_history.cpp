@@ -23,6 +23,23 @@ namespace
 		source_clips.erase(clip);
 	}
 
+	void insert_plugin(Track& track, const Plugin& plugin, size_t position)
+	{
+		track.plugins.insert(track.plugins.begin() + (std::ptrdiff_t) std::min(position, track.plugins.size()), plugin);
+	}
+
+	void erase_plugin(Project& project, PluginId id)
+	{
+		std::erase_if(project.find_track_of(id)->plugins, [id](const Plugin& plugin) { return plugin.id == id; });
+	}
+
+	void relocate_plugin(Project& project, PluginId id, TrackId target, size_t position)
+	{
+		const auto plugin = *project.find_plugin(id);
+		erase_plugin(project, id);
+		insert_plugin(*project.find_track(target), plugin, position);
+	}
+
 	void apply_all(const Transaction& transaction, Project& project)
 	{
 		for (const auto& operation : transaction.operations)
@@ -130,51 +147,53 @@ void Edit::move_clip(ClipId id, TrackId target)
 	record({[id, target](Project& project) { transfer_clip(project, id, target); }, [id, source_id](Project& project) { transfer_clip(project, id, source_id); }});
 }
 
-PluginId Edit::add_plugin(TrackId track_id, Plugin plugin)
+PluginId Edit::add_plugin(TrackId track_id, Plugin plugin, size_t position)
 {
-	if (plugin.id == PluginId{})
-		plugin.id = current_project().allocate_plugin_id();
+	if (current_project().find_track(track_id) == nullptr)
+		return {};
 
+	plugin.id = current_project().allocate_plugin_id();
 	const auto id = plugin.id;
 
-	record({[track_id, plugin](Project& target) {
-				if (auto* track = target.find_track(track_id))
-					track->plugins.push_back(plugin);
-			},
-			[track_id, id](Project& target) {
-				if (auto* track = target.find_track(track_id))
-					std::erase_if(track->plugins, [id](const Plugin& p) { return p.id == id; });
-			}});
+	record({
+		[track_id, plugin, position](Project& target) { insert_plugin(*target.find_track(track_id), plugin, position); },
+		[id](Project& target) { erase_plugin(target, id); },
+	});
 
 	return id;
 }
 
-void Edit::remove_plugin(TrackId track_id, PluginId plugin_id)
+void Edit::remove_plugin(PluginId id)
 {
-	const auto* track = current_project().find_track(track_id);
+	const auto* track = current_project().find_track_of(id);
 
 	if (track == nullptr)
 		return;
 
-	const auto it = std::find_if(track->plugins.begin(), track->plugins.end(), [plugin_id](const Plugin& p) { return p.id == plugin_id; });
+	const auto track_id = track->id;
+	const auto* removed = current_project().find_plugin(id);
+	const auto position = (size_t) (removed - track->plugins.data());
 
-	if (it == track->plugins.end())
+	record({
+		[id](Project& target) { erase_plugin(target, id); },
+		[track_id, plugin = *removed, position](Project& target) { insert_plugin(*target.find_track(track_id), plugin, position); },
+	});
+}
+
+void Edit::move_plugin(PluginId id, TrackId target, size_t position)
+{
+	const auto* source = current_project().find_track_of(id);
+
+	if (source == nullptr || current_project().find_track(target) == nullptr)
 		return;
 
-	const auto plugin = *it;
-	const auto index = (size_t) std::distance(track->plugins.begin(), it);
+	const auto source_id = source->id;
+	const auto source_position = (size_t) (current_project().find_plugin(id) - source->plugins.data());
 
-	record({[track_id, plugin_id](Project& target) {
-				if (auto* t = target.find_track(track_id))
-					std::erase_if(t->plugins, [plugin_id](const Plugin& p) { return p.id == plugin_id; });
-			},
-			[track_id, plugin, index](Project& target) {
-				if (auto* t = target.find_track(track_id)) {
-					const auto offset = static_cast<std::ptrdiff_t>(std::min(index, t->plugins.size()));
-					const auto pos = t->plugins.begin() + offset;
-					t->plugins.insert(pos, plugin);
-				}
-			}});
+	record({
+		[id, target, position](Project& project) { relocate_plugin(project, id, target, position); },
+		[id, source_id, source_position](Project& project) { relocate_plugin(project, id, source_id, source_position); },
+	});
 }
 
 void Edit::commit()

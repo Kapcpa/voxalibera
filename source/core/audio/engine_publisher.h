@@ -1,7 +1,7 @@
 #pragma once
 
-#include "core/media/audio_plugin_pool.h"
 #include "core/media/playback_files.h"
+#include "core/plugins/plugin_pool.h"
 #include "core/project/model.h"
 #include "engine/audio_engine.h"
 
@@ -12,7 +12,7 @@
 class EnginePublisher
 {
 public:
-	EnginePublisher(AudioEngine& engine, const Project& project, AudioFilePool& files, AudioPluginPool& plugins, ReadAhead& read_ahead);
+	EnginePublisher(AudioEngine& engine, const Project& project, AudioFilePool& files, PluginPool& plugins, ReadAhead& read_ahead);
 
 	void update(double now);
 	int meter_of(TrackId id) const;
@@ -20,7 +20,7 @@ public:
 
 private:
 	void publish(double now);
-	TrackPlayback build_track(const Track& track, bool solo_active, double sample_rate, int buffer_size, std::vector<ReadAheadRegion>& regions);
+	TrackPlayback build_track(const Track& track, bool solo_active, double sample_rate, std::vector<ReadAheadRegion>& regions);
 	std::optional<ClipPlayback> build_clip(const Clip& clip, double device_rate);
 	std::shared_ptr<const ResamplingKernel> resampler_for(double step);
 	int assign_meter(TrackId id);
@@ -29,9 +29,10 @@ private:
 	AudioEngine& engine;
 	const Project& project;
 	AudioFilePool& files;
-	AudioPluginPool& plugins;
+	PluginPool& plugins;
 	ReadAhead& read_ahead;
 	int published_revision = -1;
+	int published_plugin_revision = 0;
 	double published_rate = 0.0;
 	bool files_missing = false;
 	double mismatched_rate = 0.0;

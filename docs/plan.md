@@ -20,7 +20,7 @@ Short design notes, decided once and then followed everywhere.
 | Audio | renders the current engine snapshot | allocates, locks, logs, touches files |
 | Disk read | reads audio files ahead of the playhead into ring buffers | touches the model |
 | Disk write | writes recorded audio from ring buffers to files | touches the model |
-| Plugin scanner | separate process, so a crashing plugin can't take the app down | |
+| Plugin scanner | runs the app binary as a separate process (`--scan-plugins`), so a crashing plugin can't take the app down | |
 
 ### Project model (`core/`)
 
@@ -48,7 +48,7 @@ Short design notes, decided once and then followed everywhere.
 
 Full design: [projects.md](projects.md). Where the installed app and the user's files live: [distribution.md](distribution.md).
 
-- A project is a folder: `<name>.vxl` (readable JSON, kebab-case keys) plus `audio/`, `plugins/`, `backups/`, `autosave/`, `cache/`.
+- A project is a folder: `<name>.vxl` (readable JSON, kebab-case keys) plus `audio/`, `backups/`, `autosave/`, `cache/`.
 - Saving uses temporary-file-then-rename (already the rule). Autosave every 5 minutes to `autosave/autosave.vxl`, written off the message thread; a `.lock` file detects crashes.
 - Opening never fails because something is missing: missing audio files and plugins become placeholders that keep their data.
 

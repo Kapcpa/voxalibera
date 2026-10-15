@@ -16,7 +16,6 @@ How a project lives on disk and how it's rebuilt when opened. Part of the [plan]
 My Song/
   my-song.vxl              the project: readable JSON
   audio/                   recorded takes and imported audio, referenced by the project
-  plugins/                 plugin states, one binary file per plugin instance
   backups/                 previous saves, newest last (rolling, e.g. the last 10)
   autosave/                autosaved project, written every few minutes while there are unsaved changes
   cache/                   waveform overviews; safe to delete, rebuilt automatically
@@ -47,16 +46,16 @@ JSON with `kebab-case` keys, stable key order and pretty printing, so diffs show
       "pan": 0.0,
       "mute": false,
       "solo": false,
-      "inserts": [
+      "plugins": [
         {
           "id": 12,
           "format": "VST3",
-          "plugin": "Neural DSP Archetype",
-          "manufacturer": "Neural DSP",
           "identifier": "VST3-Archetype-...",
+          "name": "Neural DSP Archetype",
+          "manufacturer": "Neural DSP",
           "version": "3.1.0",
           "bypass": false,
-          "state-file": "plugins/12.bin"
+          "state": "1024.base64..."
         }
       ],
       "clips": [
@@ -96,8 +95,9 @@ JSON with `kebab-case` keys, stable key order and pretty printing, so diffs show
 
 ## Plugins
 
-- Each plugin instance stores **who it is** (format, name, manufacturer, unique identifier, version) in the JSON and **its state** (the binary blob the plugin gives us) in `plugins/<id>.bin`. Keeping blobs out of the JSON keeps it readable and diffable.
-- **Missing plugin:** a placeholder takes its place in the chain, passes audio through unchanged and keeps the identifier and state file. When the plugin is installed later, it loads with its state.
+- Each plugin instance stores **who it is** (format, identifier, name, manufacturer, version) and **its state** (the binary blob the plugin gives us, base64 under `state`) in the JSON. `format` + `identifier` find the plugin: for VST3/LV2 the identifier is JUCE's `PluginDescription::createIdentifierString()`, for our own effects (`builtin`) a kebab-case name like `test-drive`.
+- The state lives inside the `.vxl` rather than in separate files so that a save, an autosave and every backup are each one complete, consistent file: separate `plugins/<id>.bin` files would be overwritten by the next save while older backups still pointed at them. The cost is one long line per plugin, which still diffs line by line.
+- **Missing plugin:** its track plays as if the plugin weren't there; the model keeps its identity and state untouched, so it saves back unchanged. When the plugin is installed later, it loads with its state.
 - **Different version installed:** load it with the saved state; most plugins handle their own old states. Note the version change in the log.
 - **Plugin that crashes on load:** marked as failed for this session, treated like a missing plugin, reported to the user; the project still opens.
 
@@ -105,7 +105,7 @@ JSON with `kebab-case` keys, stable key order and pretty printing, so diffs show
 
 1. Write the new project file to a temporary file, then rename it over the old one (already the rule for every file we write).
 2. Before replacing it, the previous version moves into `backups/` with a timestamp; only the newest N are kept.
-3. Plugin states are written next to it in the same way.
+3. Just before writing, the live state of every plugin is copied into the model (`PluginPool::store_states`), so the file always has the current sound.
 4. **Autosave:** every few minutes, only when there are unsaved changes, into `autosave/`. Never overwrites the real project file.
 5. Saving runs on the message thread from a snapshot of the model; the audio keeps playing.
 

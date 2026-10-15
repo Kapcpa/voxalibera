@@ -26,9 +26,11 @@ public:
 	void toggle_selected(bool Track::* flag, const juce::String& action_name);
 	juce::String next_default_name() const;
 
-	PluginId add_plugin(TrackId id, const juce::String& name, const juce::String& format);
-	void remove_plugin(TrackId track_id, PluginId plugin_id);
-	void toggle_plugin_bypass(TrackId track_id, PluginId plugin_id);
+	PluginId add_plugin(TrackId id, const Plugin& plugin);
+	PluginId insert_plugin(TrackId id, const Plugin& plugin, size_t position);
+	void remove_plugin(PluginId id);
+	void move_plugin(PluginId id, TrackId target, size_t position);
+	void toggle_plugin_bypass(PluginId id);
 
 private:
 	size_t insert_position() const;

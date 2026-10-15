@@ -39,6 +39,18 @@ namespace
 		clip.gain_db = 1.5f;
 		guitar.clips.push_back(clip);
 
+		Plugin amp;
+		amp.id = project.allocate_plugin_id();
+		amp.format = "VST3";
+		amp.identifier = "VST3-Amp-1a2b3c4d-5e6f7a8b";
+		amp.name = "Amp";
+		amp.manufacturer = "Someone";
+		amp.version = "1.2.0";
+		amp.bypass = true;
+		const char state[] = {0, 1, 2, '"', '\\', 127};
+		amp.state.append(state, sizeof(state));
+		guitar.plugins.push_back(amp);
+
 		Track vocal;
 		vocal.id = project.allocate_track_id();
 		vocal.name = "Vocal";
@@ -84,6 +96,15 @@ TEST_CASE("a project survives writing and reading back")
 	CHECK(guitar.clips[0].source_offset == 512);
 	CHECK(guitar.clips[0].length == 96000);
 	CHECK(near(guitar.clips[0].gain_db, 1.5));
+	REQUIRE(guitar.plugins.size() == 1);
+	CHECK(guitar.plugins[0].id == source.plugins[0].id);
+	CHECK(guitar.plugins[0].format == "VST3");
+	CHECK(guitar.plugins[0].identifier == source.plugins[0].identifier);
+	CHECK(guitar.plugins[0].name == "Amp");
+	CHECK(guitar.plugins[0].manufacturer == "Someone");
+	CHECK(guitar.plugins[0].version == "1.2.0");
+	CHECK(guitar.plugins[0].bypass);
+	CHECK(guitar.plugins[0].state == source.plugins[0].state);
 
 	CHECK_FALSE(project.tracks[1].input.is_connected());
 	CHECK(project.tracks[1].mute);

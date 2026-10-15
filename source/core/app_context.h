@@ -5,9 +5,11 @@
 #include "core/audio/recorder.h"
 #include "core/editors.h"
 #include "core/log.h"
-#include "core/media/audio_plugin_pool.h"
 #include "core/media/peaks.h"
 #include "core/media/playback_files.h"
+#include "core/plugins/plugin_library.h"
+#include "core/plugins/plugin_pool.h"
+#include "core/plugins/plugin_scanner.h"
 #include "core/project/edit_history.h"
 #include "core/project/model.h"
 #include "core/project/project_session.h"
@@ -25,6 +27,7 @@ struct AppContext
 	void toggle_playback();
 	void toggle_recording();
 	void delete_selection();
+	void remove_selected_plugin();
 	void return_to_start();
 	void locate(std::int64_t sample);
 	void toggle_metronome();
@@ -36,6 +39,7 @@ struct AppContext
 	void redo();
 
 	Settings settings;
+	PluginLibrary library;
 	juce::TimeSliceThread disk_thread{"Disk"};
 	juce::TimeSliceThread recording_thread{"Recording writer"};
 	AudioEngine engine;
@@ -48,10 +52,11 @@ struct AppContext
 	ClipEditor clips{project, edits, selection};
 	PeakStore peaks;
 	PeakBuilder peak_builder;
-	ProjectSession session{engine, devices, project, edits, selection, peaks, peak_builder, disk_thread};
+	PluginPool plugins{library};
+	PluginScanner scanner{library, settings};
+	ProjectSession session{engine, devices, project, edits, selection, peaks, peak_builder, plugins, disk_thread};
 	Recorder recorder{engine, project, edits, selection, peaks, recording_thread};
 	AudioFilePool files;
-	AudioPluginPool plugins;
 	ReadAhead read_ahead{engine.transport};
 	EnginePublisher publisher{engine, project, files, plugins, read_ahead};
 };

@@ -14,7 +14,7 @@ namespace
 	constexpr int SIDEBAR_RADIO_GROUP = 1;
 }
 
-SettingsView::SettingsView(AppContext& context) : audio_page(context), interface_page(context)
+SettingsView::SettingsView(AppContext& context) : audio_page(context), interface_page(context), plugin_page(context)
 {
 	for (size_t position = 0; position < pages.size(); ++position) {
 		buttons[position]->setRadioGroupId(SIDEBAR_RADIO_GROUP);

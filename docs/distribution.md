@@ -16,8 +16,6 @@ Where an installed Voxalibera keeps its files, where it keeps the user's files, 
 /usr/
   bin/
     voxalibera                                   the app
-  lib/voxalibera/
-    voxalibera-plugin-scanner                    helper process that scans plugins (not on PATH)
   share/
     voxalibera/
       sounds/                                    metronome clicks, test tones
@@ -57,7 +55,7 @@ Not a goal now, but the same three kinds of files map cleanly onto Windows and m
 | `~/.config/voxalibera/` | `settings.json` (devices, interface controls, window layout), `keys.json` (remapped shortcuts), user themes | resets preferences |
 | `~/.local/share/voxalibera/` | user templates, user presets, user sounds | loses user content |
 | `~/.local/state/voxalibera/` | `voxalibera.log`, recent projects list, crash reports | yes |
-| `~/.cache/voxalibera/` | plugin scan results and blacklist | yes, rescans |
+| `~/.cache/voxalibera/` | plugin scan results and blacklist (`plugins.xml`) | yes, rescans |
 
 Each honours its `XDG_*_HOME` variable. Projects never live here.
 

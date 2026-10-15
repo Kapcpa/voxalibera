@@ -27,4 +27,5 @@ struct Settings
 	InputRouting input_routing = InputRouting::left_to_both;
 
 	std::map<juce::String, HardwareControlValues> hardware_controls;
+	juce::StringArray plugin_folders;
 };

@@ -25,13 +25,13 @@ void MixRenderer::render_chunk(const EngineSnapshot& snapshot, Inputs inputs, in
 	master_buffer.clear(0, sample_count);
 
 	for (const auto& track : snapshot.tracks)
-		render_track(track, inputs, offset, sample_count, block);
+		render_track(track, inputs, offset, sample_count, block, snapshot.tempo);
 
 	master_buffer.applyGain(0, sample_count, snapshot.master_gain);
 	master_meter.measure(master_buffer.getArrayOfReadPointers(), master_buffer.getNumChannels(), sample_count);
 }
 
-void MixRenderer::render_track(const TrackPlayback& track, Inputs inputs, int offset, int sample_count, Transport::Block block)
+void MixRenderer::render_track(const TrackPlayback& track, Inputs inputs, int offset, int sample_count, Transport::Block block, const Tempo& tempo)
 {
 	track_buffer.clear(0, sample_count);
 
@@ -42,11 +42,11 @@ void MixRenderer::render_track(const TrackPlayback& track, Inputs inputs, int of
 	if (track.monitors_input)
 		add_input(track, inputs, offset, sample_count);
 
-	if (track.plugins != nullptr)
-		track.plugins->process(track_buffer, sample_count);
-
 	if (track.channels == 1)
 		track_buffer.copyFrom(RIGHT, 0, track_buffer, LEFT, 0, sample_count);
+
+	if (track.plugins != nullptr)
+		track.plugins->process(track_buffer, sample_count, {block.playing, block.recording, block.start, tempo});
 
 	track_buffer.applyGain(LEFT, 0, sample_count, track.audible ? track.gains.left : 0.0f);
 	track_buffer.applyGain(RIGHT, 0, sample_count, track.audible ? track.gains.right : 0.0f);
