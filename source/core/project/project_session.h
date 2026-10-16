@@ -1,8 +1,8 @@
 #pragma once
 
 #include "core/audio/device_session.h"
-#include "core/plugins/plugin_pool.h"
 #include "core/media/peaks.h"
+#include "core/plugins/plugin_pool.h"
 #include "core/project/edit_history.h"
 #include "core/project/project_recovery.h"
 #include "core/project/recent_projects.h"

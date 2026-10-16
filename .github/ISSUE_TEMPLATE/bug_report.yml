@@ -1,0 +1,25 @@
+name: Bug report
+description: Something broken, crashing or sounding wrong
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did and what happened instead.
+    validations:
+      required: true
+  - type: input
+    id: setup
+    attributes:
+      label: Setup
+      description: Distro, audio interface, JACK or ALSA, buffer size.
+      placeholder: Arch, Scarlett 2i2, JACK, 128 samples
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Log
+      description: The end of ~/.local/state/voxalibera/voxalibera.log
+      render: text

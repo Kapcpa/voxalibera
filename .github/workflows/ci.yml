@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    steps:
+      - run: pacman -Syu --noconfirm --needed clang git
+      - uses: actions/checkout@v4
+      - run: git ls-files '*.cpp' '*.h' | xargs clang-format --dry-run --Werror
+
+  build:
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    steps:
+      - run: pacman -Syu --noconfirm --needed base-devel cmake ninja git pkgconf alsa-lib systemd-libs pipewire-jack freetype2 fontconfig libx11 libxrandr libxinerama libxcursor libxext
+      - uses: actions/checkout@v4
+      - run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+      - run: cmake --build build --target voxalibera voxalibera_tests
+      - run: ./build/tests/voxalibera_tests_artefacts/Release/voxalibera_tests

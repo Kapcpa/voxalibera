@@ -1,12 +1,10 @@
 # Plan
 
-Rough development plan. Background in [research.md](research.md) and [direction.md](direction.md). Each milestone ends with something usable, so the app is worth opening at every step.
+Rough development plan. Each milestone ends with something usable, so the app is worth opening at every step.
 
 ## Where we are
 
-- Low-latency audio I/O through JACK (PipeWire) or direct ALSA, with device borrowing, device quirks handled, hardware controls per interface.
-- Main window skeleton (transport, tracks, mixer zones), menu bar driven by commands, settings dialog, shared theme.
-- Logging, sanitizer debug build, base tests, scripts.
+Milestones 1 and 2 are done: recording and playback of mono and stereo tracks, timeline, mixer, projects with autosave and crash recovery, VST3 and LV2 effect chains with latency compensation. Next is milestone 3.
 
 ## Architecture to settle before milestone 1
 
@@ -111,13 +109,12 @@ The core loop: arm a track, record, hear it back, record again.
 - Sends, buses, groups; latency compensation extended to all of them.
 - Presets for effects: save and load a plugin's state as a file, factory presets for our own effects.
 
-### 7. Ready to open up
+### 7. Ready for users
 
 - Key remapping UI and command palette.
 - A proper notification system for errors and warnings (non-blocking, with details on demand) instead of the plain message dialog and the transport bar note.
 - Plugin crash isolation report.
-- Packaging (AUR, Flatpak or AppImage), a website, contributor docs.
-- Make the GitHub repository public.
+- Packaging (AUR, Flatpak or AppImage), a website.
 
 ### Later
 
@@ -127,8 +124,13 @@ Clip launcher (session grid), CLAP, out-of-process plugin sandboxing, time-stret
 
 ## Decisions
 
+- What it's meant to be: Logic's recording workflow and clarity with Ableton's clip-based side, recording first. Plug in, arm, record, listen, record again, keep the best take.
+- One window with zones that can be toggled: transport on top, tracks in the middle, mixer at the bottom. Effect chains are not Logic's sidebar inspector; they live in a panel above the mixer.
+- Clips are objects of their own, not just positions on a timeline, so a clip launcher can be added later without rebuilding the model.
+- AGPLv3, which JUCE's free licence requires.
 - Effects come before full editing: recording guitar through an amp simulator matters more early on than trimming clips. Selecting, moving and deleting clips is already in milestone 1.
 - Tempo, bars and a metronome are part of milestone 1; recording to a click is the normal case.
+- The repository goes public after milestone 2, quietly, for hardware feedback and people who want to follow along; the real announcement comes after milestone 3, once a whole song can be made and exported.
 - Sends, buses and presets wait until after automation: inserts cover the recording workflow, and they matter most once other people use the app. Latency compensation between tracks stays in milestone 2, since takes recorded through effects with latency would otherwise drift apart.
 - Tracks are mono or stereo, chosen when created. Splitting or swapping channels happens later as clip operations.
 - Recording: Ctrl+R records (R arms the selected track). If no track is armed, recording arms the selected one. A count-in toggle comes later.
