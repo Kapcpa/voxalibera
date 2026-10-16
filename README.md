@@ -36,3 +36,8 @@ Contributing: [CONTRIBUTING.md](CONTRIBUTING.md).
 ## License
 
 Copyright (C) 2026 Kapcpa. AGPL-3.0-or-later, see [LICENSE](LICENSE).
+
+Additional terms under section 7 of the AGPL:
+
+- (b) Copies and modified versions must keep the copyright notice and the link to this repository in the About dialog.
+- (e) The license grants no rights to the Voxalibera name or logo. Modified versions that are distributed must use a different name.

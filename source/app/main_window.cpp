@@ -24,6 +24,7 @@ namespace
 	constexpr int MIN_HEIGHT = 700;
 	constexpr int MAX_SIZE = 10000;
 	const juce::String UNSAVED_MARK = juce::String::fromUTF8(" \xe2\x80\xa2");
+	constexpr auto ABOUT_TEXT = "Open-source DAW for Linux.\nCopyright (C) 2026 Kapcpa, AGPL-3.0-or-later.\nhttps://github.com/Kapcpa/voxalibera";
 }
 
 WindowContent::WindowContent(juce::MenuBarModel& menu, MainView& main_view, ModalOverlay& overlay) : menu_bar(&menu), main_view(main_view), overlay(overlay)
@@ -337,7 +338,7 @@ void MainWindow::close_overlay()
 
 void MainWindow::show_about()
 {
-	show_message("About " + juce::JUCEApplication::getInstance()->getApplicationName(), "Version " + juce::JUCEApplication::getInstance()->getApplicationVersion() + "\nOpen-source DAW for Linux, AGPLv3.", {{"OK", {}}});
+	show_message("About " + juce::JUCEApplication::getInstance()->getApplicationName(), "Version " + juce::JUCEApplication::getInstance()->getApplicationVersion() + "\n" + ABOUT_TEXT, {{"OK", {}}});
 }
 
 void MainWindow::show_message(const juce::String& title, const juce::String& message, std::vector<MessageChoice> choices)
