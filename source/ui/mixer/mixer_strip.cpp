@@ -84,12 +84,16 @@ MixerStrip::MixerStrip(AppContext& context, TrackId id) : context(context), id(i
 	style_toggle(solo_button, theme::SOLO);
 	mute_button.onClick = [this] { this->context.tracks.toggle(this->id, &Track::mute, "Mute Track"); };
 	solo_button.onClick = [this] { this->context.tracks.toggle(this->id, &Track::solo, "Solo Track"); };
+	plugins_button.onClick = [this] {
+		if (on_show_plugins)
+			on_show_plugins(this->id);
+	};
 
 	for (auto* child : std::initializer_list<juce::Component*>{&name, &volume_value, &fader, &meter_view})
 		addAndMakeVisible(child);
 
 	if (!is_master())
-		for (auto* child : std::initializer_list<juce::Component*>{&pan, &pan_value, &mute_button, &solo_button})
+		for (auto* child : std::initializer_list<juce::Component*>{&pan, &pan_value, &plugins_button, &mute_button, &solo_button})
 			addAndMakeVisible(child);
 }
 
@@ -121,6 +125,7 @@ void MixerStrip::show_track(const Track& track, bool is_selected, LevelMeter* me
 	name.setText(track.name, juce::dontSendNotification);
 	mute_button.setToggleState(track.mute, juce::dontSendNotification);
 	solo_button.setToggleState(track.solo, juce::dontSendNotification);
+	plugins_button.show(track);
 
 	if (!pan.isMouseButtonDown())
 		pan.setValue(track.pan, juce::dontSendNotification);
@@ -178,6 +183,8 @@ void MixerStrip::resized()
 	const auto button_width = (buttons.getWidth() - BUTTON_GAP) / 2;
 	mute_button.setBounds(buttons.removeFromLeft(button_width));
 	solo_button.setBounds(buttons.removeFromRight(button_width));
+	area.removeFromBottom(BUTTON_GAP);
+	plugins_button.setBounds(area.removeFromBottom(BUTTON_HEIGHT));
 	area.removeFromBottom(GAP);
 
 	pan.setBounds(area.removeFromTop(PAN_SIZE).withSizeKeepingCentre(PAN_SIZE, PAN_SIZE));

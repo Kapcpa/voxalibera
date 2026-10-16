@@ -5,6 +5,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
+#include <functional>
 #include <map>
 #include <memory>
 
@@ -16,6 +17,8 @@ public:
 	void update();
 	void paint(juce::Graphics& graphics) override;
 	void resized() override;
+
+	std::function<void(TrackId)> on_show_plugins;
 
 private:
 	void sync_strips();

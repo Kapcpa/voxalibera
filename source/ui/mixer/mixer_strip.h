@@ -1,9 +1,12 @@
 #pragma once
 
 #include "core/app_context.h"
+#include "ui/parts/plugins_button.h"
 #include "ui/parts/meter_view.h"
 
 #include <juce_gui_basics/juce_gui_basics.h>
+
+#include <functional>
 
 class MixerStrip : public juce::Component
 {
@@ -20,6 +23,8 @@ public:
 	void paint(juce::Graphics& graphics) override;
 	void resized() override;
 	void mouseDown(const juce::MouseEvent& event) override;
+
+	std::function<void(TrackId)> on_show_plugins;
 
 private:
 	void set_volume(float volume_db);
@@ -39,4 +44,5 @@ private:
 	MeterView meter_view{MeterView::Orientation::vertical};
 	juce::TextButton mute_button{"M"};
 	juce::TextButton solo_button{"S"};
+	PluginsButton plugins_button;
 };

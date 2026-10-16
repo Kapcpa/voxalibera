@@ -11,7 +11,7 @@ class PluginSlot : public juce::Component
 public:
 	PluginSlot(AppContext& context, const Plugin& plugin);
 
-	void show(const Plugin& plugin, bool selected, bool missing);
+	void show(const Plugin& plugin, bool selected, bool missing, bool chain_bypassed);
 	PluginId id() const { return plugin_data.id; }
 
 	void paint(juce::Graphics& graphics) override;
@@ -30,6 +30,7 @@ private:
 	Plugin plugin_data;
 	bool is_selected = false;
 	bool is_missing = false;
+	bool is_chain_bypassed = false;
 	bool dragging = false;
 
 	juce::TextButton bypass_button;

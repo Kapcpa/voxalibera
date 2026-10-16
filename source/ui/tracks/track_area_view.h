@@ -22,6 +22,7 @@ public:
 	void mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel) override;
 
 	std::function<void()> on_add_track;
+	std::function<void(TrackId)> on_show_plugins;
 
 private:
 	void sync_headers();

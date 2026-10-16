@@ -54,6 +54,7 @@ private:
 	void release_focus_outside_text_fields();
 	void toggle_mixer();
 	void toggle_plugin_chain();
+	void show_plugins_of(TrackId track);
 	void show_settings(int page);
 	void show_about();
 	void show_message(const juce::String& title, const juce::String& message, std::vector<MessageChoice> choices);

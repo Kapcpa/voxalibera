@@ -34,6 +34,7 @@ private:
 	juce::TextButton add_button{"Add"};
 	juce::TextButton open_button{"Open"};
 	juce::TextButton remove_button{"Remove"};
+	juce::TextButton bypass_button{"Bypass"};
 	PluginWindows windows{context};
 	int shown_project_revision = -1;
 	int shown_selection_revision = -1;

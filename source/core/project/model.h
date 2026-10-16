@@ -90,6 +90,7 @@ struct Track
 	bool armed = false;
 	bool mute = false;
 	bool solo = false;
+	bool plugins_bypassed = false;
 	float volume_db = 0.0f;
 	float pan = 0.0f;
 	std::vector<Clip> clips;

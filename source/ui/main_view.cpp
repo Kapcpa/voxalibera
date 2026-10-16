@@ -19,6 +19,11 @@ MainView::MainView(AppContext& context) : transport_bar(context), track_area(con
 	addAndMakeVisible(mixer);
 	addAndMakeVisible(plugin_chain);
 
+	track_area.on_show_plugins = mixer.on_show_plugins = [this](TrackId id) {
+		if (on_show_plugins)
+			on_show_plugins(id);
+	};
+
 	setSize(WIDTH, HEIGHT);
 }
 

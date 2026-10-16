@@ -26,8 +26,14 @@ PluginChainView::PluginChainView(AppContext& context) : context(context)
 	};
 	open_button.onClick = [this] { open(this->context.selection.plugin); };
 	remove_button.onClick = [this] { this->context.remove_selected_plugin(); };
+	bypass_button.onClick = [this] {
+		if (const auto* track = shown_track())
+			this->context.tracks.toggle(track->id, &Track::plugins_bypassed, "Bypass Effects");
+	};
+	bypass_button.setColour(juce::TextButton::buttonOnColourId, theme::BYPASS);
+	bypass_button.setColour(juce::TextButton::textColourOnId, theme::WINDOW_BACKGROUND);
 
-	for (auto* button : {&add_button, &open_button, &remove_button})
+	for (auto* button : {&add_button, &open_button, &remove_button, &bypass_button})
 		addAndMakeVisible(button);
 }
 
@@ -77,6 +83,8 @@ void PluginChainView::refresh()
 	add_button.setEnabled(track != nullptr);
 	open_button.setEnabled(plugin_selected && context.plugins.find_instance(context.selection.plugin) != nullptr);
 	remove_button.setEnabled(plugin_selected);
+	bypass_button.setEnabled(track != nullptr);
+	bypass_button.setToggleState(track != nullptr && track->plugins_bypassed, juce::dontSendNotification);
 
 	if (track != nullptr) {
 		row.show(*track);
@@ -135,7 +143,7 @@ void PluginChainView::resized()
 	auto area = getLocalBounds();
 	auto menu = area.removeFromRight(MENU_WIDTH).reduced(MENU_PADDING);
 
-	for (auto* button : {&add_button, &open_button, &remove_button}) {
+	for (auto* button : {&add_button, &open_button, &remove_button, &bypass_button}) {
 		button->setBounds(menu.removeFromTop(BUTTON_HEIGHT));
 		menu.removeFromTop(BUTTON_GAP);
 	}

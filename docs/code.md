@@ -77,7 +77,9 @@ Everything the audio thread touches. Nothing here allocates, locks or touches fi
 - `passthrough` - the test monitor: input straight to output, bypassing tracks.
 - `plugins/plugin_processor` - `PluginProcessor`, what the engine needs from any effect: prepare, process (with a `PluginPlayhead`), state, latency, tail, its editor, and a change counter (`mark_changed()`) for unsaved changes.
 - `plugins/plugin_chain` - `PluginChain`: a track's effects in order with their bypass flags, immutable once built; sleeps while the input is silent and the tails have ended.
-- `plugins/builtin_plugins` - our own effects (format `builtin`) and `create_builtin_plugin(identifier)`.
+- `plugins/builtin/builtin_plugins` - the list of our own effects (format `builtin`) and `create_builtin_plugin(identifier)`.
+- `plugins/builtin/builtin_processor` - `BuiltinProcessor`, the base of our effects: parameters declared with `add_parameter`, read on the audio thread with `value()`, saved as JSON by key.
+- `plugins/builtin/test_drive` - a tanh drive with drive, mix and output; the example to copy for new effects.
 - `plugins/hosted_plugin` - `HostedPlugin`: a VST3 or LV2 plugin behind `PluginProcessor` (channel layout, playhead, state, change notifications, editor).
 
 `transport.play()` / `stop()` / `record()` / `locate(sample)` - safe to call from the UI; applied at the next audio block.
@@ -99,23 +101,25 @@ Views. They read state every frame and call into `core/` on user input; they nev
 
 - `main_view` - the main window's zones: transport bar, tracks area, mixer.
 - `mixer/mixer_view` - the master strip on the left, then one strip per track, scrolling sideways.
-- `mixer/mixer_strip` - pan, values, fader with meter, mute, solo and a colour name plate; the master keeps the same sections so all faders line up.
+- `mixer/mixer_strip` - pan, values, fader with meter, FX, mute, solo and a colour name plate; the master keeps the same sections so all faders line up.
 - `transport_bar` - play, stop, record, position (or the count-in beats), tempo, time signature, metronome, count-in, and a warning when clips don't match the device's sample rate.
 - `parts/modal_overlay` - dims the window and shows a dialog in the middle.
 - `parts/message_dialog` - a message with a row of buttons (Save changes, problems, About), shown in the overlay.
 - `theme` - all colours, and `ThemeLookAndFeel`, which applies them to every JUCE widget and draws our own faders and knobs.
+- `parts/plugins_button` - the FX button of track headers and mixer strips: lit when the track has effects, orange when they are bypassed.
 - `parts/meter_view` - draws a `LevelMeter`, horizontally with labels (settings) or vertically (mixer).
 - `tracks/track_area_view` - headers, ruler and timeline together; scrolling, zoom, following the playhead.
-- `tracks/track_header` - one track's name, colour, arm, mute, solo and volume.
+- `tracks/track_header` - one track's name, colour, FX, arm, mute, solo and volume.
 - `tracks/timeline_view` - lanes, grid, clips, live takes, playhead; clip selection and dragging. `TimelineViewport` holds the zoom and scroll state shared by ruler and timeline.
 - `tracks/ruler_view` - bar numbers; click or drag to move the playhead.
 - `tracks/clip_painter` - draws a clip with its waveform (one band per channel).
 - `tracks/new_track_dialog` - the New Track dialog.
-- `plugins/plugin_chain_view` - the effect chain panel above the mixer: the chain row in a sideways scroll, the side menu (Add, Open, Remove), and the plugin windows.
+- `plugins/plugin_chain_view` - the effect chain panel above the mixer: the chain row in a sideways scroll, the side menu (Add, Open, Remove, Bypass), and the plugin windows.
 - `plugins/plugin_chain_row` - the track node, effect slots, wires with `+` and the Output node; selecting, opening, dragging effects onto wires.
 - `plugins/plugin_slot` - one effect in a chain: name, format or "not available", bypass and remove buttons, selection.
 - `plugins/plugin_browser` - the Add Effect dialog: search, list, scan progress.
 - `plugins/plugin_window` - plugin editor windows, one per effect, closed when the effect's instance goes away.
+- `plugins/builtin_editor` - the window contents for our own effects: a title bar and one knob per parameter.
 - `settings/settings_view` - the settings dialog with its sidebar.
 - `settings/audio_page`, `device_picker`, `monitoring_section`, `status_section` - the Audio page.
 - `settings/interface_page` - the interface's hardware controls.

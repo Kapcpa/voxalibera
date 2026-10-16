@@ -40,6 +40,10 @@ void MixerView::sync_strips()
 
 		if (strip == nullptr) {
 			strip = std::make_unique<MixerStrip>(context, track.id);
+			strip->on_show_plugins = [this](TrackId id) {
+				if (on_show_plugins)
+					on_show_plugins(id);
+			};
 			strip_row.addAndMakeVisible(*strip);
 		}
 

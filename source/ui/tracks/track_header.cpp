@@ -9,6 +9,7 @@ namespace
 	constexpr int PADDING = 8;
 	constexpr int ROW_HEIGHT = 22;
 	constexpr int TOGGLE_SIZE = 22;
+	constexpr int PLUGINS_BUTTON_WIDTH = 28;
 	constexpr int TOGGLE_GAP = 3;
 	constexpr int DETAILS_WIDTH = 82;
 	constexpr int VOLUME_TEXT_WIDTH = 46;
@@ -38,6 +39,10 @@ TrackHeader::TrackHeader(AppContext& context, TrackId id) : context(context), id
 	arm_button.onClick = [this] { this->context.tracks.toggle(this->id, &Track::armed, "Arm Track"); };
 	mute_button.onClick = [this] { this->context.tracks.toggle(this->id, &Track::mute, "Mute Track"); };
 	solo_button.onClick = [this] { this->context.tracks.toggle(this->id, &Track::solo, "Solo Track"); };
+	plugins_button.onClick = [this] {
+		if (on_show_plugins)
+			on_show_plugins(this->id);
+	};
 
 	volume.setRange(MIN_VOLUME_DB, MAX_VOLUME_DB, VOLUME_STEP_DB);
 	volume.setSkewFactorFromMidPoint(VOLUME_SKEW_CENTRE_DB);
@@ -49,7 +54,7 @@ TrackHeader::TrackHeader(AppContext& context, TrackId id) : context(context), id
 	volume.setColour(juce::Slider::textBoxOutlineColourId, juce::Colours::transparentBlack);
 	volume.onValueChange = [this] { this->context.tracks.set_volume(this->id, (float) volume.getValue()); };
 
-	for (auto* child : std::initializer_list<juce::Component*>{&name, &details, &arm_button, &mute_button, &solo_button, &volume})
+	for (auto* child : std::initializer_list<juce::Component*>{&name, &details, &plugins_button, &arm_button, &mute_button, &solo_button, &volume})
 		addAndMakeVisible(child);
 }
 
@@ -72,6 +77,7 @@ void TrackHeader::show(const Track& track, bool is_selected)
 	arm_button.setToggleState(track.armed, juce::dontSendNotification);
 	mute_button.setToggleState(track.mute, juce::dontSendNotification);
 	solo_button.setToggleState(track.solo, juce::dontSendNotification);
+	plugins_button.show(track);
 
 	if (!volume.isMouseButtonDown())
 		volume.setValue(track.volume_db, juce::dontSendNotification);
@@ -98,6 +104,9 @@ void TrackHeader::resized()
 		button->setBounds(top.removeFromRight(TOGGLE_SIZE));
 		top.removeFromRight(TOGGLE_GAP);
 	}
+
+	plugins_button.setBounds(top.removeFromRight(PLUGINS_BUTTON_WIDTH));
+	top.removeFromRight(TOGGLE_GAP);
 
 	name.setBounds(top);
 	area.removeFromTop(TOGGLE_GAP);

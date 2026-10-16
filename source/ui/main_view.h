@@ -8,6 +8,8 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
+#include <functional>
+
 class MainView : public juce::Component
 {
 public:
@@ -23,6 +25,8 @@ public:
 
 	void paint(juce::Graphics& graphics) override;
 	void resized() override;
+
+	std::function<void(TrackId)> on_show_plugins;
 
 private:
 	TransportBar transport_bar;

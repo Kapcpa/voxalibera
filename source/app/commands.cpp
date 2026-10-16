@@ -28,6 +28,7 @@ namespace
 		{command::ARM_TRACKS, "Arm", "Track", 'r', NO_MODIFIERS},
 		{command::MUTE_TRACKS, "Mute", "Track", 'm', NO_MODIFIERS},
 		{command::SOLO_TRACKS, "Solo", "Track", 's', NO_MODIFIERS},
+		{command::BYPASS_TRACK_PLUGINS, "Bypass Effects", "Track", 'b', NO_MODIFIERS},
 		{command::AUDIO_SETTINGS, "Audio...", "Settings", ',', CONTROL},
 		{command::INTERFACE_SETTINGS, "Interface...", "Settings", 0, NO_MODIFIERS},
 		{command::PLUGIN_SETTINGS, "Plugin...", "Settings", 0, NO_MODIFIERS},

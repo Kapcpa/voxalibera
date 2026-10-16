@@ -2,7 +2,7 @@
 
 #include "core/log.h"
 #include "engine/mix_renderer.h"
-#include "engine/plugins/builtin_plugins.h"
+#include "engine/plugins/builtin/builtin_plugins.h"
 #include "engine/plugins/hosted_plugin.h"
 
 #include <cmath>
@@ -43,7 +43,7 @@ std::shared_ptr<PluginChain> PluginPool::chain_for(const Track& track)
 
 	for (const auto& plugin : track.plugins)
 		if (auto instance = instance_for(plugin))
-			slots.push_back({std::move(instance), plugin.bypass});
+			slots.push_back({std::move(instance), plugin.bypass || track.plugins_bypassed});
 
 	auto& chain = chains[track.id];
 

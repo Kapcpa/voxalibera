@@ -1,7 +1,7 @@
 #include "core/plugins/plugin_library.h"
 
 #include "core/log.h"
-#include "engine/plugins/builtin_plugins.h"
+#include "engine/plugins/builtin/builtin_plugins.h"
 #include "platform/system.h"
 
 namespace

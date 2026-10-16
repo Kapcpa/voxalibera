@@ -68,6 +68,10 @@ void TrackAreaView::sync_headers()
 
 		if (header == nullptr) {
 			header = std::make_unique<TrackHeader>(context, track.id);
+			header->on_show_plugins = [this](TrackId id) {
+				if (on_show_plugins)
+					on_show_plugins(id);
+			};
 			header_column.addAndMakeVisible(*header);
 		}
 

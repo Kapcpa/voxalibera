@@ -41,14 +41,15 @@ PluginSlot::PluginSlot(AppContext& context, const Plugin& plugin) : context(cont
 	show_bypass();
 }
 
-void PluginSlot::show(const Plugin& plugin, bool selected, bool missing)
+void PluginSlot::show(const Plugin& plugin, bool selected, bool missing, bool chain_bypassed)
 {
-	if (plugin.name == plugin_data.name && plugin.bypass == plugin_data.bypass && selected == is_selected && missing == is_missing)
+	if (plugin.name == plugin_data.name && plugin.bypass == plugin_data.bypass && selected == is_selected && missing == is_missing && chain_bypassed == is_chain_bypassed)
 		return;
 
 	plugin_data = plugin;
 	is_selected = selected;
 	is_missing = missing;
+	is_chain_bypassed = chain_bypassed;
 	show_bypass();
 	repaint();
 }
@@ -62,7 +63,7 @@ void PluginSlot::paint(juce::Graphics& graphics)
 {
 	const auto area = getLocalBounds().reduced(MARGIN).toFloat();
 	const auto text_area = area.toNearestInt().reduced(TEXT_MARGIN, 0);
-	const auto dimmed = plugin_data.bypass || is_missing;
+	const auto dimmed = plugin_data.bypass || is_missing || is_chain_bypassed;
 
 	graphics.setColour(dimmed ? theme::PANEL_BACKGROUND.darker(BYPASSED_DARKNESS) : theme::PANEL_BACKGROUND.brighter(ACTIVE_BRIGHTNESS));
 	graphics.fillRoundedRectangle(area, CORNER_RADIUS);

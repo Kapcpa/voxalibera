@@ -81,6 +81,7 @@ namespace
 		object->setProperty("armed", track.armed);
 		object->setProperty("mute", track.mute);
 		object->setProperty("solo", track.solo);
+		object->setProperty("plugins-bypassed", track.plugins_bypassed);
 		object->setProperty("volume-db", track.volume_db);
 		object->setProperty("pan", track.pan);
 		object->setProperty("clips", clips);
@@ -128,6 +129,7 @@ namespace
 		track.armed = (bool) read(json, "armed", false);
 		track.mute = (bool) read(json, "mute", false);
 		track.solo = (bool) read(json, "solo", false);
+		track.plugins_bypassed = (bool) read(json, "plugins-bypassed", false);
 		track.volume_db = (float) read(json, "volume-db", 0.0);
 		track.pan = (float) read(json, "pan", 0.0);
 

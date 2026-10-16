@@ -68,6 +68,7 @@ MainWindow::MainWindow(const juce::String& name, AppContext& context) : Document
 		{command::ARM_TRACKS, [this] { this->context.tracks.toggle_selected(&Track::armed, "Arm Track"); }},
 		{command::MUTE_TRACKS, [this] { this->context.tracks.toggle_selected(&Track::mute, "Mute Track"); }},
 		{command::SOLO_TRACKS, [this] { this->context.tracks.toggle_selected(&Track::solo, "Solo Track"); }},
+		{command::BYPASS_TRACK_PLUGINS, [this] { this->context.tracks.toggle_selected(&Track::plugins_bypassed, "Bypass Effects"); }},
 		{command::AUDIO_SETTINGS, [this] { show_settings(SettingsView::AUDIO_PAGE); }},
 		{command::INTERFACE_SETTINGS, [this] { show_settings(SettingsView::INTERFACE_PAGE); }},
 		{command::PLUGIN_SETTINGS, [this] { show_settings(SettingsView::PLUGIN_PAGE); }},
@@ -90,6 +91,7 @@ MainWindow::MainWindow(const juce::String& name, AppContext& context) : Document
 	plugin_browser.on_finished = [this] { close_overlay(); };
 	main_view.plugin_chain.on_browse = [this](TrackId track, size_t position) { show_plugin_browser(track, position); };
 	main_view.track_area.on_add_track = [this] { show_new_track_dialog(); };
+	main_view.on_show_plugins = [this](TrackId track) { show_plugins_of(track); };
 	main_menu.recent_files = [this] { return this->context.session.recent.files; };
 	main_menu.can_open_recent = [this] { return is_allowed_now(command::OPEN_PROJECT) && is_available(command::OPEN_PROJECT); };
 	main_menu.on_open_recent = [this](const juce::File& file) { project_dialogs.open_recent(file); };
@@ -190,6 +192,7 @@ bool MainWindow::is_available(juce::CommandID id) const
 		case command::ARM_TRACKS:
 		case command::MUTE_TRACKS:
 		case command::SOLO_TRACKS:
+		case command::BYPASS_TRACK_PLUGINS:
 			return !context.selection.tracks.empty();
 		default:
 			return true;
@@ -272,6 +275,20 @@ void MainWindow::toggle_plugin_chain()
 		context.selection.clear_chain();
 
 	main_view.set_plugin_chain_visible(visible);
+	command_manager.commandStatusChanged();
+}
+
+void MainWindow::show_plugins_of(TrackId track)
+{
+	const auto& selected = context.selection.tracks;
+
+	if (main_view.is_plugin_chain_visible() && !selected.empty() && selected.front() == track) {
+		toggle_plugin_chain();
+		return;
+	}
+
+	context.selection.select_only(track);
+	main_view.set_plugin_chain_visible(true);
 	command_manager.commandStatusChanged();
 }
 

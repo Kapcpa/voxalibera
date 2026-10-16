@@ -41,7 +41,7 @@ void PluginChainRow::show(const Track& track)
 
 	for (size_t index = 0; index < slots.size(); ++index) {
 		const auto& plugin = track.plugins[index];
-		slots[index]->show(plugin, context.selection.plugin == plugin.id, context.plugins.is_missing(plugin.id));
+		slots[index]->show(plugin, context.selection.plugin == plugin.id, context.plugins.is_missing(plugin.id), track.plugins_bypassed);
 	}
 
 	repaint();

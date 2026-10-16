@@ -1,5 +1,6 @@
 #include "ui/plugins/plugin_window.h"
 
+#include "ui/plugins/builtin_editor.h"
 #include "ui/theme.h"
 
 #include <juce_audio_processors/juce_audio_processors.h>
@@ -10,6 +11,14 @@ namespace
 	{
 		const auto* plugin_editor = dynamic_cast<const juce::AudioProcessorEditor*>(&editor);
 		return plugin_editor != nullptr && plugin_editor->isResizable();
+	}
+
+	std::unique_ptr<juce::Component> create_editor(PluginProcessor& processor, const juce::String& name)
+	{
+		if (auto* builtin = dynamic_cast<BuiltinProcessor*>(&processor))
+			return std::make_unique<BuiltinEditor>(*builtin, name);
+
+		return processor.create_editor();
 	}
 }
 
@@ -51,7 +60,7 @@ void PluginWindows::open(PluginId id)
 		return;
 	}
 
-	auto editor = processor->create_editor();
+	auto editor = create_editor(*processor, plugin->name);
 
 	if (editor == nullptr)
 		return;

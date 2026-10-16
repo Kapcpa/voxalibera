@@ -1,8 +1,11 @@
 #pragma once
 
 #include "core/app_context.h"
+#include "ui/parts/plugins_button.h"
 
 #include <juce_gui_basics/juce_gui_basics.h>
+
+#include <functional>
 
 class TrackHeader : public juce::Component
 {
@@ -16,6 +19,8 @@ public:
 	void resized() override;
 	void mouseDown(const juce::MouseEvent& event) override;
 
+	std::function<void(TrackId)> on_show_plugins;
+
 private:
 	void style_toggle(juce::TextButton& button, juce::Colour on_colour);
 	void choose_colour();
@@ -26,6 +31,7 @@ private:
 	bool selected = false;
 	juce::Label name;
 	juce::Label details;
+	PluginsButton plugins_button;
 	juce::TextButton arm_button{"R"};
 	juce::TextButton mute_button{"M"};
 	juce::TextButton solo_button{"S"};

@@ -7,7 +7,6 @@ namespace
 	constexpr int BUTTON_SPACING = 10;
 	constexpr int BUTTON_HEIGHT = 26;
 	constexpr int BUTTON_GAP = 6;
-	constexpr int DEFAULT_FOLDERS_LINES = 4;
 
 	juce::String plural(int count, const juce::String& noun)
 	{
