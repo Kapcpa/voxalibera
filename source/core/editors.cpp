@@ -30,18 +30,36 @@ size_t TrackEditor::insert_position() const
 	return position == Project::NOT_FOUND ? project.tracks.size() : (size_t) position + 1;
 }
 
-TrackId TrackEditor::add(const NewTrack& new_track)
+TrackId TrackEditor::add(const TrackSettings& settings)
 {
 	Track track;
-	track.name = new_track.name.isNotEmpty() ? new_track.name : next_default_name();
-	track.channels = new_track.channels;
-	track.input = new_track.input;
+	track.name = settings.name.isNotEmpty() ? settings.name : next_default_name();
+	track.channels = settings.channels;
+	track.input = settings.input;
 	track.colour = TRACK_COLOURS[(size_t) project.next_id % TRACK_COLOURS.size()].argb;
 
 	auto edit = edits.begin("Add Track");
 	const auto id = edit.add_track(track, insert_position());
 	selection.select_only(id);
 	return id;
+}
+
+void TrackEditor::change_settings(TrackId id, const TrackSettings& settings)
+{
+	const auto* track = project.find_track(id);
+
+	if (track == nullptr)
+		return;
+
+	const auto name = settings.name.trim().isNotEmpty() ? settings.name.trim() : track->name;
+
+	if (name == track->name && settings.channels == track->channels && settings.input == track->input)
+		return;
+
+	auto edit = edits.begin("Track Settings");
+	edit.set(id, &Track::name, name);
+	edit.set(id, &Track::channels, settings.channels);
+	edit.set(id, &Track::input, settings.input);
 }
 
 void TrackEditor::remove_selected()

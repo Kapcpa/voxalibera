@@ -33,11 +33,14 @@ void MixRenderer::render_chunk(const EngineSnapshot& snapshot, Inputs inputs, in
 
 void MixRenderer::render_track(const TrackPlayback& track, Inputs inputs, int offset, int sample_count, Transport::Block block, const Tempo& tempo)
 {
+	const auto latency = track.plugins != nullptr ? track.plugins->total_latency() : 0;
+	const auto source_position = block.start + latency;
+
 	track_buffer.clear(0, sample_count);
 
 	if (block.playing)
 		for (const auto& clip : track.clips)
-			add_clip(track, clip, block.start, sample_count);
+			add_clip(track, clip, source_position, sample_count);
 
 	if (track.monitors_input)
 		add_input(track, inputs, offset, sample_count);
@@ -46,7 +49,7 @@ void MixRenderer::render_track(const TrackPlayback& track, Inputs inputs, int of
 		track_buffer.copyFrom(RIGHT, 0, track_buffer, LEFT, 0, sample_count);
 
 	if (track.plugins != nullptr)
-		track.plugins->process(track_buffer, sample_count, {block.playing, block.recording, block.start, tempo});
+		track.plugins->process(track_buffer, sample_count, {block.playing, block.recording, source_position, tempo});
 
 	track_buffer.applyGain(LEFT, 0, sample_count, track.audible ? track.gains.left : 0.0f);
 	track_buffer.applyGain(RIGHT, 0, sample_count, track.audible ? track.gains.right : 0.0f);

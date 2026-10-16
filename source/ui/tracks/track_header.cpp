@@ -128,8 +128,13 @@ void TrackHeader::mouseDown(const juce::MouseEvent& event)
 	else
 		context.selection.select_only(id);
 
-	if (event.getNumberOfClicks() == 2 && name.getBounds().contains(event.getPosition()))
+	if (event.getNumberOfClicks() != 2)
+		return;
+
+	if (name.getBounds().contains(event.getPosition()))
 		name.showEditor();
+	else if (details.getBounds().contains(event.getPosition()) && on_edit)
+		on_edit(id);
 }
 
 void TrackHeader::choose_colour()

@@ -18,6 +18,7 @@ target_sources(voxalibera_tests PRIVATE
     ${PROJECT_SOURCE_DIR}/source/engine/musical_time.cpp
     ${PROJECT_SOURCE_DIR}/source/engine/passthrough.cpp
     ${PROJECT_SOURCE_DIR}/source/engine/plugins/plugin_chain.cpp
+    ${PROJECT_SOURCE_DIR}/source/engine/plugins/plugin_processor.cpp
     ${PROJECT_SOURCE_DIR}/source/engine/resampler.cpp
     ${PROJECT_SOURCE_DIR}/source/engine/transport.cpp
     ${PROJECT_SOURCE_DIR}/source/platform/alsa_cards.cpp
@@ -28,6 +29,7 @@ target_compile_definitions(voxalibera_tests PRIVATE ${VOXALIBERA_DEFINITIONS})
 target_link_libraries(voxalibera_tests
     PRIVATE
         juce::juce_audio_formats
+        juce::juce_gui_basics
         PkgConfig::ALSA
         PkgConfig::SYSTEMD
         Catch2::Catch2WithMain

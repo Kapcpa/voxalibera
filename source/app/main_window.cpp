@@ -42,7 +42,7 @@ void WindowContent::resized()
 	main_view.setBounds(area);
 }
 
-MainWindow::MainWindow(const juce::String& name, AppContext& context) : DocumentWindow(name, theme::WINDOW_BACKGROUND, allButtons), context(context), main_view(context), settings_view(context), new_track_dialog(context), plugin_browser(context)
+MainWindow::MainWindow(const juce::String& name, AppContext& context) : DocumentWindow(name, theme::WINDOW_BACKGROUND, allButtons), context(context), main_view(context), settings_view(context), track_dialog(context), plugin_browser(context)
 {
 	actions = {
 		{command::NEW_PROJECT, [this] { project_dialogs.new_project(); }},
@@ -63,6 +63,7 @@ MainWindow::MainWindow(const juce::String& name, AppContext& context) : Document
 		{command::UNDO, [this] { this->context.undo(); }},
 		{command::REDO, [this] { this->context.redo(); }},
 		{command::NEW_TRACK, [this] { show_new_track_dialog(); }},
+		{command::TRACK_SETTINGS, [this] { show_track_settings(this->context.selection.tracks.front()); }},
 		{command::DELETE_SELECTION, [this] { this->context.delete_selection(); }},
 		{command::RECORD, [this] { this->context.toggle_recording(); }},
 		{command::ARM_TRACKS, [this] { this->context.tracks.toggle_selected(&Track::armed, "Arm Track"); }},
@@ -86,11 +87,15 @@ MainWindow::MainWindow(const juce::String& name, AppContext& context) : Document
 	centreWithSize(getWidth(), getHeight());
 
 	overlay.on_close = [this] { command_manager.commandStatusChanged(); };
-	new_track_dialog.on_finished = [this] { close_overlay(); };
+	track_dialog.on_finished = [this] { close_overlay(); };
 	message_dialog.on_finished = [this] { close_overlay(); };
 	plugin_browser.on_finished = [this] { close_overlay(); };
 	main_view.plugin_chain.on_browse = [this](TrackId track, size_t position) { show_plugin_browser(track, position); };
 	main_view.track_area.on_add_track = [this] { show_new_track_dialog(); };
+	main_view.track_area.on_edit_track = [this](TrackId track) {
+		if (is_allowed_now(command::TRACK_SETTINGS) && !this->context.recorder.is_recording())
+			show_track_settings(track);
+	};
 	main_view.on_show_plugins = [this](TrackId track) { show_plugins_of(track); };
 	main_menu.recent_files = [this] { return this->context.session.recent.files; };
 	main_menu.can_open_recent = [this] { return is_allowed_now(command::OPEN_PROJECT) && is_available(command::OPEN_PROJECT); };
@@ -189,6 +194,8 @@ bool MainWindow::is_available(juce::CommandID id) const
 			return !context.recorder.is_recording();
 		case command::DELETE_SELECTION:
 			return !context.selection.tracks.empty() || !context.selection.clips.empty() || context.selection.plugin.is_valid();
+		case command::TRACK_SETTINGS:
+			return !context.selection.tracks.empty() && !context.recorder.is_recording();
 		case command::ARM_TRACKS:
 		case command::MUTE_TRACKS:
 		case command::SOLO_TRACKS:
@@ -301,8 +308,18 @@ void MainWindow::show_settings(int page)
 
 void MainWindow::show_new_track_dialog()
 {
-	overlay.open("New Track", new_track_dialog, false);
-	new_track_dialog.prepare();
+	overlay.open("New Track", track_dialog, false);
+	track_dialog.prepare_new();
+	command_manager.commandStatusChanged();
+}
+
+void MainWindow::show_track_settings(TrackId track)
+{
+	if (context.project.find_track(track) == nullptr)
+		return;
+
+	overlay.open("Track Settings", track_dialog, false);
+	track_dialog.prepare_edit(track);
 	command_manager.commandStatusChanged();
 }
 

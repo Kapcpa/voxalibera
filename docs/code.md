@@ -20,7 +20,7 @@ Starting the program, windows, commands and menus.
 Application state. `project/` is the song document and its files, `audio/` talks to the engine and the devices, `media/` handles audio files and waveforms, `plugins/` effects.
 
 - `app_context` - `AppContext`, the one shared object: settings, engine, devices, project, edits, selection, recorder, project session.
-- `editors` - `TrackEditor` (add, delete, rename, colour, volume, arm, mute, solo, add/insert/move/remove/bypass plugins) and `ClipEditor` (move the selection in time and across tracks, delete).
+- `editors` - `TrackEditor` (add, change settings, delete, rename, colour, volume, arm, mute, solo, add/insert/move/remove/bypass plugins) and `ClipEditor` (move the selection in time and across tracks, delete).
 - `selection` - which tracks and clips are selected; outside undo.
 - `settings` - `settings.json`: device, test monitor, hardware controls, extra plugin folders.
 - `log` - the log file under `~/.local/state/voxalibera/`, and `XrunWatch`, which logs dropouts at most every two seconds.
@@ -109,11 +109,11 @@ Views. They read state every frame and call into `core/` on user input; they nev
 - `parts/plugins_button` - the FX button of track headers and mixer strips: lit when the track has effects, orange when they are bypassed.
 - `parts/meter_view` - draws a `LevelMeter`, horizontally with labels (settings) or vertically (mixer).
 - `tracks/track_area_view` - headers, ruler and timeline together; scrolling, zoom, following the playhead.
-- `tracks/track_header` - one track's name, colour, FX, arm, mute, solo and volume.
+- `tracks/track_header` - one track's name, colour, FX, arm, mute, solo and volume; double-clicking its channels and input opens Track Settings.
 - `tracks/timeline_view` - lanes, grid, clips, live takes, playhead; clip selection and dragging. `TimelineViewport` holds the zoom and scroll state shared by ruler and timeline.
 - `tracks/ruler_view` - bar numbers; click or drag to move the playhead.
 - `tracks/clip_painter` - draws a clip with its waveform (one band per channel).
-- `tracks/new_track_dialog` - the New Track dialog.
+- `tracks/track_dialog` - the New Track and Track Settings dialog: name, mono or stereo, input.
 - `plugins/plugin_chain_view` - the effect chain panel above the mixer: the chain row in a sideways scroll, the side menu (Add, Open, Remove, Bypass), and the plugin windows.
 - `plugins/plugin_chain_row` - the track node, effect slots, wires with `+` and the Output node; selecting, opening, dragging effects onto wires.
 - `plugins/plugin_slot` - one effect in a chain: name, format or "not available", bypass and remove buttons, selection.

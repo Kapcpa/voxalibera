@@ -14,6 +14,7 @@ struct ClipAppearance
 	std::int64_t source_offset = 0;
 	std::int64_t length = 0;
 	double timeline_rate = 0.0;
+	int track_channels = 2;
 	bool selected = false;
 	bool recording = false;
 };

@@ -24,6 +24,7 @@ namespace
 		{command::TOGGLE_METRONOME, "Metronome", "Transport", 'k', NO_MODIFIERS},
 		{command::TOGGLE_COUNT_IN, "Count-in", "Transport", 'k', SHIFT},
 		{command::NEW_TRACK, "New Track...", "Track", 't', CONTROL},
+		{command::TRACK_SETTINGS, "Track Settings...", "Track", 0, NO_MODIFIERS},
 		{command::DELETE_SELECTION, "Delete", "Edit", juce::KeyPress::deleteKey, NO_MODIFIERS},
 		{command::ARM_TRACKS, "Arm", "Track", 'r', NO_MODIFIERS},
 		{command::MUTE_TRACKS, "Mute", "Track", 'm', NO_MODIFIERS},

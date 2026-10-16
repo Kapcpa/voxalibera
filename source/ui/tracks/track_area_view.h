@@ -23,6 +23,7 @@ public:
 
 	std::function<void()> on_add_track;
 	std::function<void(TrackId)> on_show_plugins;
+	std::function<void(TrackId)> on_edit_track;
 
 private:
 	void sync_headers();

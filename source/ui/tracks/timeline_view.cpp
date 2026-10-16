@@ -142,7 +142,7 @@ void TimelineView::paint_clips(juce::Graphics& graphics)
 			if (area.getRight() < 0.0f || area.getX() > (float) getWidth())
 				continue;
 
-			paint_clip(graphics, area, {media_display_name(clip.file), juce::Colour(tracks[index].colour), context.peaks.find(clip.file), clip.source_offset, clip.length, sample_rate(), context.selection.contains(clip.id), false});
+			paint_clip(graphics, area, {media_display_name(clip.file), juce::Colour(tracks[index].colour), context.peaks.find(clip.file), clip.source_offset, clip.length, sample_rate(), channel_count(tracks[index].channels), context.selection.contains(clip.id), false});
 		}
 }
 
@@ -159,7 +159,7 @@ void TimelineView::paint_live_takes(juce::Graphics& graphics)
 
 	for (const auto& take : context.recorder.live_takes())
 		if (const auto index = context.project.index_of(take.track); index != Project::NOT_FOUND)
-			paint_clip(graphics, clip_area((size_t) index, timeline_start, length), {take.file.getFileNameWithoutExtension(), theme::RECORD, &take.peaks, 0, length, sample_rate(), false, true});
+			paint_clip(graphics, clip_area((size_t) index, timeline_start, length), {take.file.getFileNameWithoutExtension(), theme::RECORD, &take.peaks, 0, length, sample_rate(), channel_count(context.project.tracks[(size_t) index].channels), false, true});
 }
 
 std::optional<ClipId> TimelineView::clip_at(juce::Point<int> position) const

@@ -14,7 +14,8 @@ int PluginChain::total_latency() const
 	int total = 0;
 
 	for (const auto& slot : chain)
-		total += slot.processor->latency_samples();
+		if (!slot.bypass)
+			total += slot.processor->latency_samples();
 
 	return total;
 }

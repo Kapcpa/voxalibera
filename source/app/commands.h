@@ -27,6 +27,7 @@ namespace command
 	constexpr juce::CommandID MUTE_TRACKS = 63;
 	constexpr juce::CommandID SOLO_TRACKS = 64;
 	constexpr juce::CommandID BYPASS_TRACK_PLUGINS = 65;
+	constexpr juce::CommandID TRACK_SETTINGS = 66;
 	constexpr juce::CommandID AUDIO_SETTINGS = 30;
 	constexpr juce::CommandID INTERFACE_SETTINGS = 31;
 	constexpr juce::CommandID PLUGIN_SETTINGS = 32;

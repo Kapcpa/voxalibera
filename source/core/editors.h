@@ -3,7 +3,7 @@
 #include "core/project/edit_history.h"
 #include "core/selection.h"
 
-struct NewTrack
+struct TrackSettings
 {
 	juce::String name;
 	TrackChannels channels = TrackChannels::mono;
@@ -15,7 +15,8 @@ class TrackEditor
 public:
 	TrackEditor(Project& project, EditHistory& edits, Selection& selection);
 
-	TrackId add(const NewTrack& new_track);
+	TrackId add(const TrackSettings& settings);
+	void change_settings(TrackId id, const TrackSettings& settings);
 	void remove_selected();
 	void rename(TrackId id, const juce::String& name);
 	void set_colour(TrackId id, std::uint32_t colour);

@@ -8,7 +8,7 @@
 #include "ui/parts/modal_overlay.h"
 #include "ui/plugins/plugin_browser.h"
 #include "ui/settings/settings_view.h"
-#include "ui/tracks/new_track_dialog.h"
+#include "ui/tracks/track_dialog.h"
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
@@ -49,6 +49,7 @@ private:
 	bool is_available(juce::CommandID id) const;
 	void describe_dynamic_command(juce::CommandID id, juce::ApplicationCommandInfo& info) const;
 	void show_new_track_dialog();
+	void show_track_settings(TrackId track);
 	void show_plugin_browser(TrackId track, size_t position);
 	void close_overlay();
 	void release_focus_outside_text_fields();
@@ -66,7 +67,7 @@ private:
 	MainMenu main_menu{command_manager};
 	MainView main_view;
 	SettingsView settings_view;
-	NewTrackDialog new_track_dialog;
+	TrackDialog track_dialog;
 	PluginBrowser plugin_browser;
 	MessageDialog message_dialog;
 	ProjectDialogs project_dialogs{context, [this](const auto& title, const auto& message, auto choices) { show_message(title, message, std::move(choices)); }};

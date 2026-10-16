@@ -2,6 +2,9 @@
 
 #include "ui/theme.h"
 
+#include <algorithm>
+#include <span>
+
 namespace
 {
 	constexpr float CORNER_RADIUS = 3.0f;
@@ -26,7 +29,17 @@ namespace
 		return level;
 	}
 
-	void paint_channel(juce::Graphics& graphics, juce::Rectangle<float> band, const std::vector<float>& levels, int samples_per_peak, const ClipAppearance& clip)
+	float mixed_peak_between(std::span<const std::vector<float>> channels, int samples_per_peak, std::int64_t from_sample, std::int64_t to_sample)
+	{
+		auto sum = 0.0f;
+
+		for (const auto& levels : channels)
+			sum += peak_between(levels, samples_per_peak, from_sample, to_sample);
+
+		return sum / (float) channels.size();
+	}
+
+	void paint_band(juce::Graphics& graphics, juce::Rectangle<float> band, std::span<const std::vector<float>> channels, int samples_per_peak, const ClipAppearance& clip)
 	{
 		const auto to_file = clip.peaks->sample_rate > 0.0 && clip.timeline_rate > 0.0 ? clip.peaks->sample_rate / clip.timeline_rate : 1.0;
 		const auto file_offset = (double) clip.source_offset * to_file;
@@ -37,7 +50,7 @@ namespace
 		for (int pixel = 0; pixel < (int) band.getWidth(); ++pixel) {
 			const auto from = (std::int64_t) (file_offset + pixel * samples_per_pixel);
 			const auto to = (std::int64_t) (file_offset + (pixel + 1) * samples_per_pixel);
-			const auto extent = std::min(1.0f, peak_between(levels, samples_per_peak, from, to)) * half_height;
+			const auto extent = std::min(1.0f, mixed_peak_between(channels, samples_per_peak, from, to)) * half_height;
 			graphics.drawVerticalLine((int) band.getX() + pixel, centre - extent, centre + extent);
 		}
 	}
@@ -47,15 +60,18 @@ namespace
 		if (clip.peaks == nullptr || clip.peaks->channels.empty() || area.getWidth() < 1.0f)
 			return;
 
-		const auto& channels = clip.peaks->channels;
-		const auto band_height = area.getHeight() / (float) channels.size();
+		const std::span<const std::vector<float>> channels = clip.peaks->channels;
+		const auto samples_per_peak = clip.peaks->samples_per_peak;
+		const auto band_count = clip.track_channels == 1 ? 1 : 2;
+		const auto band_height = area.getHeight() / (float) band_count;
 
-		for (size_t channel = 0; channel < channels.size(); ++channel) {
-			const auto band = area.withHeight(band_height).withY(area.getY() + band_height * (float) channel);
+		for (int band_index = 0; band_index < band_count; ++band_index) {
+			const auto band = area.withHeight(band_height).withY(area.getY() + band_height * (float) band_index);
+			const auto source = band_count == 1 ? channels : channels.subspan(std::min((size_t) band_index, channels.size() - 1), 1);
 			graphics.setColour(clip.colour.withAlpha(WAVEFORM_ALPHA));
-			paint_channel(graphics, band, channels[channel], clip.peaks->samples_per_peak, clip);
+			paint_band(graphics, band, source, samples_per_peak, clip);
 
-			if (channel > 0) {
+			if (band_index > 0) {
 				graphics.setColour(clip.colour.withAlpha(SEPARATOR_ALPHA));
 				graphics.drawHorizontalLine((int) band.getY(), band.getX(), band.getRight());
 			}
@@ -72,7 +88,9 @@ void paint_clip(juce::Graphics& graphics, juce::Rectangle<float> bounds, const C
 
 	auto content = bounds;
 	const auto name_area = content.removeFromTop(NAME_HEIGHT);
-	paint_waveform(graphics, content, {clip.name, colour, clip.peaks, clip.source_offset, clip.length, clip.timeline_rate});
+	auto waveform = clip;
+	waveform.colour = colour;
+	paint_waveform(graphics, content, waveform);
 
 	graphics.setColour(theme::TEXT);
 	graphics.setFont(juce::FontOptions(NAME_FONT_SIZE));

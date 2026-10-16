@@ -78,17 +78,15 @@ The core loop: arm a track, record, hear it back, record again.
 
 - Plugin hosting (VST3, LV2), scanner process, plugin browser with search.
 - Insert chains per track, in a new design (not Logic's sidebar). Ideas to try: the chain expanding under the track header, a chain row in the mixer strip, a dedicated chain view in the bottom panel.
-- Plugin windows, bypass, presets.
-- Sends, buses, groups; latency compensation across all of them.
+- Plugin windows, bypass per effect and per chain, a default window for our own effects.
+- Latency compensation across tracks: tracks whose chains report less latency are delayed to line up with the slowest one.
 - Monitoring through effects while recording (amp simulators for guitar).
 - Track settings editable after creation: input (recovered tracks start with none), mono/stereo where it makes sense.
-- CPU: effect chains run per track inside `MixRenderer::render_track` (after clips and input, before volume and pan). From the start, chains sleep when the track is silent and their tail has ended. Then, in order of need:
-  - freeze: render a track with its effects to a file in the background and play that instead, until it's unfrozen;
-  - spread independent tracks across processor cores;
-  - anticipative processing: render tracks that aren't live ahead of time on worker threads, keeping only live tracks at low latency.
+- CPU: effect chains run per track inside `MixRenderer::render_track` (after clips and input, before volume and pan), and sleep when the track is silent and their tail has ended. Further strategies are under Later.
 
 ### 3. Edit and arrange
 
+- Import audio files as clips (drag and drop or File > Import), copied into the project's `audio/` folder.
 - Trim, split, duplicate clips; fades and clip gain.
 - Channel operations on clips: left only, right only, swap, mix down to mono.
 - Snap and grid, loop range, markers.
@@ -108,7 +106,12 @@ The core loop: arm a track, record, hear it back, record again.
 - Macros and modulators (LFO, envelope follower) on any parameter.
 - MIDI controller mapping.
 
-### 6. Ready to open up
+### 6. Routing and presets
+
+- Sends, buses, groups; latency compensation extended to all of them.
+- Presets for effects: save and load a plugin's state as a file, factory presets for our own effects.
+
+### 7. Ready to open up
 
 - Key remapping UI and command palette.
 - A proper notification system for errors and warnings (non-blocking, with details on demand) instead of the plain message dialog and the transport bar note.
@@ -118,12 +121,15 @@ The core loop: arm a track, record, hear it back, record again.
 
 ### Later
 
+CPU strategies, in order of need: freeze (render a track with its effects to a file in the background and play that instead, until it's unfrozen), spreading independent tracks across processor cores, anticipative processing (render tracks that aren't live ahead of time on worker threads, keeping only live tracks at low latency).
+
 Clip launcher (session grid), CLAP, out-of-process plugin sandboxing, time-stretch (Rubber Band), stem separation (offline, open models), DAWproject import/export, scripting (Lua), tempo changes and time-signature changes, video.
 
 ## Decisions
 
 - Effects come before full editing: recording guitar through an amp simulator matters more early on than trimming clips. Selecting, moving and deleting clips is already in milestone 1.
 - Tempo, bars and a metronome are part of milestone 1; recording to a click is the normal case.
+- Sends, buses and presets wait until after automation: inserts cover the recording workflow, and they matter most once other people use the app. Latency compensation between tracks stays in milestone 2, since takes recorded through effects with latency would otherwise drift apart.
 - Tracks are mono or stereo, chosen when created. Splitting or swapping channels happens later as clip operations.
 - Recording: Ctrl+R records (R arms the selected track). If no track is armed, recording arms the selected one. A count-in toggle comes later.
 - The app starts with an empty project; File > Open Recent lists the last ones (a start screen comes later). Projects default to `~/Music/Voxalibera/<name>/<name>.vxl`.

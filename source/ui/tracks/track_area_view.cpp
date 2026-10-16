@@ -72,6 +72,10 @@ void TrackAreaView::sync_headers()
 				if (on_show_plugins)
 					on_show_plugins(id);
 			};
+			header->on_edit = [this](TrackId id) {
+				if (on_edit_track)
+					on_edit_track(id);
+			};
 			header_column.addAndMakeVisible(*header);
 		}
 

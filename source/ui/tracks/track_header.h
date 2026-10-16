@@ -20,6 +20,7 @@ public:
 	void mouseDown(const juce::MouseEvent& event) override;
 
 	std::function<void(TrackId)> on_show_plugins;
+	std::function<void(TrackId)> on_edit;
 
 private:
 	void style_toggle(juce::TextButton& button, juce::Colour on_colour);

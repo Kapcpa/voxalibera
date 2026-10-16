@@ -1,4 +1,5 @@
 #include "engine/mix_renderer.h"
+#include "engine/plugins/plugin_chain.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -37,7 +38,7 @@ TEST_CASE("a clip plays the right part of its file at the right place and level"
 	TrackPlayback track;
 	track.channels = 1;
 	track.gains = {0.5f, 1.0f};
-	track.clips.push_back({AudioFile::open(file), 100, 500, 200.0, 1.0f});
+	track.clips.push_back({AudioFile::open(file), 100, 500, 200.0, 1.0f, nullptr});
 
 	EngineSnapshot snapshot;
 	snapshot.tracks.push_back(track);
@@ -60,7 +61,7 @@ TEST_CASE("nothing plays from clips while the transport is stopped")
 	const auto file = write_ramp_file();
 
 	TrackPlayback track;
-	track.clips.push_back({AudioFile::open(file), 0, FILE_LENGTH, 0.0, 1.0f});
+	track.clips.push_back({AudioFile::open(file), 0, FILE_LENGTH, 0.0, 1.0f, nullptr});
 
 	EngineSnapshot snapshot;
 	snapshot.tracks.push_back(track);
@@ -94,5 +95,74 @@ TEST_CASE("a clip at another sample rate is resampled to the device")
 	CHECK(std::abs(right[400] - (float) (400.0 * step / FILE_LENGTH)) < 0.005f);
 	CHECK(std::abs(right[800] - (float) (800.0 * step / FILE_LENGTH)) < 0.005f);
 	CHECK(near(right[950], 0.0f));
+	file.deleteFile();
+}
+
+namespace
+{
+	class DelayProcessor : public PluginProcessor
+	{
+	public:
+		explicit DelayProcessor(int latency) : latency(latency), history((size_t) latency) {}
+
+		void prepare(const PluginProcessContext&) override {}
+
+		void process(juce::AudioBuffer<float>& buffer, int sample_count, const PluginPlayhead&) override
+		{
+			auto* samples = buffer.getWritePointer(0);
+
+			for (int index = 0; index < sample_count; ++index) {
+				std::swap(samples[index], history[next]);
+				next = (next + 1) % history.size();
+			}
+
+			buffer.copyFrom(1, 0, buffer, 0, 0, sample_count);
+		}
+
+		int latency_samples() const override { return latency; }
+
+	private:
+		int latency;
+		std::vector<float> history;
+		size_t next = 0;
+	};
+
+	constexpr int PLUGIN_LATENCY = 32;
+
+	std::vector<float> render_through_delay(const juce::File& file, bool bypass)
+	{
+		TrackPlayback track;
+		track.channels = 1;
+		track.gains = {1.0f, 1.0f};
+		track.clips.push_back({AudioFile::open(file), 100, 500, 200.0, 1.0f, nullptr});
+		track.plugins = std::make_shared<PluginChain>(std::vector<PluginChain::Slot>{{std::make_shared<DelayProcessor>(PLUGIN_LATENCY), bypass}});
+
+		EngineSnapshot snapshot;
+		snapshot.tracks.push_back(track);
+
+		std::vector<float> left(256), right(256);
+		float* outputs[]{left.data(), right.data()};
+		MixRenderer().render(snapshot, {}, outputs, 2, 256, {true, false, 0});
+		return right;
+	}
+}
+
+TEST_CASE("clips on a track with plugin latency are read ahead so they still play on time")
+{
+	const auto file = write_ramp_file();
+	const auto output = render_through_delay(file, false);
+
+	CHECK(near(output[99], 0.0f));
+	CHECK(near(output[100], 200.0f / FILE_LENGTH));
+	CHECK(near(output[255], 355.0f / FILE_LENGTH));
+	file.deleteFile();
+}
+
+TEST_CASE("a bypassed plugin's latency is not compensated")
+{
+	const auto file = write_ramp_file();
+	const auto output = render_through_delay(file, true);
+
+	CHECK(near(output[100], 200.0f / FILE_LENGTH));
 	file.deleteFile();
 }
