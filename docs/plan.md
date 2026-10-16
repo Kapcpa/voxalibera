@@ -121,20 +121,3 @@ The core loop: arm a track, record, hear it back, record again.
 CPU strategies, in order of need: freeze (render a track with its effects to a file in the background and play that instead, until it's unfrozen), spreading independent tracks across processor cores, anticipative processing (render tracks that aren't live ahead of time on worker threads, keeping only live tracks at low latency).
 
 Clip launcher (session grid), CLAP, out-of-process plugin sandboxing, time-stretch (Rubber Band), stem separation (offline, open models), DAWproject import/export, scripting (Lua), tempo changes and time-signature changes, video.
-
-## Decisions
-
-- What it's meant to be: Logic's recording workflow and clarity with Ableton's clip-based side, recording first. Plug in, arm, record, listen, record again, keep the best take.
-- One window with zones that can be toggled: transport on top, tracks in the middle, mixer at the bottom. Effect chains are not Logic's sidebar inspector; they live in a panel above the mixer.
-- Clips are objects of their own, not just positions on a timeline, so a clip launcher can be added later without rebuilding the model.
-- AGPLv3, which JUCE's free licence requires.
-- Effects come before full editing: recording guitar through an amp simulator matters more early on than trimming clips. Selecting, moving and deleting clips is already in milestone 1.
-- Tempo, bars and a metronome are part of milestone 1; recording to a click is the normal case.
-- The repository goes public after milestone 2, quietly, for hardware feedback and people who want to follow along; the real announcement comes after milestone 3, once a whole song can be made and exported.
-- Sends, buses and presets wait until after automation: inserts cover the recording workflow, and they matter most once other people use the app. Latency compensation between tracks stays in milestone 2, since takes recorded through effects with latency would otherwise drift apart.
-- Tracks are mono or stereo, chosen when created. Splitting or swapping channels happens later as clip operations.
-- Recording: Ctrl+R records (R arms the selected track). If no track is armed, recording arms the selected one. A count-in toggle comes later.
-- The app starts with an empty project; File > Open Recent lists the last ones (a start screen comes later). Projects default to `~/Music/Voxalibera/<name>/<name>.vxl`.
-- Arming is saved in the project, but tracks open disarmed (arming means monitoring, so an armed track with a laptop microphone could feed back). A setting to restore it can come later.
-- Sample rate: a project keeps the rate of its first recording. In JACK mode the app asks PipeWire to run at the project's rate; when the card can't run it (the UX1 only runs 44.1 kHz), and in ALSA mode, clips at another rate are resampled in real time. Export will use a slower, higher-quality pass.
-- Projects use the `.vxl` extension. Imported audio is copied into the project. A project keeps the sample rate it was created at; export can convert to another rate.

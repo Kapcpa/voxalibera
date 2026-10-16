@@ -26,7 +26,7 @@ Needs `cmake`, `ninja`, a C++20 compiler, `alsa-lib`, `libsystemd` and `pipewire
 
 ## Docs
 
-- [docs/plan.md](docs/plan.md) - milestones and decisions
+- [docs/plan.md](docs/plan.md) - milestones
 - [AGENTS.md](AGENTS.md) - code rules and architecture
 - [docs/code.md](docs/code.md) - where things are in the source
 - [docs/projects.md](docs/projects.md) - the project format
