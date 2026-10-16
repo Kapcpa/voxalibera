@@ -24,9 +24,22 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container: archlinux:latest
+    env:
+      CCACHE_DIR: ${{ github.workspace }}/.ccache
+      CCACHE_MAXSIZE: 1G
     steps:
-      - run: pacman -Syu --noconfirm --needed base-devel cmake ninja git pkgconf alsa-lib systemd-libs pipewire-jack freetype2 fontconfig libx11 libxrandr libxinerama libxcursor libxext
+      - run: pacman -Syu --noconfirm --needed base-devel cmake ninja git pkgconf ccache zstd alsa-lib systemd-libs pipewire-jack freetype2 fontconfig libx11 libxrandr libxinerama libxcursor libxext
       - uses: actions/checkout@v4
-      - run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+      - uses: actions/cache@v4
+        with:
+          path: .deps
+          key: deps-${{ hashFiles('CMakeLists.txt', 'tests/CMakeLists.txt') }}
+      - uses: actions/cache@v4
+        with:
+          path: .ccache
+          key: ccache-${{ github.sha }}
+          restore-keys: ccache-
+      - run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DVOXALIBERA_LTO=OFF -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DFETCHCONTENT_BASE_DIR=$GITHUB_WORKSPACE/.deps
       - run: cmake --build build --target voxalibera voxalibera_tests
       - run: ./build/tests/voxalibera_tests_artefacts/Release/voxalibera_tests
+      - run: ccache --show-stats

@@ -7,6 +7,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(VOXALIBERA_TESTS "Build the base tests" ON)
 option(VOXALIBERA_SANITIZERS "Build with address and undefined behaviour sanitizers" OFF)
+option(VOXALIBERA_LTO "Build with link-time optimisation" ON)
 
 if(VOXALIBERA_SANITIZERS)
     add_compile_options(-fsanitize=address,undefined -fno-omit-frame-pointer)
@@ -56,8 +57,11 @@ target_link_libraries(voxalibera
         PkgConfig::ALSA
         PkgConfig::SYSTEMD
     PUBLIC
-        juce::juce_recommended_config_flags
-        juce::juce_recommended_lto_flags)
+        juce::juce_recommended_config_flags)
+
+if(VOXALIBERA_LTO)
+    target_link_libraries(voxalibera PUBLIC juce::juce_recommended_lto_flags)
+endif()
 
 set_source_files_properties(${VOXALIBERA_SOURCES} PROPERTIES COMPILE_OPTIONS "${VOXALIBERA_WARNINGS}")
 
