@@ -38,6 +38,7 @@ Application state. `project/` is the song document and its files, `audio/` talks
 - `plugins/plugin_library` - the format manager and the list of installed plugins with the blacklist (`~/.cache/voxalibera/plugins.xml`); search for the browser; `plugin_from(description)` turns a JUCE description into a `Plugin`.
 - `plugins/plugin_scanner` - finds and scans plugins on a background thread through a child process (`--scan-plugins`), blacklists the ones that crash or hang, reports progress and failures; also the child's side (`run_plugin_scan`).
 - `media/project_folders` - where takes go and how they're named; the temporary folders of unsaved projects.
+- `media/audio_import` - imports an audio file as a new track with one clip; WAV is copied into `audio/`, other formats (FLAC, Ogg, MP3, AIFF) are converted to 24-bit WAV there.
 - `media/peaks` - waveform overviews per file for drawing clips (`PeakStore`), and `PeakBuilder`, which builds them on a background thread after opening a project, cached in the project's `cache/` folder.
 - `media/playback_files` - `AudioFilePool` opens each audio file once and shares it between snapshots (reopening a take once it's finished); `ReadAhead`, on the disk thread, loads the next few seconds of every clip into memory before the audio thread needs it.
 

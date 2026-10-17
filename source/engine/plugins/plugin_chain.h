@@ -27,4 +27,5 @@ private:
 
 	std::vector<Slot> chain;
 	int remaining_tail = 0;
+	bool ringing = false;
 };

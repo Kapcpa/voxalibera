@@ -33,14 +33,15 @@ int PluginChain::longest_tail() const
 
 void PluginChain::process(juce::AudioBuffer<float>& buffer, int sample_count, const PluginPlayhead& playhead)
 {
-	const auto silent = buffer.getMagnitude(0, sample_count) < SILENCE;
+	const auto input_silent = buffer.getMagnitude(0, sample_count) < SILENCE;
 
-	if (silent && remaining_tail <= 0)
+	if (input_silent && !ringing && remaining_tail <= 0)
 		return;
-
-	remaining_tail = silent ? remaining_tail - sample_count : longest_tail();
 
 	for (const auto& slot : chain)
 		if (!slot.bypass)
 			slot.processor->process(buffer, sample_count, playhead);
+
+	ringing = buffer.getMagnitude(0, sample_count) >= SILENCE;
+	remaining_tail = input_silent && !ringing ? remaining_tail - sample_count : longest_tail();
 }
