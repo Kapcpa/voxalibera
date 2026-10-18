@@ -32,13 +32,18 @@ size_t TrackEditor::insert_position() const
 
 TrackId TrackEditor::add(const TrackSettings& settings)
 {
+	auto edit = edits.begin("Add Track");
+	return add(edit, settings);
+}
+
+TrackId TrackEditor::add(Edit& edit, const TrackSettings& settings)
+{
 	Track track;
 	track.name = settings.name.isNotEmpty() ? settings.name : next_default_name();
 	track.channels = settings.channels;
 	track.input = settings.input;
 	track.colour = TRACK_COLOURS[(size_t) project.next_id % TRACK_COLOURS.size()].argb;
 
-	auto edit = edits.begin("Add Track");
 	const auto id = edit.add_track(track, insert_position());
 	selection.select_only(id);
 	return id;

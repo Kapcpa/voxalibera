@@ -1,9 +1,11 @@
 #include "engine/plugins/hosted_plugin.h"
 
+#include <algorithm>
 #include <cmath>
 
 namespace
 {
+	constexpr double MIN_TAIL_SECONDS = 2.0;
 	constexpr double MAX_TAIL_SECONDS = 30.0;
 	constexpr int MIDI_EVENTS_RESERVED = 256;
 	constexpr double SECONDS_PER_MINUTE = 60.0;
@@ -61,7 +63,7 @@ void HostedPlugin::prepare(const PluginProcessContext& context)
 	instance->prepareToPlay(context.sample_rate, context.maximum_block_size);
 
 	const auto tail_seconds = instance->getTailLengthSeconds();
-	tail = (int) (std::min(std::isfinite(tail_seconds) ? tail_seconds : MAX_TAIL_SECONDS, MAX_TAIL_SECONDS) * sample_rate);
+	tail = (int) (std::clamp(std::isfinite(tail_seconds) ? tail_seconds : MAX_TAIL_SECONDS, MIN_TAIL_SECONDS, MAX_TAIL_SECONDS) * sample_rate);
 }
 
 void HostedPlugin::process(juce::AudioBuffer<float>& buffer, int sample_count, const PluginPlayhead& playhead)

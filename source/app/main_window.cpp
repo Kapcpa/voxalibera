@@ -1,6 +1,7 @@
 #include "app/main_window.h"
 
 #include "app/commands.h"
+#include "core/media/audio_import.h"
 #include "ui/theme.h"
 
 namespace
@@ -51,6 +52,7 @@ MainWindow::MainWindow(const juce::String& name, AppContext& context) : Document
 		{command::SAVE_PROJECT, [this] { project_dialogs.save(); }},
 		{command::SAVE_PROJECT_AS, [this] { project_dialogs.save_as(); }},
 		{command::CLEAN_UP_PROJECT, [this] { project_dialogs.clean_up(); }},
+		{command::IMPORT_FILE, [this] { import_file(); }},
 		{command::QUIT, [this] { request_quit(); }},
 		{command::TOGGLE_MIXER, [this] { toggle_mixer(); }},
 		{command::TOGGLE_PLUGIN_CHAIN, [this] { toggle_plugin_chain(); }},
@@ -267,6 +269,23 @@ bool MainWindow::perform(const InvocationInfo& info)
 
 	action->second();
 	return true;
+}
+
+void MainWindow::import_file()
+{
+	import_file_chooser = std::make_unique<juce::FileChooser>("Import Audio File", juce::File::getSpecialLocation(juce::File::userHomeDirectory), importable_audio_wildcard());
+
+	constexpr auto flags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles;
+
+	import_file_chooser->launchAsync(flags, [this](const juce::FileChooser& chooser) {
+		const auto file = chooser.getResult();
+
+		if (file == juce::File())
+			return;
+
+		if (!import_audio_file(context, file))
+			show_message("Import Failed", "Couldn't read " + file.getFileName() + " as audio.", {{"OK", {}}});
+	});
 }
 
 void MainWindow::toggle_mixer()

@@ -84,7 +84,7 @@ JSON with `kebab-case` keys, stable key order and pretty printing, so diffs show
 
 - **Recording:** each take is written to `audio/` while it's being recorded, by the disk write thread. File names are readable and unique: `<track>-take-<n>.wav` (`guitar-take-3.wav`).
 - **Crash safety while recording:** the WAV header is updated every few seconds, so a crash leaves a valid file with all but the last moments. On the next open, files in `audio/` that no clip references are offered for recovery ("2 recorded takes were found that aren't in the project").
-- **Importing:** audio dragged in from elsewhere is **copied** into `audio/` by default, so the project stays self-contained. Files at a different sample rate are converted while copying.
+- **Importing:** audio dragged in from elsewhere is **copied** into `audio/` by default, so the project stays self-contained. WAV files are copied as they are; other formats (FLAC, Ogg, MP3, AIFF) are converted to WAV, since playback reads only WAV. The sample rate is kept: files at a different rate are resampled while playing, like any clip.
 - **Missing files:** the clip stays, drawn as missing, and plays silence. A "find missing files" action searches by file name and lets the user point at a folder.
 - **Before the first save** a project lives in a temporary folder, `~/.local/share/voxalibera/unsaved/<date-time>/`, so takes have a home from the first recording. The first "save as" moves the whole folder to the chosen place; after a crash the folder is still there to recover.
 - **Unused files** are never deleted silently:

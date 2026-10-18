@@ -53,6 +53,7 @@ private:
 	void show_plugin_browser(TrackId track, size_t position);
 	void close_overlay();
 	void release_focus_outside_text_fields();
+	void import_file();
 	void toggle_mixer();
 	void toggle_plugin_chain();
 	void show_plugins_of(TrackId track);
@@ -72,6 +73,7 @@ private:
 	MessageDialog message_dialog;
 	ProjectDialogs project_dialogs{context, [this](const auto& title, const auto& message, auto choices) { show_message(title, message, std::move(choices)); }};
 	ModalOverlay overlay;
+	std::unique_ptr<juce::FileChooser> import_file_chooser;
 	WindowContent content{main_menu, main_view, overlay};
 	std::map<juce::CommandID, std::function<void()>> actions;
 	bool quit_pending = false;

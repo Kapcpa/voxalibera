@@ -3,6 +3,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <array>
 #include <cmath>
 
 namespace
@@ -165,4 +166,47 @@ TEST_CASE("a bypassed plugin's latency is not compensated")
 
 	CHECK(near(output[100], 200.0f / FILE_LENGTH));
 	file.deleteFile();
+}
+
+namespace
+{
+	class RingingProcessor : public PluginProcessor
+	{
+	public:
+		void prepare(const PluginProcessContext&) override {}
+
+		void process(juce::AudioBuffer<float>& buffer, int sample_count, const PluginPlayhead&) override
+		{
+			for (int channel = 0; channel < buffer.getNumChannels(); ++channel) {
+				auto* samples = buffer.getWritePointer(channel);
+
+				for (int index = 0; index < sample_count; ++index)
+					samples[index] = state[(size_t) channel] = samples[index] + DECAY * state[(size_t) channel];
+			}
+		}
+
+	private:
+		static constexpr float DECAY = 0.99f;
+		std::array<float, 2> state{};
+	};
+}
+
+TEST_CASE("a chain keeps ringing after its input stops even when the plugin reports no tail")
+{
+	constexpr int BLOCK = 64;
+	constexpr int SILENT_BLOCKS = 10;
+
+	PluginChain chain({{std::make_shared<RingingProcessor>(), false}});
+	juce::AudioBuffer<float> buffer(2, BLOCK);
+
+	buffer.clear();
+	buffer.setSample(0, 0, 1.0f);
+	chain.process(buffer, BLOCK, {});
+
+	for (int block = 0; block < SILENT_BLOCKS; ++block) {
+		buffer.clear();
+		chain.process(buffer, BLOCK, {});
+	}
+
+	CHECK(buffer.getMagnitude(0, BLOCK) > 0.001f);
 }

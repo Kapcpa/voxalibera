@@ -15,6 +15,7 @@ class TrackEditor
 public:
 	TrackEditor(Project& project, EditHistory& edits, Selection& selection);
 
+	TrackId add(Edit& edit, const TrackSettings& settings);
 	TrackId add(const TrackSettings& settings);
 	void change_settings(TrackId id, const TrackSettings& settings);
 	void remove_selected();
