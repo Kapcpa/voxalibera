@@ -43,7 +43,14 @@ juce::String importable_audio_wildcard()
 	return formats.getWildcardForAllFormats();
 }
 
-bool import_audio_file(AppContext& context, const juce::File& file)
+bool is_importable_audio(const juce::File& file)
+{
+	juce::AudioFormatManager formats;
+	formats.registerBasicFormats();
+	return file.existsAsFile() && formats.findFormatForFileExtension(file.getFileExtension()) != nullptr;
+}
+
+bool import_audio_file(AppContext& context, const juce::File& file, ImportPlace import_place)
 {
 	auto source_reader = open_reader(file);
 
@@ -77,10 +84,18 @@ bool import_audio_file(AppContext& context, const juce::File& file)
 	Clip clip;
 	clip.file = relative_media_path(project.folder, target);
 	clip.length = convert_samples(reader->lengthInSamples, reader->sampleRate, timeline);
+	clip.start = import_place.start;
 
 	const auto channels = reader->numChannels == 1 ? TrackChannels::mono : TrackChannels::stereo;
 	auto edit = context.edits.begin("Import");
-	const auto track = context.tracks.add(edit, {file.getFileNameWithoutExtension(), channels, TrackInput{TrackInput::NONE}});
+
+	TrackId track;
+	if (import_place.track && project.find_track(*import_place.track)) {
+		track = *import_place.track;
+	} else {
+		track = context.tracks.add(edit, {file.getFileNameWithoutExtension(), channels, TrackInput{TrackInput::NONE}});
+	}
+
 	edit.add_clip(track, clip);
 
 	context.peak_builder.request(project.folder, clip.file);

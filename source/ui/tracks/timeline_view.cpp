@@ -1,5 +1,6 @@
 #include "ui/tracks/timeline_view.h"
 
+#include "core/media/audio_import.h"
 #include "core/media/project_folders.h"
 #include "ui/theme.h"
 #include "ui/tracks/clip_painter.h"
@@ -43,6 +44,33 @@ double TimelineView::playhead_beat() const
 {
 	const auto rate = context.engine.sample_rate.load();
 	return rate > 0.0 ? (double) context.engine.transport.position() / samples_per_beat(context.project.tempo, rate) : 0.0;
+}
+
+bool TimelineView::isInterestedInFileDrag(const juce::StringArray& files)
+{
+	if (context.recorder.is_recording()) {
+		return false;
+	}
+
+	return std::any_of(files.begin(), files.end(), [](const auto& path) { return is_importable_audio(juce::File(path)); });
+}
+
+void TimelineView::filesDropped(const juce::StringArray& files, int x, int y)
+{
+	const auto index = track_index_at(y);
+	const auto& tracks = context.project.tracks;
+	const auto spacing = samples_per_beat(context.project.tempo, sample_rate());
+	const auto beat = std::max(0.0, viewport.x_to_beat(x));
+	const auto snapped_beat = juce::ModifierKeys::currentModifiers.isCommandDown() ? beat : std::round(beat);
+
+	ImportPlace place;
+	place.start = spacing > 0.0 ? (std::int64_t) (snapped_beat * spacing) : 0;
+
+	if (index >= 0 && index < (int) tracks.size())
+		place.track = tracks[(size_t) index].id;
+
+	for (const auto& path : files)
+		import_audio_file(context, juce::File(path), place);
 }
 
 double TimelineView::sample_to_x(std::int64_t sample) const

@@ -23,7 +23,7 @@ struct TimelineViewport
 	int revision = 0;
 };
 
-class TimelineView : public juce::Component
+class TimelineView : public juce::Component, public juce::FileDragAndDropTarget
 {
 public:
 	TimelineView(AppContext& context, const TimelineViewport& viewport);
@@ -32,6 +32,9 @@ public:
 	void mouseDown(const juce::MouseEvent& event) override;
 	void mouseDrag(const juce::MouseEvent& event) override;
 	void mouseUp(const juce::MouseEvent& event) override;
+
+	bool isInterestedInFileDrag(const juce::StringArray& files) override;
+	void filesDropped(const juce::StringArray& files, int x, int y) override;
 
 	double playhead_beat() const;
 
