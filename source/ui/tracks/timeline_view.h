@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/app_context.h"
+#include "core/media/audio_import.h"
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
@@ -34,6 +35,8 @@ public:
 	void mouseUp(const juce::MouseEvent& event) override;
 
 	bool isInterestedInFileDrag(const juce::StringArray& files) override;
+	void fileDragMove(const juce::StringArray& files, int x, int y) override;
+	void fileDragExit(const juce::StringArray& files) override;
 	void filesDropped(const juce::StringArray& files, int x, int y) override;
 
 	double playhead_beat() const;
@@ -54,13 +57,16 @@ private:
 	juce::Rectangle<float> clip_area(size_t track_index, std::int64_t start, std::int64_t length) const;
 	std::optional<ClipId> clip_at(juce::Point<int> position) const;
 	int track_index_at(int y) const;
+	ImportPlace import_place_at(int x, int y) const;
 	void paint_clips(juce::Graphics& graphics);
 	void paint_live_takes(juce::Graphics& graphics);
 	void paint_lanes(juce::Graphics& graphics);
 	void paint_grid(juce::Graphics& graphics);
 	void paint_playhead(juce::Graphics& graphics);
+	void paint_drop_place(juce::Graphics& graphics);
 
 	AppContext& context;
 	const TimelineViewport& viewport;
 	std::optional<ClipDrag> drag;
+	std::optional<ImportPlace> drop_place;
 };

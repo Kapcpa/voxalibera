@@ -1,6 +1,5 @@
 #include "ui/tracks/timeline_view.h"
 
-#include "core/media/audio_import.h"
 #include "core/media/project_folders.h"
 #include "ui/theme.h"
 #include "ui/tracks/clip_painter.h"
@@ -15,6 +14,7 @@ namespace
 	constexpr float HINT_FONT_SIZE = 14.0f;
 	constexpr auto EMPTY_HINT = "No tracks yet. Press Ctrl+T or + Track to add one.";
 	constexpr float CLIP_MARGIN = 3.0f;
+	constexpr float DROP_LINE_WIDTH = 2.0f;
 }
 
 void TimelineViewport::zoom_around(double x, double factor)
@@ -48,14 +48,13 @@ double TimelineView::playhead_beat() const
 
 bool TimelineView::isInterestedInFileDrag(const juce::StringArray& files)
 {
-	if (context.recorder.is_recording()) {
+	if (context.recorder.is_recording())
 		return false;
-	}
 
 	return std::any_of(files.begin(), files.end(), [](const auto& path) { return is_importable_audio(juce::File(path)); });
 }
 
-void TimelineView::filesDropped(const juce::StringArray& files, int x, int y)
+ImportPlace TimelineView::import_place_at(int x, int y) const
 {
 	const auto index = track_index_at(y);
 	const auto& tracks = context.project.tracks;
@@ -68,6 +67,27 @@ void TimelineView::filesDropped(const juce::StringArray& files, int x, int y)
 
 	if (index >= 0 && index < (int) tracks.size())
 		place.track = tracks[(size_t) index].id;
+
+	return place;
+}
+
+void TimelineView::fileDragMove(const juce::StringArray&, int x, int y)
+{
+	drop_place = import_place_at(x, y);
+	repaint();
+}
+
+void TimelineView::fileDragExit(const juce::StringArray&)
+{
+	drop_place.reset();
+	repaint();
+}
+
+void TimelineView::filesDropped(const juce::StringArray& files, int x, int y)
+{
+	const auto place = import_place_at(x, y);
+	drop_place.reset();
+	repaint();
 
 	for (const auto& path : files)
 		import_audio_file(context, juce::File(path), place);
@@ -98,6 +118,7 @@ void TimelineView::paint(juce::Graphics& graphics)
 	paint_grid(graphics);
 	paint_clips(graphics);
 	paint_live_takes(graphics);
+	paint_drop_place(graphics);
 	paint_playhead(graphics);
 
 	if (context.project.tracks.empty()) {
@@ -140,6 +161,21 @@ void TimelineView::paint_grid(juce::Graphics& graphics)
 		graphics.setColour(is_bar ? theme::GRID_BAR : theme::GRID_BEAT);
 		graphics.drawVerticalLine((int) viewport.beat_to_x(beat), 0.0f, (float) getHeight());
 	}
+}
+
+void TimelineView::paint_drop_place(juce::Graphics& graphics)
+{
+	if (!drop_place)
+		return;
+
+	const auto row = drop_place->track ? context.project.index_of(*drop_place->track) : (int) context.project.tracks.size();
+	const auto y = row * TimelineViewport::TRACK_HEIGHT - viewport.scroll_y;
+
+	graphics.setColour(theme::DROP_TARGET);
+	graphics.fillRect(0, y, getWidth(), TimelineViewport::TRACK_HEIGHT);
+
+	graphics.setColour(theme::ACCENT);
+	graphics.fillRect((float) sample_to_x(drop_place->start), (float) y, DROP_LINE_WIDTH, (float) TimelineViewport::TRACK_HEIGHT);
 }
 
 void TimelineView::paint_playhead(juce::Graphics& graphics)

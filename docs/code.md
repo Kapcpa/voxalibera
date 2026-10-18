@@ -111,7 +111,7 @@ Views. They read state every frame and call into `core/` on user input; they nev
 - `parts/meter_view` - draws a `LevelMeter`, horizontally with labels (settings) or vertically (mixer).
 - `tracks/track_area_view` - headers, ruler and timeline together; scrolling, zoom, following the playhead.
 - `tracks/track_header` - one track's name, colour, FX, arm, mute, solo and volume; double-clicking its channels and input opens Track Settings.
-- `tracks/timeline_view` - lanes, grid, clips, live takes, playhead; clip selection and dragging. `TimelineViewport` holds the zoom and scroll state shared by ruler and timeline.
+- `tracks/timeline_view` - lanes, grid, clips, live takes, playhead; clip selection and dragging; audio files dropped on it become clips, with a preview of where they land. `TimelineViewport` holds the zoom and scroll state shared by ruler and timeline.
 - `tracks/ruler_view` - bar numbers; click or drag to move the playhead.
 - `tracks/clip_painter` - draws a clip with its waveform (one band per channel).
 - `tracks/track_dialog` - the New Track and Track Settings dialog: name, mono or stereo, input.

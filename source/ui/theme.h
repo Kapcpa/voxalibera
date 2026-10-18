@@ -21,6 +21,7 @@ namespace theme
 	inline const juce::Colour GRID_BAR{0xff3a3d43};
 	inline const juce::Colour GRID_BEAT{0xff2a2c31};
 	inline const juce::Colour LANE_SELECTED{0xff24262b};
+	inline const juce::Colour DROP_TARGET{0x335b8def};
 	inline const juce::Colour BACKDROP{0x99000000};
 	inline const juce::Colour GROOVE{0xff141518};
 	inline const juce::Colour FADER_CAP{0xffc9ccd2};
