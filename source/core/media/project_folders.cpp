@@ -68,3 +68,10 @@ juce::Array<juce::File> audio_files_in(const juce::File& project_folder)
 	files.sort();
 	return files;
 }
+
+juce::Array<juce::File> impulse_files_in(const juce::File& project_folder)
+{
+	auto files = project_folder.getChildFile(IMPULSES_FOLDER).findChildFiles(juce::File::findFiles, false);
+	files.sort();
+	return files;
+}

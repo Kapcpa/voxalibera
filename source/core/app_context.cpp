@@ -32,6 +32,8 @@ void AppContext::update()
 	if (scanner.update())
 		plugins.retry_missing();
 
+	plugins.use_media_folder(project.folder);
+
 	if (plugins.take_changes())
 		edits.mark_changed_without_undo();
 

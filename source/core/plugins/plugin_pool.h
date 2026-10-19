@@ -13,6 +13,7 @@ public:
 	explicit PluginPool(PluginLibrary& library);
 
 	void use_rate(double sample_rate);
+	void use_media_folder(const juce::File& folder);
 	void forget_removed(const Project& project);
 	std::shared_ptr<PluginChain> chain_for(const Track& track);
 	std::shared_ptr<PluginProcessor> find_instance(PluginId id) const;
@@ -38,6 +39,7 @@ private:
 
 	PluginLibrary& library;
 	double sample_rate = 0.0;
+	juce::File media_folder;
 	int availability_revision = 0;
 	std::map<TrackId, std::shared_ptr<PluginChain>> chains;
 	std::map<PluginId, Instance> instances;

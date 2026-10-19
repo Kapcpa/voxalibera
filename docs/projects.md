@@ -16,6 +16,7 @@ How a project lives on disk and how it's rebuilt when opened. Part of the [plan]
 My Song/
   my-song.vxl              the project: readable JSON
   audio/                   recorded takes and imported audio, referenced by the project
+  impulses/                impulse responses loaded into the Cabinet effect, copied in like imports
   backups/                 previous saves, newest last (rolling, e.g. the last 10)
   autosave/                autosaved project, written every few minutes while there are unsaved changes
   cache/                   waveform overviews; safe to delete, rebuilt automatically
@@ -95,7 +96,7 @@ JSON with `kebab-case` keys, stable key order and pretty printing, so diffs show
 
 ## Plugins
 
-- Each plugin instance stores **who it is** (format, identifier, name, manufacturer, version) and **its state** (the binary blob the plugin gives us, base64 under `state`) in the JSON. `format` + `identifier` find the plugin: for VST3/LV2 the identifier is JUCE's `PluginDescription::createIdentifierString()`, for our own effects (`builtin`) a kebab-case name like `test-drive`.
+- Each plugin instance stores **who it is** (format, identifier, name, manufacturer, version) and **its state** (the binary blob the plugin gives us, base64 under `state`) in the JSON. `format` + `identifier` find the plugin: for VST3/LV2 the identifier is JUCE's `PluginDescription::createIdentifierString()`, for our own effects (`builtin`) a kebab-case name like `overdrive`.
 - The state lives inside the `.vxl` rather than in separate files so that a save, an autosave and every backup are each one complete, consistent file: separate `plugins/<id>.bin` files would be overwritten by the next save while older backups still pointed at them. The cost is one long line per plugin, which still diffs line by line.
 - **Missing plugin:** its track plays as if the plugin weren't there; the model keeps its identity and state untouched, so it saves back unchanged. When the plugin is installed later, it loads with its state.
 - **Different version installed:** load it with the saved state; most plugins handle their own old states. Note the version change in the log.

@@ -79,8 +79,12 @@ Everything the audio thread touches. Nothing here allocates, locks or touches fi
 - `plugins/plugin_processor` - `PluginProcessor`, what the engine needs from any effect: prepare, process (with a `PluginPlayhead`), state, latency, tail, its editor, and a change counter (`mark_changed()`) for unsaved changes.
 - `plugins/plugin_chain` - `PluginChain`: a track's effects in order with their bypass flags, immutable once built; sleeps while the input is silent and the tails have ended.
 - `plugins/builtin/builtin_plugins` - the list of our own effects (format `builtin`) and `create_builtin_plugin(identifier)`.
-- `plugins/builtin/builtin_processor` - `BuiltinProcessor`, the base of our effects: parameters declared with `add_parameter`, read on the audio thread with `value()`, saved as JSON by key.
-- `plugins/builtin/test_drive` - a tanh drive with drive, mix and output; the example to copy for new effects.
+- `plugins/builtin/builtin_processor` - `BuiltinProcessor`, the base of our effects: parameters declared with `add_parameter` (a list of `choices` makes a switch), read on the audio thread with `value()`, and files (`add_file`, paths relative to the project) saved as JSON by key.
+- `plugins/builtin/drive_pedal` - `DrivePedal`, the base of the drives: oversampling, signal in volts, DC blocker; a pedal writes only its circuit.
+- `plugins/builtin/overdrive`, `blues_drive`, `distortion`, `fuzz` - drives modelled on the Tube Screamer, Bluesbreaker, Rat and Big Muff circuits.
+- `plugins/builtin/noise_gate` - a basic gate with threshold, hold, release and range; goes before the drives.
+- `plugins/builtin/cabinet` - two impulse responses (mic A and B) with blend, B alignment and polarity, then low and high cut, resonance and presence. IRs are read on the message thread and handed to the audio thread through a queue.
+- `dsp/` - building blocks for our effects: one-pole and biquad filters, diode and rail clipping, envelope follower, oversampler, impulse response loading.
 - `plugins/hosted_plugin` - `HostedPlugin`: a VST3 or LV2 plugin behind `PluginProcessor` (channel layout, playhead, state, change notifications, editor).
 
 `transport.play()` / `stop()` / `record()` / `locate(sample)` - safe to call from the UI; applied at the next audio block.

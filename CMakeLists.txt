@@ -55,6 +55,7 @@ target_compile_definitions(voxalibera PRIVATE
 target_link_libraries(voxalibera
     PRIVATE
         juce::juce_audio_utils
+        juce::juce_dsp
         PkgConfig::ALSA
         PkgConfig::SYSTEMD
     PUBLIC

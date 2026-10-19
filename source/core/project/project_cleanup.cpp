@@ -3,8 +3,10 @@
 #include "core/log.h"
 #include "core/media/peaks.h"
 #include "core/media/project_folders.h"
+#include "engine/plugins/builtin/builtin_plugins.h"
 #include "platform/system.h"
 
+#include <algorithm>
 #include <set>
 
 namespace
@@ -27,15 +29,22 @@ juce::Array<juce::File> unused_media(const Project& project)
 {
 	std::set<juce::String> used;
 
-	for (const auto& track : project.tracks)
+	for (const auto& track : project.tracks) {
 		for (const auto& clip : track.clips)
 			used.insert(project.folder.getChildFile(clip.file).getFullPathName());
 
+		for (const auto& plugin : track.plugins)
+			if (plugin.format == BUILTIN_FORMAT)
+				for (const auto& path : BuiltinProcessor::files_in_state(plugin.state))
+					used.insert(project.folder.getChildFile(path).getFullPathName());
+	}
+
 	juce::Array<juce::File> unused;
 
-	for (const auto& file : audio_files_in(project.folder))
-		if (!used.contains(file.getFullPathName()))
-			unused.add(file);
+	for (const auto& files : {audio_files_in(project.folder), impulse_files_in(project.folder)})
+		for (const auto& file : files)
+			if (!used.contains(file.getFullPathName()))
+				unused.add(file);
 
 	return unused;
 }
@@ -60,7 +69,9 @@ int delete_media(const Project& project, const juce::Array<juce::File>& files)
 	int deleted = 0;
 
 	for (const auto& file : files) {
-		if (!file.isAChildOf(project.folder.getChildFile(AUDIO_FOLDER)) || !file.deleteFile())
+		const auto in_media = std::any_of(std::begin(MEDIA_FOLDERS), std::end(MEDIA_FOLDERS), [&](const char* folder) { return file.isAChildOf(project.folder.getChildFile(folder)); });
+
+		if (!in_media || !file.deleteFile())
 			continue;
 
 		peak_cache_file(project.folder, relative_media_path(project.folder, file)).deleteFile();
