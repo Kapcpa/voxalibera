@@ -7,8 +7,10 @@ FetchContent_MakeAvailable(Catch2)
 juce_add_console_app(voxalibera_tests PRODUCT_NAME "voxalibera-tests")
 
 file(GLOB VOXALIBERA_TEST_SOURCES CONFIGURE_DEPENDS *_tests.cpp)
+file(GLOB_RECURSE VOXALIBERA_EFFECT_SOURCES CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/source/engine/dsp/*.cpp ${PROJECT_SOURCE_DIR}/source/engine/plugins/builtin/*.cpp)
 target_sources(voxalibera_tests PRIVATE
     ${VOXALIBERA_TEST_SOURCES}
+    ${VOXALIBERA_EFFECT_SOURCES}
     ${PROJECT_SOURCE_DIR}/source/core/project/edit_history.cpp
     ${PROJECT_SOURCE_DIR}/source/core/project/model.cpp
     ${PROJECT_SOURCE_DIR}/source/core/project/project_file.cpp
@@ -29,6 +31,7 @@ target_compile_definitions(voxalibera_tests PRIVATE ${VOXALIBERA_DEFINITIONS})
 target_link_libraries(voxalibera_tests
     PRIVATE
         juce::juce_audio_formats
+        juce::juce_dsp
         juce::juce_gui_basics
         PkgConfig::ALSA
         PkgConfig::SYSTEMD

@@ -225,12 +225,16 @@ juce::Result ProjectSession::move_media_to(const juce::File& folder)
 		return juce::Result::ok();
 	}
 
-	const auto source = previous.getChildFile(AUDIO_FOLDER);
-	const auto destination = folder.getChildFile(AUDIO_FOLDER);
 	const auto unsaved = is_unsaved_project_folder(previous);
 
-	if (source.isDirectory()) {
-		const auto result = unsaved ? move_folder(source, destination) : juce::Result(source.copyDirectoryTo(destination) ? juce::Result::ok() : juce::Result::fail("Could not copy the audio files to " + destination.getFullPathName()));
+	for (const auto* media : MEDIA_FOLDERS) {
+		const auto source = previous.getChildFile(media);
+		const auto destination = folder.getChildFile(media);
+
+		if (!source.isDirectory())
+			continue;
+
+		const auto result = unsaved ? move_folder(source, destination) : juce::Result(source.copyDirectoryTo(destination) ? juce::Result::ok() : juce::Result::fail("Could not copy the media files to " + destination.getFullPathName()));
 
 		if (result.failed())
 			return result;

@@ -213,6 +213,7 @@ void ProjectDialogs::close_project_then(Next next)
 void ProjectDialogs::clean_up(Next next)
 {
 	next = or_nothing(std::move(next));
+	context.plugins.store_states(context.project);
 	const auto unused = unused_media(context.project);
 
 	if (unused.isEmpty()) {
@@ -231,7 +232,7 @@ void ProjectDialogs::clean_up(Next next)
 
 void ProjectDialogs::confirm_clean_up(const juce::Array<juce::File>& unused, Next next)
 {
-	const auto message = juce::String(unused.size()) + " audio file(s) no clip uses, " + describe_size(total_size(unused)) + " in total:\n\n" + describe_files(unused) + "\n\nDeleting them can't be undone, and it clears the undo history.";
+	const auto message = juce::String(unused.size()) + " audio file(s) nothing in the project uses, " + describe_size(total_size(unused)) + " in total:\n\n" + describe_files(unused) + "\n\nDeleting them can't be undone, and it clears the undo history.";
 	const auto remove = [this, unused, next] {
 		context.session.clean_up(unused);
 		next();

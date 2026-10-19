@@ -1,5 +1,6 @@
 #include "ui/plugins/plugin_window.h"
 
+#include "core/media/impulse_import.h"
 #include "ui/plugins/builtin_editor.h"
 #include "ui/theme.h"
 
@@ -13,10 +14,16 @@ namespace
 		return plugin_editor != nullptr && plugin_editor->isResizable();
 	}
 
-	std::unique_ptr<juce::Component> create_editor(PluginProcessor& processor, const juce::String& name)
+	std::unique_ptr<juce::Component> create_editor(AppContext& context, PluginProcessor& processor, const juce::String& name)
 	{
+		const auto import_into_project = [&context](const juce::File& file) {
+			const auto relative = import_impulse_file(context.project, file);
+			context.plugins.use_media_folder(context.project.folder);
+			return relative;
+		};
+
 		if (auto* builtin = dynamic_cast<BuiltinProcessor*>(&processor))
-			return std::make_unique<BuiltinEditor>(*builtin, name);
+			return std::make_unique<BuiltinEditor>(*builtin, name, import_into_project, impulse_wildcard());
 
 		return processor.create_editor();
 	}
@@ -60,7 +67,7 @@ void PluginWindows::open(PluginId id)
 		return;
 	}
 
-	auto editor = create_editor(*processor, plugin->name);
+	auto editor = create_editor(context, *processor, plugin->name);
 
 	if (editor == nullptr)
 		return;

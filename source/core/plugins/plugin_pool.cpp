@@ -23,6 +23,18 @@ void PluginPool::use_rate(double rate)
 	sample_rate = rate;
 }
 
+void PluginPool::use_media_folder(const juce::File& folder)
+{
+	if (folder == media_folder)
+		return;
+
+	media_folder = folder;
+
+	for (const auto& [id, instance] : instances)
+		if (auto* builtin = dynamic_cast<BuiltinProcessor*>(instance.processor.get()))
+			builtin->use_media_folder(folder);
+}
+
 void PluginPool::forget_removed(const Project& project)
 {
 	std::erase_if(chains, [&](const auto& entry) { return project.find_track(entry.first) == nullptr; });
@@ -128,6 +140,9 @@ std::shared_ptr<PluginProcessor> PluginPool::create_instance(const Plugin& plugi
 
 	if (instance == nullptr)
 		return nullptr;
+
+	if (auto* builtin = dynamic_cast<BuiltinProcessor*>(instance.get()))
+		builtin->use_media_folder(media_folder);
 
 	const auto retired = retired_states.extract(plugin.id);
 	instance->set_state(retired.empty() ? plugin.state : retired.mapped());
