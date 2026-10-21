@@ -3,6 +3,7 @@
 #include "ui/theme.h"
 
 #include <algorithm>
+#include <cmath>
 #include <span>
 
 namespace
@@ -16,6 +17,12 @@ namespace
 	constexpr float NAME_FONT_SIZE = 11.0f;
 	constexpr float SELECTED_BORDER = 2.0f;
 	constexpr float NORMAL_BORDER = 1.0f;
+	constexpr float WAVEFORM_CURVE = 0.5f;
+
+	float displayed_level(float level)
+	{
+		return std::pow(std::min(1.0f, level), WAVEFORM_CURVE);
+	}
 
 	float peak_between(const std::vector<float>& levels, int samples_per_peak, std::int64_t from_sample, std::int64_t to_sample)
 	{
@@ -50,7 +57,7 @@ namespace
 		for (int pixel = 0; pixel < (int) band.getWidth(); ++pixel) {
 			const auto from = (std::int64_t) (file_offset + pixel * samples_per_pixel);
 			const auto to = (std::int64_t) (file_offset + (pixel + 1) * samples_per_pixel);
-			const auto extent = std::min(1.0f, mixed_peak_between(channels, samples_per_peak, from, to)) * half_height;
+			const auto extent = displayed_level(mixed_peak_between(channels, samples_per_peak, from, to)) * half_height;
 			graphics.drawVerticalLine((int) band.getX() + pixel, centre - extent, centre + extent);
 		}
 	}
