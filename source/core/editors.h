@@ -58,6 +58,7 @@ public:
 	ClipMove limit_move(ClipMove move) const;
 	void move_selected(ClipMove move);
 	void remove_selected();
+	void set_gain(ClipId id, float gain_db);
 
 private:
 	Project& project;

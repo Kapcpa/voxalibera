@@ -13,31 +13,11 @@ namespace
 	constexpr float PLAYHEAD_WIDTH = 1.5f;
 	constexpr float HINT_FONT_SIZE = 14.0f;
 	constexpr auto EMPTY_HINT = "No tracks yet. Press Ctrl+T or + Track to add one.";
-	constexpr float CLIP_MARGIN = 3.0f;
 	constexpr float DROP_LINE_WIDTH = 2.0f;
 }
 
-void TimelineViewport::zoom_around(double x, double factor)
+TimelineView::TimelineView(AppContext& context, const TimelineViewport& viewport) : context(context), viewport(viewport), layout{context, viewport}, mouse(context, layout)
 {
-	const auto anchor_beat = x_to_beat(x);
-	pixels_per_beat = std::clamp(pixels_per_beat * factor, MIN_PIXELS_PER_BEAT, MAX_PIXELS_PER_BEAT);
-	first_beat = std::max(0.0, anchor_beat - x / pixels_per_beat);
-	++revision;
-}
-
-void TimelineViewport::scroll_beats(double beats)
-{
-	first_beat = std::max(0.0, first_beat + beats);
-	++revision;
-}
-
-TimelineView::TimelineView(AppContext& context, const TimelineViewport& viewport) : context(context), viewport(viewport)
-{
-}
-
-double TimelineView::sample_rate() const
-{
-	return timeline_rate(context.project, context.engine.sample_rate.load());
 }
 
 double TimelineView::playhead_beat() const
@@ -56,9 +36,9 @@ bool TimelineView::isInterestedInFileDrag(const juce::StringArray& files)
 
 ImportPlace TimelineView::import_place_at(int x, int y) const
 {
-	const auto index = track_index_at(y);
+	const auto index = layout.track_index_at(y);
 	const auto& tracks = context.project.tracks;
-	const auto spacing = samples_per_beat(context.project.tempo, sample_rate());
+	const auto spacing = samples_per_beat(context.project.tempo, layout.sample_rate());
 	const auto beat = std::max(0.0, viewport.x_to_beat(x));
 	const auto snapped_beat = juce::ModifierKeys::currentModifiers.isCommandDown() ? beat : std::round(beat);
 
@@ -91,24 +71,6 @@ void TimelineView::filesDropped(const juce::StringArray& files, int x, int y)
 
 	for (const auto& path : files)
 		import_audio_file(context, juce::File(path), place);
-}
-
-double TimelineView::sample_to_x(std::int64_t sample) const
-{
-	const auto rate = sample_rate();
-	return rate > 0.0 ? viewport.beat_to_x((double) sample / samples_per_beat(context.project.tempo, rate)) : 0.0;
-}
-
-juce::Rectangle<float> TimelineView::lane_area(size_t track_index) const
-{
-	return {0.0f, (float) ((int) track_index * TimelineViewport::TRACK_HEIGHT - viewport.scroll_y), (float) getWidth(), (float) TimelineViewport::TRACK_HEIGHT};
-}
-
-juce::Rectangle<float> TimelineView::clip_area(size_t track_index, std::int64_t start, std::int64_t length) const
-{
-	const auto lane = lane_area(track_index).reduced(0.0f, CLIP_MARGIN);
-	const auto left = (float) sample_to_x(start);
-	return lane.withX(left).withWidth((float) sample_to_x(start + length) - left);
 }
 
 void TimelineView::paint(juce::Graphics& graphics)
@@ -175,7 +137,7 @@ void TimelineView::paint_drop_place(juce::Graphics& graphics)
 	graphics.fillRect(0, y, getWidth(), TimelineViewport::TRACK_HEIGHT);
 
 	graphics.setColour(theme::ACCENT);
-	graphics.fillRect((float) sample_to_x(drop_place->start), (float) y, DROP_LINE_WIDTH, (float) TimelineViewport::TRACK_HEIGHT);
+	graphics.fillRect((float) layout.sample_to_x(drop_place->start), (float) y, DROP_LINE_WIDTH, (float) TimelineViewport::TRACK_HEIGHT);
 }
 
 void TimelineView::paint_playhead(juce::Graphics& graphics)
@@ -191,22 +153,23 @@ void TimelineView::paint_playhead(juce::Graphics& graphics)
 
 void TimelineView::paint_clips(juce::Graphics& graphics)
 {
-	if (sample_rate() <= 0.0)
+	if (layout.sample_rate() <= 0.0)
 		return;
 
 	const auto& tracks = context.project.tracks;
 
 	for (size_t index = 0; index < tracks.size(); ++index)
 		for (const auto& clip : tracks[index].clips) {
-			const auto dragged = drag && context.selection.contains(clip.id);
-			const auto start = dragged ? clip.start + drag->move.delta : clip.start;
-			const auto lane = dragged ? (size_t) ((int) index + drag->move.track_offset) : index;
-			const auto area = clip_area(lane, start, clip.length);
+			const auto& gesture = mouse.gesture();
+			const auto moved = gesture && gesture->zone == ClipZone::body && context.selection.contains(clip.id);
+			const auto start = moved ? clip.start + gesture->move.delta : clip.start;
+			const auto lane = moved ? (size_t) ((int) index + gesture->move.track_offset) : index;
+			const auto area = layout.clip_area(lane, start, clip.length);
 
 			if (area.getRight() < 0.0f || area.getX() > (float) getWidth())
 				continue;
 
-			paint_clip(graphics, area, {media_display_name(clip.file), juce::Colour(tracks[index].colour), context.peaks.find(clip.file), clip.source_offset, clip.length, sample_rate(), channel_count(tracks[index].channels), context.selection.contains(clip.id), false});
+			paint_clip(graphics, area, {media_display_name(clip.file), juce::Colour(tracks[index].colour), context.peaks.find(clip.file), clip.source_offset, clip.length, layout.sample_rate(), channel_count(tracks[index].channels), context.selection.contains(clip.id), false, clip.gain_db});
 		}
 }
 
@@ -214,88 +177,38 @@ void TimelineView::paint_live_takes(juce::Graphics& graphics)
 {
 	const auto start = context.recorder.start_sample();
 
-	if (start == RecordingSession::NOT_STARTED || sample_rate() <= 0.0)
+	if (start == RecordingSession::NOT_STARTED || layout.sample_rate() <= 0.0)
 		return;
 
 	const auto device_rate = context.engine.sample_rate.load();
-	const auto timeline_start = convert_samples(start, device_rate, sample_rate());
-	const auto length = convert_samples(context.engine.transport.position() - start, device_rate, sample_rate());
+	const auto timeline_start = convert_samples(start, device_rate, layout.sample_rate());
+	const auto length = convert_samples(context.engine.transport.position() - start, device_rate, layout.sample_rate());
 
 	for (const auto& take : context.recorder.live_takes())
 		if (const auto index = context.project.index_of(take.track); index != Project::NOT_FOUND)
-			paint_clip(graphics, clip_area((size_t) index, timeline_start, length), {take.file.getFileNameWithoutExtension(), theme::RECORD, &take.peaks, 0, length, sample_rate(), channel_count(context.project.tracks[(size_t) index].channels), false, true});
-}
-
-std::optional<ClipId> TimelineView::clip_at(juce::Point<int> position) const
-{
-	const auto& tracks = context.project.tracks;
-
-	for (size_t index = 0; index < tracks.size(); ++index)
-		for (const auto& clip : tracks[index].clips)
-			if (clip_area(index, clip.start, clip.length).contains(position.toFloat()))
-				return clip.id;
-
-	return std::nullopt;
-}
-
-int TimelineView::track_index_at(int y) const
-{
-	return (y + viewport.scroll_y) / TimelineViewport::TRACK_HEIGHT;
+			paint_clip(graphics, layout.clip_area((size_t) index, timeline_start, length), {take.file.getFileNameWithoutExtension(), theme::RECORD, &take.peaks, 0, length, layout.sample_rate(), channel_count(context.project.tracks[(size_t) index].channels), false, true});
 }
 
 void TimelineView::mouseDown(const juce::MouseEvent& event)
 {
-	if (const auto clip = clip_at(event.getPosition()); clip && sample_rate() > 0.0) {
-		if (event.mods.isShiftDown()) {
-			context.selection.toggle(*clip);
-			return;
-		}
-
-		if (!context.selection.contains(*clip))
-			context.selection.select_only(*clip);
-
-		drag = ClipDrag{*clip, context.project.find_clip(*clip)->start, viewport.x_to_beat(event.x), track_index_at(event.y), {}};
-		return;
-	}
-
-	const auto index = track_index_at(event.y);
-	const auto& tracks = context.project.tracks;
-
-	if (index < 0 || index >= (int) tracks.size()) {
-		context.selection.clear();
-		return;
-	}
-
-	if (event.mods.isShiftDown())
-		context.selection.toggle(tracks[(size_t) index].id);
-	else
-		context.selection.select_only(tracks[(size_t) index].id);
+	mouse.down(event);
+	repaint();
 }
 
 void TimelineView::mouseDrag(const juce::MouseEvent& event)
 {
-	if (!drag || !event.mouseWasDraggedSinceMouseDown())
-		return;
-
-	const auto spacing = samples_per_beat(context.project.tempo, sample_rate());
-	const auto start_beat = (double) drag->anchor_start / spacing + viewport.x_to_beat(event.x) - drag->grab_beat;
-	const auto snapped_beat = event.mods.isCommandDown() ? start_beat : std::round(start_beat);
-	const auto new_start = (std::int64_t) (std::max(0.0, snapped_beat) * spacing);
-
-	drag->move = context.clips.limit_move({new_start - drag->anchor_start, track_index_at(event.y) - drag->grab_track});
+	mouse.drag(event);
 	repaint();
 }
 
 void TimelineView::mouseUp(const juce::MouseEvent& event)
 {
-	if (!drag)
-		return;
-
-	if (event.mouseWasDraggedSinceMouseDown())
-		context.clips.move_selected(drag->move);
-	else
-		context.selection.select_only(drag->anchor);
-
-	drag.reset();
+	mouse.up(event);
+	setMouseCursor(mouse.cursor_at(event.getPosition()));
 	repaint();
+}
+
+void TimelineView::mouseMove(const juce::MouseEvent& event)
+{
+	setMouseCursor(mouse.cursor_at(event.getPosition()));
 }

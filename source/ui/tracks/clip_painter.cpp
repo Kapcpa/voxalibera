@@ -1,5 +1,6 @@
 #include "ui/tracks/clip_painter.h"
 
+#include "engine/levels.h"
 #include "ui/theme.h"
 
 #include <algorithm>
@@ -53,11 +54,12 @@ namespace
 		const auto samples_per_pixel = (double) clip.length * to_file / band.getWidth();
 		const auto centre = band.getCentreY();
 		const auto half_height = band.getHeight() / 2.0f;
+		const auto gain = fader_gain(clip.gain_db);
 
 		for (int pixel = 0; pixel < (int) band.getWidth(); ++pixel) {
 			const auto from = (std::int64_t) (file_offset + pixel * samples_per_pixel);
 			const auto to = (std::int64_t) (file_offset + (pixel + 1) * samples_per_pixel);
-			const auto extent = displayed_level(mixed_peak_between(channels, samples_per_peak, from, to)) * half_height;
+			const auto extent = displayed_level(gain * mixed_peak_between(channels, samples_per_peak, from, to)) * half_height;
 			graphics.drawVerticalLine((int) band.getX() + pixel, centre - extent, centre + extent);
 		}
 	}
@@ -101,7 +103,10 @@ void paint_clip(juce::Graphics& graphics, juce::Rectangle<float> bounds, const C
 
 	graphics.setColour(theme::TEXT);
 	graphics.setFont(juce::FontOptions(NAME_FONT_SIZE));
+
 	graphics.drawText(clip.name, name_area.withTrimmedLeft(NAME_PADDING), juce::Justification::centredLeft);
+	if (clip.gain_db != 0.0f)
+		graphics.drawText((clip.gain_db > 0.0f ? "+" : "") + juce::String(clip.gain_db, 1) + " dB", name_area.withTrimmedRight(NAME_PADDING), juce::Justification::centredRight);
 
 	graphics.setColour(clip.selected ? theme::TEXT : colour);
 	graphics.drawRoundedRectangle(bounds, CORNER_RADIUS, clip.selected ? SELECTED_BORDER : NORMAL_BORDER);

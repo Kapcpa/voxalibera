@@ -9,6 +9,8 @@ namespace
 	constexpr auto DEFAULT_NAME = "Audio";
 	constexpr float MIN_VOLUME_DB = -60.0f;
 	constexpr float MAX_VOLUME_DB = 6.0f;
+	constexpr float MIN_GAIN_DB = -48.0f;
+	constexpr float MAX_GAIN_DB = 24.0f;
 }
 
 TrackEditor::TrackEditor(Project& project, EditHistory& edits, Selection& selection) : project(project), edits(edits), selection(selection)
@@ -235,4 +237,9 @@ void ClipEditor::remove_selected()
 
 	edit.commit();
 	selection.forget_missing(project);
+}
+
+void ClipEditor::set_gain(ClipId id, float gain_db)
+{
+	edits.begin("Clip Gain", "gain:" + juce::String(id.value)).set(id, &Clip::gain_db, std::clamp(gain_db, MIN_GAIN_DB, MAX_GAIN_DB));
 }

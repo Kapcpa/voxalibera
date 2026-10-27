@@ -17,6 +17,7 @@ struct ClipAppearance
 	int track_channels = 2;
 	bool selected = false;
 	bool recording = false;
+	float gain_db = 0.0f;
 };
 
 void paint_clip(juce::Graphics& graphics, juce::Rectangle<float> bounds, const ClipAppearance& clip);
