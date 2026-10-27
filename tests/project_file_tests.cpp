@@ -37,6 +37,8 @@ namespace
 		clip.source_offset = 512;
 		clip.length = 96000;
 		clip.gain_db = 1.5f;
+		clip.fade_in = 4800;
+		clip.fade_out = 960;
 		guitar.clips.push_back(clip);
 
 		Plugin amp;
@@ -96,6 +98,8 @@ TEST_CASE("a project survives writing and reading back")
 	CHECK(guitar.clips[0].source_offset == 512);
 	CHECK(guitar.clips[0].length == 96000);
 	CHECK(near(guitar.clips[0].gain_db, 1.5));
+	CHECK(guitar.clips[0].fade_in == 4800);
+	CHECK(guitar.clips[0].fade_out == 960);
 	REQUIRE(guitar.plugins.size() == 1);
 	CHECK(guitar.plugins[0].id == source.plugins[0].id);
 	CHECK(guitar.plugins[0].format == "VST3");

@@ -243,3 +243,15 @@ void ClipEditor::set_gain(ClipId id, float gain_db)
 {
 	edits.begin("Clip Gain", "gain:" + juce::String(id.value)).set(id, &Clip::gain_db, std::clamp(gain_db, MIN_GAIN_DB, MAX_GAIN_DB));
 }
+
+void ClipEditor::set_fade_in(ClipId id, std::int64_t fade_in)
+{
+	const auto* clip = project.find_clip(id);
+	edits.begin("Clip Fade", "fade:" + juce::String(id.value)).set(id, &Clip::fade_in, std::clamp<std::int64_t>(fade_in, 0, clip->length - clip->fade_out));
+}
+
+void ClipEditor::set_fade_out(ClipId id, std::int64_t fade_out)
+{
+	const auto* clip = project.find_clip(id);
+	edits.begin("Clip Fade", "fade:" + juce::String(id.value)).set(id, &Clip::fade_out, std::clamp<std::int64_t>(fade_out, 0, clip->length - clip->fade_in));
+}

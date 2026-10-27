@@ -38,10 +38,12 @@ public:
 	const std::optional<ClipGesture>& gesture() const { return current; }
 
 private:
-	ClipZone zone_at(juce::Point<int> position, juce::Rectangle<float> clip_area) const;
+	ClipZone zone_at(juce::Point<int> position, const ClipUnder& clip) const;
 	void select_track_at(const juce::MouseEvent& event);
 	void drag_move(const juce::MouseEvent& event);
 	void drag_gain(const juce::MouseEvent& event);
+	void drag_fade_in(const juce::MouseEvent& event);
+	void drag_fade_out(const juce::MouseEvent& event);
 
 	AppContext& context;
 	const TimelineLayout& layout;

@@ -1,5 +1,7 @@
 #include "ui/tracks/timeline_mouse.h"
 
+#include "ui/tracks/clip_painter.h"
+
 #include <cmath>
 
 namespace
@@ -12,20 +14,21 @@ TimelineMouse::TimelineMouse(AppContext& context, const TimelineLayout& layout) 
 {
 }
 
-ClipZone TimelineMouse::zone_at(juce::Point<int> position, juce::Rectangle<float> clip_area) const
+ClipZone TimelineMouse::zone_at(juce::Point<int> position, const ClipUnder& clip) const
 {
 	const auto point = position.toFloat();
+	const auto* model_clip = context.project.find_clip(clip.id);
+	const auto handles = fade_handles(clip.area, model_clip->length, model_clip->fade_in, model_clip->fade_out);
+	const auto to_fade_in = point.getDistanceFrom({handles.fade_in_x, handles.y});
+	const auto to_fade_out = point.getDistanceFrom({handles.fade_out_x, handles.y});
 
-	if (point.y > clip_area.getY() + HANDLE_SIZE)
-		return ClipZone::body;
+	if (std::min(to_fade_in, to_fade_out) < HANDLE_SIZE)
+		return to_fade_in <= to_fade_out ? ClipZone::fade_in : ClipZone::fade_out;
 
-	if (point.x < clip_area.getX() + HANDLE_SIZE)
-		return ClipZone::fade_in;
+	if (point.y < clip.area.getY() + CLIP_HEADER_HEIGHT)
+		return ClipZone::gain;
 
-	if (point.x > clip_area.getRight() - HANDLE_SIZE)
-		return ClipZone::fade_out;
-
-	return ClipZone::gain;
+	return ClipZone::body;
 }
 
 juce::MouseCursor TimelineMouse::cursor_at(juce::Point<int> position) const
@@ -35,7 +38,7 @@ juce::MouseCursor TimelineMouse::cursor_at(juce::Point<int> position) const
 	if (!clip)
 		return juce::MouseCursor::NormalCursor;
 
-	switch (zone_at(position, clip->area)) {
+	switch (zone_at(position, *clip)) {
 		case ClipZone::fade_in:
 		case ClipZone::fade_out:
 			return juce::MouseCursor::LeftRightResizeCursor;
@@ -66,7 +69,7 @@ void TimelineMouse::down(const juce::MouseEvent& event)
 		context.selection.select_only(clip->id);
 
 	const auto* model_clip = context.project.find_clip(clip->id);
-	current = ClipGesture{zone_at(event.getPosition(), clip->area), clip->id, model_clip->start, layout.viewport.x_to_beat(event.x), layout.track_index_at(event.y), model_clip->gain_db, {}};
+	current = ClipGesture{zone_at(event.getPosition(), *clip), clip->id, model_clip->start, layout.viewport.x_to_beat(event.x), layout.track_index_at(event.y), model_clip->gain_db, {}};
 }
 
 void TimelineMouse::select_track_at(const juce::MouseEvent& event)
@@ -94,6 +97,10 @@ void TimelineMouse::drag(const juce::MouseEvent& event)
 		drag_move(event);
 	else if (current->zone == ClipZone::gain)
 		drag_gain(event);
+	else if (current->zone == ClipZone::fade_in)
+		drag_fade_in(event);
+	else if (current->zone == ClipZone::fade_out)
+		drag_fade_out(event);
 }
 
 void TimelineMouse::drag_move(const juce::MouseEvent& event)
@@ -111,6 +118,22 @@ void TimelineMouse::drag_gain(const juce::MouseEvent& event)
 	const auto new_gain_db = current->gain_db - event.getDistanceFromDragStartY() * GAIN_DB_PER_PIXEL;
 
 	context.clips.set_gain(current->anchor, new_gain_db);
+}
+
+void TimelineMouse::drag_fade_in(const juce::MouseEvent& event)
+{
+	const auto* model_clip = context.project.find_clip(current->anchor);
+	const auto new_fade_in = layout.viewport.x_to_beat(event.x) * samples_per_beat(context.project.tempo, layout.sample_rate()) - model_clip->start;
+
+	context.clips.set_fade_in(current->anchor, (std::int64_t) new_fade_in);
+}
+
+void TimelineMouse::drag_fade_out(const juce::MouseEvent& event)
+{
+	const auto* model_clip = context.project.find_clip(current->anchor);
+	const auto new_fade_out = model_clip->start + model_clip->length - layout.viewport.x_to_beat(event.x) * samples_per_beat(context.project.tempo, layout.sample_rate());
+
+	context.clips.set_fade_out(current->anchor, (std::int64_t) new_fade_out);
 }
 
 void TimelineMouse::up(const juce::MouseEvent& event)

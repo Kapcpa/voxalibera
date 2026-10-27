@@ -20,6 +20,8 @@ struct ClipPlayback
 	double file_start = 0.0;
 	float gain = 1.0f;
 	std::shared_ptr<const ResamplingKernel> resampler;
+	std::int64_t fade_in = 0;
+	std::int64_t fade_out = 0;
 
 	double file_position(std::int64_t position) const { return file_start + (double) (position - start) * (resampler != nullptr ? resampler->step() : 1.0); }
 };

@@ -169,7 +169,7 @@ void TimelineView::paint_clips(juce::Graphics& graphics)
 			if (area.getRight() < 0.0f || area.getX() > (float) getWidth())
 				continue;
 
-			paint_clip(graphics, area, {media_display_name(clip.file), juce::Colour(tracks[index].colour), context.peaks.find(clip.file), clip.source_offset, clip.length, layout.sample_rate(), channel_count(tracks[index].channels), context.selection.contains(clip.id), false, clip.gain_db});
+			paint_clip(graphics, area, {media_display_name(clip.file), juce::Colour(tracks[index].colour), context.peaks.find(clip.file), clip.source_offset, clip.length, layout.sample_rate(), channel_count(tracks[index].channels), context.selection.contains(clip.id), false, clip.gain_db, clip.fade_in, clip.fade_out});
 		}
 }
 

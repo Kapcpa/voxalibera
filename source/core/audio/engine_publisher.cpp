@@ -2,6 +2,7 @@
 
 #include "core/log.h"
 
+#include <algorithm>
 #include <cmath>
 
 namespace
@@ -9,6 +10,7 @@ namespace
 	constexpr double MISSING_FILE_RETRY_SECONDS = 0.25;
 	constexpr std::int64_t ROUNDING_SAMPLES = 2;
 	constexpr double STEP_KEY_SCALE = 1.0e9;
+	constexpr double MICRO_FADE_SECONDS = 0.003;
 
 	bool same_rate(double first, double second)
 	{
@@ -130,6 +132,10 @@ std::optional<ClipPlayback> EnginePublisher::build_clip(const Clip& clip, double
 	playback.file_start = (double) clip.source_offset * file_rate / timeline;
 	playback.gain = fader_gain(clip.gain_db);
 	playback.resampler = same_rate(file_rate, device_rate) ? nullptr : resampler_for(step);
+
+	const auto micro_fade = std::min((std::int64_t) (device_rate * MICRO_FADE_SECONDS), playback.length / 2);
+	playback.fade_in = std::clamp(convert_samples(clip.fade_in, timeline, device_rate), micro_fade, playback.length - micro_fade);
+	playback.fade_out = std::clamp(convert_samples(clip.fade_out, timeline, device_rate), micro_fade, playback.length - playback.fade_in);
 	return playback;
 }
 
