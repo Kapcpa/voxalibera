@@ -1,3 +1,4 @@
+#include "engine/levels.h"
 #include "engine/mix_renderer.h"
 #include "engine/plugins/plugin_chain.h"
 
@@ -53,6 +54,42 @@ TEST_CASE("a clip plays the right part of its file at the right place and level"
 	CHECK(near(left[100], 0.5f * 200.0f / FILE_LENGTH));
 	CHECK(near(right[100], 200.0f / FILE_LENGTH));
 	CHECK(near(right[255], 355.0f / FILE_LENGTH));
+
+	file.deleteFile();
+}
+
+TEST_CASE("clip fades shape the start and end of a clip across blocks")
+{
+	const auto file = write_ramp_file();
+	constexpr int FADE = 100;
+	constexpr int BLOCK = 64;
+
+	TrackPlayback track;
+	track.channels = 1;
+	track.gains = {1.0f, 1.0f};
+	track.clips.push_back({AudioFile::open(file), 0, FILE_LENGTH, 0.0, 0.5f, nullptr, FADE, FADE});
+
+	EngineSnapshot snapshot;
+	snapshot.tracks.push_back(track);
+
+	MixRenderer renderer;
+	std::vector<float> left(FILE_LENGTH), right(FILE_LENGTH);
+
+	for (int start = 0; start < FILE_LENGTH; start += BLOCK) {
+		const auto count = std::min(BLOCK, FILE_LENGTH - start);
+		float* outputs[]{left.data() + start, right.data() + start};
+		renderer.render(snapshot, {}, outputs, 2, count, {true, false, start});
+	}
+
+	const auto expected = [](int sample, float fade) { return 0.5f * (float) sample / FILE_LENGTH * fade; };
+
+	CHECK(near(left[0], 0.0f));
+	CHECK(near(left[50], expected(50, fade_gain(0.5f))));
+	CHECK(near(left[BLOCK], expected(BLOCK, fade_gain((float) BLOCK / FADE))));
+	CHECK(near(left[FADE], expected(FADE, 1.0f)));
+	CHECK(near(left[500], expected(500, 1.0f)));
+	CHECK(near(left[FILE_LENGTH - 1 - 50], expected(FILE_LENGTH - 1 - 50, fade_gain(0.5f))));
+	CHECK(near(left[FILE_LENGTH - 1], 0.0f));
 
 	file.deleteFile();
 }

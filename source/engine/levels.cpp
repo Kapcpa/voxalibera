@@ -11,6 +11,24 @@ float fader_gain(float decibels)
 	return decibels <= SILENT_DB ? 0.0f : std::pow(10.0f, decibels / 20.0f);
 }
 
+float fade_gain(float progress)
+{
+	return std::sin(std::clamp(progress, 0.0f, 1.0f) * std::numbers::pi_v<float> / 2.0f);
+}
+
+float clip_fade_gain(std::int64_t position, std::int64_t length, std::int64_t fade_in, std::int64_t fade_out)
+{
+	auto gain = 1.0f;
+
+	if (position < fade_in)
+		gain *= fade_gain((float) position / (float) fade_in);
+
+	if (length - 1 - position < fade_out)
+		gain *= fade_gain((float) (length - 1 - position) / (float) fade_out);
+
+	return gain;
+}
+
 StereoGains mono_pan_gains(float pan)
 {
 	const auto angle = (std::clamp(pan, -1.0f, 1.0f) + 1.0f) * std::numbers::pi_v<float> / 4.0f;

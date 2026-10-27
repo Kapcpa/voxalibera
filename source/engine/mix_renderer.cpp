@@ -1,5 +1,7 @@
 #include "engine/mix_renderer.h"
 
+#include "engine/levels.h"
+
 #include <cmath>
 
 namespace
@@ -73,6 +75,7 @@ void MixRenderer::add_clip(const TrackPlayback& track, const ClipPlayback& clip,
 	const auto count = (int) (to - from);
 	const auto file_channels = clip.file->channels();
 	read_clip(clip, from, count, destination);
+	apply_fades(clip, from, count, destination);
 
 	if (file_channels == 1) {
 		track_buffer.addFrom(LEFT, destination, clip_buffer, LEFT, destination, count, clip.gain);
@@ -149,5 +152,23 @@ void MixRenderer::write_outputs(float* const* outputs, int output_count, int off
 		} else {
 			juce::FloatVectorOperations::clear(output, sample_count);
 		}
+	}
+}
+
+void MixRenderer::apply_fades(const ClipPlayback& clip, std::int64_t from, int count, int destination)
+{
+	const auto end = clip.start + clip.length;
+
+	if (from >= clip.start + clip.fade_in && from + count <= end - clip.fade_out)
+		return;
+
+	const auto channels = std::min(clip.file->channels(), clip_buffer.getNumChannels());
+	const auto samples = clip_buffer.getArrayOfWritePointers();
+
+	for (auto position = from; position < from + count; ++position) {
+		const auto gain = clip_fade_gain(position - clip.start, clip.length, clip.fade_in, clip.fade_out);
+
+		for (int channel = 0; channel < channels; ++channel)
+			samples[channel][destination + (position - from)] *= gain;
 	}
 }

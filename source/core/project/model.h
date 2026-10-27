@@ -31,6 +31,8 @@ struct Clip
 	std::int64_t length = 0;
 	float gain_db = 0.0f;
 	int lane = 0;
+	std::int64_t fade_in = 0;
+	std::int64_t fade_out = 0;
 
 	std::int64_t end() const { return start + length; }
 };

@@ -34,6 +34,7 @@ private:
 	void read_resampled(const ClipPlayback& clip, std::int64_t from, int count, int destination);
 	void add_input(const TrackPlayback& track, Inputs inputs, int offset, int sample_count);
 	void write_outputs(float* const* outputs, int output_count, int offset, int sample_count);
+	void apply_fades(const ClipPlayback& clip, std::int64_t from, int count, int destination);
 
 	juce::AudioBuffer<float> track_buffer{2, CHUNK_SAMPLES};
 	juce::AudioBuffer<float> clip_buffer{2, CHUNK_SAMPLES};

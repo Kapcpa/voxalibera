@@ -58,6 +58,9 @@ public:
 	ClipMove limit_move(ClipMove move) const;
 	void move_selected(ClipMove move);
 	void remove_selected();
+	void set_gain(ClipId id, float gain_db);
+	void set_fade_in(ClipId id, std::int64_t fade_in);
+	void set_fade_out(ClipId id, std::int64_t fade_out);
 
 private:
 	Project& project;
