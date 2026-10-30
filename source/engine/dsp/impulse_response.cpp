@@ -27,7 +27,6 @@ namespace
 
 	constexpr float GENERIC_LOW_CUT = 75.0f;
 	constexpr float GENERIC_HIGH_CUT = 4800.0f;
-	constexpr float BUTTERWORTH_Q = 0.7071f;
 	constexpr GenericBand GENERIC_RESONANCE{110.0f, 1.4f, 5.0f};
 	constexpr GenericBand GENERIC_BOX_DIP{450.0f, 1.0f, -3.0f};
 	constexpr GenericBand GENERIC_PRESENCE{2400.0f, 1.0f, 4.0f};
@@ -109,13 +108,13 @@ std::unique_ptr<ImpulseResponse> generic_cabinet_response()
 	std::vector<float> samples((size_t) length, 0.0f);
 	samples.front() = 1.0f;
 
-	std::array<Biquad, 6> stages;
-	stages[0].set(BiquadCoefficients::highpass(GENERIC_RATE, GENERIC_LOW_CUT, BUTTERWORTH_Q));
-	stages[1].set(BiquadCoefficients::peak(GENERIC_RATE, GENERIC_RESONANCE.frequency, GENERIC_RESONANCE.q, GENERIC_RESONANCE.gain_db));
-	stages[2].set(BiquadCoefficients::peak(GENERIC_RATE, GENERIC_BOX_DIP.frequency, GENERIC_BOX_DIP.q, GENERIC_BOX_DIP.gain_db));
-	stages[3].set(BiquadCoefficients::peak(GENERIC_RATE, GENERIC_PRESENCE.frequency, GENERIC_PRESENCE.q, GENERIC_PRESENCE.gain_db));
-	stages[4].set(BiquadCoefficients::lowpass(GENERIC_RATE, GENERIC_HIGH_CUT, BUTTERWORTH_Q));
-	stages[5].set(BiquadCoefficients::lowpass(GENERIC_RATE, GENERIC_HIGH_CUT, BUTTERWORTH_Q));
+	std::array<Svf, 6> stages;
+	stages[0].set(SvfCoefficients::make(FilterShape::highpass, GENERIC_RATE, GENERIC_LOW_CUT, butterworth_q(2, 0)));
+	stages[1].set(SvfCoefficients::make(FilterShape::bell, GENERIC_RATE, GENERIC_RESONANCE.frequency, GENERIC_RESONANCE.q, GENERIC_RESONANCE.gain_db));
+	stages[2].set(SvfCoefficients::make(FilterShape::bell, GENERIC_RATE, GENERIC_BOX_DIP.frequency, GENERIC_BOX_DIP.q, GENERIC_BOX_DIP.gain_db));
+	stages[3].set(SvfCoefficients::make(FilterShape::bell, GENERIC_RATE, GENERIC_PRESENCE.frequency, GENERIC_PRESENCE.q, GENERIC_PRESENCE.gain_db));
+	stages[4].set(SvfCoefficients::make(FilterShape::lowpass, GENERIC_RATE, GENERIC_HIGH_CUT, butterworth_q(2, 0)));
+	stages[5].set(SvfCoefficients::make(FilterShape::lowpass, GENERIC_RATE, GENERIC_HIGH_CUT, butterworth_q(2, 0)));
 
 	for (auto& sample : samples)
 		for (auto& stage : stages)
