@@ -4,6 +4,7 @@
 #include "engine/plugins/builtin/cabinet.h"
 #include "engine/plugins/builtin/distortion.h"
 #include "engine/plugins/builtin/fuzz.h"
+#include "engine/plugins/builtin/graphic_eq.h"
 #include "engine/plugins/builtin/noise_gate.h"
 #include "engine/plugins/builtin/overdrive.h"
 
@@ -21,13 +22,14 @@ struct BuiltinPlugin
 inline constexpr auto BUILTIN_FORMAT = "builtin";
 inline constexpr auto BUILTIN_MANUFACTURER = "Voxalibera";
 
-inline const std::array<BuiltinPlugin, 6> BUILTIN_PLUGINS{{
+inline const std::array<BuiltinPlugin, 7> BUILTIN_PLUGINS{{
 	{"noise-gate", "Noise Gate", [] { return std::make_shared<NoiseGate>(); }},
 	{"overdrive", "Overdrive", [] { return std::make_shared<Overdrive>(); }},
 	{"blues-drive", "Blues Drive", [] { return std::make_shared<BluesDrive>(); }},
 	{"distortion", "Distortion", [] { return std::make_shared<Distortion>(); }},
 	{"fuzz", "Fuzz", [] { return std::make_shared<Fuzz>(); }},
 	{"cabinet", "Cabinet", [] { return std::make_shared<Cabinet>(); }},
+	{"graphic-eq", "Graphic Eq", [] { return std::make_shared<GraphicEq>(); }},
 }};
 
 inline std::shared_ptr<PluginProcessor> create_builtin_plugin(const juce::String& identifier)

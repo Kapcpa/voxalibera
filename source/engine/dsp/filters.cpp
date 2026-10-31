@@ -2,43 +2,39 @@
 
 #include <algorithm>
 #include <cmath>
+#include <complex>
 #include <numbers>
 
 namespace
 {
 	constexpr double HIGHEST_CUTOFF_RATIO = 0.49;
-	constexpr float SHELF_SLOPE_Q = 0.7071f;
 	constexpr float TAPER_DECADES = 2.0f;
+	constexpr float LOWEST_Q = 0.01f;
+	constexpr float LOWEST_MAGNITUDE = 1.0e-12f;
 
-	struct Bilinear
+	double warped(double sample_rate, double frequency)
 	{
-		double cosine;
-		double alpha;
-	};
-
-	Bilinear bilinear(double sample_rate, float frequency, float q)
-	{
-		const auto clamped = std::min((double) frequency, sample_rate * HIGHEST_CUTOFF_RATIO);
-		const auto omega = 2.0 * std::numbers::pi * clamped / sample_rate;
-		return {std::cos(omega), std::sin(omega) / (2.0 * q)};
-	}
-
-	BiquadCoefficients normalised(double b0, double b1, double b2, double a0, double a1, double a2)
-	{
-		return {(float) (b0 / a0), (float) (b1 / a0), (float) (b2 / a0), (float) (a1 / a0), (float) (a2 / a0)};
+		return std::tan(std::numbers::pi * std::min(frequency, sample_rate * HIGHEST_CUTOFF_RATIO) / sample_rate);
 	}
 
 	double shelf_amplitude(float gain_db)
 	{
 		return std::pow(10.0, gain_db / 40.0);
 	}
+
+	SvfCoefficients solved(double g, double k, double input_mix, double band_mix, double low_mix)
+	{
+		const auto a1 = 1.0 / (1.0 + g * (g + k));
+		const auto a2 = g * a1;
+		const auto a3 = g * a2;
+		return {(float) g, (float) k, (float) a1, (float) a2, (float) a3, (float) input_mix, (float) band_mix, (float) low_mix};
+	}
 }
 
 void OnePole::set_cutoff(float frequency, double sample_rate)
 {
-	const auto clamped = std::min((double) frequency, sample_rate * HIGHEST_CUTOFF_RATIO);
-	const auto warped = std::tan(std::numbers::pi * clamped / sample_rate);
-	gain = (float) (warped / (1.0 + warped));
+	const auto g = warped(sample_rate, frequency);
+	gain = (float) (g / (1.0 + g));
 }
 
 float OnePole::lowpass(float input)
@@ -49,47 +45,60 @@ float OnePole::lowpass(float input)
 	return output;
 }
 
-BiquadCoefficients BiquadCoefficients::lowpass(double sample_rate, float frequency, float q)
+SvfCoefficients SvfCoefficients::make(FilterShape shape, double sample_rate, float frequency, float q, float gain_db)
 {
-	const auto [cosine, alpha] = bilinear(sample_rate, frequency, q);
-	return normalised((1.0 - cosine) / 2.0, 1.0 - cosine, (1.0 - cosine) / 2.0, 1.0 + alpha, -2.0 * cosine, 1.0 - alpha);
-}
-
-BiquadCoefficients BiquadCoefficients::highpass(double sample_rate, float frequency, float q)
-{
-	const auto [cosine, alpha] = bilinear(sample_rate, frequency, q);
-	return normalised((1.0 + cosine) / 2.0, -(1.0 + cosine), (1.0 + cosine) / 2.0, 1.0 + alpha, -2.0 * cosine, 1.0 - alpha);
-}
-
-BiquadCoefficients BiquadCoefficients::peak(double sample_rate, float frequency, float q, float gain_db)
-{
-	const auto [cosine, alpha] = bilinear(sample_rate, frequency, q);
+	const auto g = warped(sample_rate, frequency);
+	const auto k = 1.0 / std::max(q, LOWEST_Q);
 	const auto amplitude = shelf_amplitude(gain_db);
-	return normalised(1.0 + alpha * amplitude, -2.0 * cosine, 1.0 - alpha * amplitude, 1.0 + alpha / amplitude, -2.0 * cosine, 1.0 - alpha / amplitude);
+
+	switch (shape) {
+		case FilterShape::bell: {
+			const auto bell_k = k / amplitude;
+			return solved(g, bell_k, 1.0, bell_k * (amplitude * amplitude - 1.0), 0.0);
+		}
+		case FilterShape::low_shelf:
+			return solved(g / std::sqrt(amplitude), k, 1.0, k * (amplitude - 1.0), amplitude * amplitude - 1.0);
+		case FilterShape::high_shelf:
+			return solved(g * std::sqrt(amplitude), k, amplitude * amplitude, k * (1.0 - amplitude) * amplitude, 1.0 - amplitude * amplitude);
+		case FilterShape::lowpass:
+			return solved(g, k, 0.0, 0.0, 1.0);
+		case FilterShape::highpass:
+			break;
+	}
+
+	return solved(g, k, 1.0, -k, -1.0);
 }
 
-BiquadCoefficients BiquadCoefficients::low_shelf(double sample_rate, float frequency, float gain_db)
+float SvfCoefficients::magnitude_db(double sample_rate, float frequency) const
 {
-	const auto [cosine, alpha] = bilinear(sample_rate, frequency, SHELF_SLOPE_Q);
-	const auto amplitude = shelf_amplitude(gain_db);
-	const auto root = 2.0 * std::sqrt(amplitude) * alpha;
-	return normalised(amplitude * ((amplitude + 1.0) - (amplitude - 1.0) * cosine + root), 2.0 * amplitude * ((amplitude - 1.0) - (amplitude + 1.0) * cosine), amplitude * ((amplitude + 1.0) - (amplitude - 1.0) * cosine - root), (amplitude + 1.0) + (amplitude - 1.0) * cosine + root, -2.0 * ((amplitude - 1.0) + (amplitude + 1.0) * cosine), (amplitude + 1.0) + (amplitude - 1.0) * cosine - root);
+	const auto omega = warped(sample_rate, frequency) / g;
+	const std::complex<double> s{0.0, omega};
+	const auto denominator = s * s + (double) k * s + 1.0;
+	const auto response = (double) input_mix + ((double) band_mix * s + (double) low_mix) / denominator;
+	return 20.0f * std::log10(std::max((float) std::abs(response), LOWEST_MAGNITUDE));
 }
 
-BiquadCoefficients BiquadCoefficients::high_shelf(double sample_rate, float frequency, float gain_db)
+float Svf::process(float input)
 {
-	const auto [cosine, alpha] = bilinear(sample_rate, frequency, SHELF_SLOPE_Q);
-	const auto amplitude = shelf_amplitude(gain_db);
-	const auto root = 2.0 * std::sqrt(amplitude) * alpha;
-	return normalised(amplitude * ((amplitude + 1.0) + (amplitude - 1.0) * cosine + root), -2.0 * amplitude * ((amplitude - 1.0) + (amplitude + 1.0) * cosine), amplitude * ((amplitude + 1.0) + (amplitude - 1.0) * cosine - root), (amplitude + 1.0) - (amplitude - 1.0) * cosine + root, 2.0 * ((amplitude - 1.0) - (amplitude + 1.0) * cosine), (amplitude + 1.0) - (amplitude - 1.0) * cosine - root);
+	const auto& c = coefficients;
+	const auto difference = input - low_state;
+	const auto band = c.a1 * band_state + c.a2 * difference;
+	const auto low = low_state + c.a2 * band_state + c.a3 * difference;
+	band_state = 2.0f * band - band_state;
+	low_state = 2.0f * low - low_state;
+	return c.input_mix * input + c.band_mix * band + c.low_mix * low;
 }
 
-float Biquad::process(float input)
+float butterworth_q(int order, int section)
 {
-	const auto output = coefficients.b0 * input + first;
-	first = coefficients.b1 * input - coefficients.a1 * output + second;
-	second = coefficients.b2 * input - coefficients.a2 * output;
-	return output;
+	const auto angle = std::numbers::pi * (2.0 * section + 1.0) / (2.0 * order);
+	return (float) (1.0 / (2.0 * std::cos(angle)));
+}
+
+float octave_bandwidth_q(float octaves)
+{
+	const auto ratio = std::pow(2.0, (double) octaves);
+	return (float) (std::sqrt(ratio) / (ratio - 1.0));
 }
 
 float audio_taper(float position)

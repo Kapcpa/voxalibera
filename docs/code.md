@@ -84,7 +84,7 @@ Everything the audio thread touches. Nothing here allocates, locks or touches fi
 - `plugins/builtin/overdrive`, `blues_drive`, `distortion`, `fuzz` - drives modelled on the Tube Screamer, Bluesbreaker, Rat and Big Muff circuits.
 - `plugins/builtin/noise_gate` - a basic gate with threshold, hold, release and range; goes before the drives.
 - `plugins/builtin/cabinet` - two impulse responses (mic A and B) with blend, B alignment and polarity, then low and high cut, resonance and presence. IRs are read on the message thread and handed to the audio thread through a queue.
-- `dsp/` - building blocks for our effects: one-pole and biquad filters, diode and rail clipping, envelope follower, oversampler, impulse response loading.
+- `dsp/` - building blocks for our effects: filters (`OnePole` for first order, `Svf` for second order, with `magnitude_db` for drawing the response), diode and rail clipping, envelope follower, oversampler, impulse response loading.
 - `plugins/hosted_plugin` - `HostedPlugin`: a VST3 or LV2 plugin behind `PluginProcessor` (channel layout, playhead, state, change notifications, editor).
 
 `transport.play()` / `stop()` / `record()` / `locate(sample)` - safe to call from the UI; applied at the next audio block.

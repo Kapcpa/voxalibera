@@ -42,10 +42,10 @@ private:
 
 	struct Tone
 	{
-		Biquad low_cut;
-		Biquad high_cut;
-		Biquad resonance;
-		Biquad presence;
+		Svf low_cut;
+		Svf high_cut;
+		Svf resonance;
+		Svf presence;
 	};
 
 	void file_changed(BuiltinFile& file) override;

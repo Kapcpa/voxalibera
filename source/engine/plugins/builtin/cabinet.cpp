@@ -7,11 +7,10 @@
 namespace
 {
 	constexpr double SMOOTHING_SECONDS = 0.05;
-	constexpr int TONE_BLOCK = 32;
 	constexpr float PERCENT = 100.0f;
 	constexpr float LONGEST_DELAY_MICROSECONDS = 1000.0f;
 	constexpr double MICROSECONDS = 1.0e6;
-	constexpr float BUTTERWORTH_Q = 0.7071f;
+	constexpr float SHELF_Q = 0.7071f;
 	constexpr float RESONANCE_HERTZ = 100.0f;
 	constexpr float RESONANCE_Q = 1.4f;
 	constexpr float PRESENCE_HERTZ = 3500.0f;
@@ -169,10 +168,10 @@ void Cabinet::mix_microphones(juce::AudioBuffer<float>& buffer, int sample_count
 
 void Cabinet::set_tone()
 {
-	const auto low = BiquadCoefficients::highpass(sample_rate, low_cut_hertz.getCurrentValue(), BUTTERWORTH_Q);
-	const auto high = BiquadCoefficients::lowpass(sample_rate, high_cut_hertz.getCurrentValue(), BUTTERWORTH_Q);
-	const auto bump = BiquadCoefficients::peak(sample_rate, RESONANCE_HERTZ, RESONANCE_Q, resonance_db.getCurrentValue());
-	const auto shelf = BiquadCoefficients::high_shelf(sample_rate, PRESENCE_HERTZ, presence_db.getCurrentValue());
+	const auto low = SvfCoefficients::make(FilterShape::highpass, sample_rate, low_cut_hertz.getCurrentValue(), butterworth_q(2, 0));
+	const auto high = SvfCoefficients::make(FilterShape::lowpass, sample_rate, high_cut_hertz.getCurrentValue(), butterworth_q(2, 0));
+	const auto bump = SvfCoefficients::make(FilterShape::bell, sample_rate, RESONANCE_HERTZ, RESONANCE_Q, resonance_db.getCurrentValue());
+	const auto shelf = SvfCoefficients::make(FilterShape::high_shelf, sample_rate, PRESENCE_HERTZ, SHELF_Q, presence_db.getCurrentValue());
 
 	for (auto& channel : tone) {
 		channel.low_cut.set(low);
@@ -190,22 +189,18 @@ void Cabinet::shape_tone(juce::AudioBuffer<float>& buffer, int sample_count)
 	presence_db.setTargetValue(presence.value());
 	output_gain.setTargetValue(juce::Decibels::decibelsToGain(output.value()));
 
-	for (int start = 0; start < sample_count; start += TONE_BLOCK) {
-		const auto count = std::min(TONE_BLOCK, sample_count - start);
-		const auto moving = low_cut_hertz.isSmoothing() || high_cut_hertz.isSmoothing() || resonance_db.isSmoothing() || presence_db.isSmoothing();
+	for (int index = 0; index < sample_count; ++index) {
+		if (low_cut_hertz.isSmoothing() || high_cut_hertz.isSmoothing() || resonance_db.isSmoothing() || presence_db.isSmoothing()) {
+			for (auto* smoothed : {&low_cut_hertz, &high_cut_hertz, &resonance_db, &presence_db})
+				smoothed->getNextValue();
 
-		for (auto* smoothed : {&low_cut_hertz, &high_cut_hertz, &resonance_db, &presence_db})
-			smoothed->skip(count);
-
-		if (moving)
 			set_tone();
+		}
 
 		for (int channel = 0; channel < CHANNELS; ++channel) {
 			auto& filters = tone[(size_t) channel];
-			auto* samples = buffer.getWritePointer(channel, start);
-
-			for (int index = 0; index < count; ++index)
-				samples[index] = filters.presence.process(filters.resonance.process(filters.high_cut.process(filters.low_cut.process(samples[index]))));
+			auto* sample = buffer.getWritePointer(channel, index);
+			*sample = filters.presence.process(filters.resonance.process(filters.high_cut.process(filters.low_cut.process(*sample))));
 		}
 	}
 
