@@ -11,6 +11,11 @@ namespace
 	constexpr float MAX_VOLUME_DB = 6.0f;
 	constexpr float MIN_GAIN_DB = -48.0f;
 	constexpr float MAX_GAIN_DB = 24.0f;
+
+	std::int64_t min_clip_length(const Project& project)
+	{
+		return (std::int64_t) samples_per_beat(project.tempo, project.sample_rate);
+	}
 }
 
 TrackEditor::TrackEditor(Project& project, EditHistory& edits, Selection& selection) : project(project), edits(edits), selection(selection)
@@ -247,11 +252,42 @@ void ClipEditor::set_gain(ClipId id, float gain_db)
 void ClipEditor::set_fade_in(ClipId id, std::int64_t fade_in)
 {
 	const auto* clip = project.find_clip(id);
-	edits.begin("Clip Fade", "fade:" + juce::String(id.value)).set(id, &Clip::fade_in, std::clamp<std::int64_t>(fade_in, 0, clip->length - clip->fade_out));
+	edits.begin("Clip Fade In", "fade:" + juce::String(id.value)).set(id, &Clip::fade_in, std::clamp<std::int64_t>(fade_in, 0, clip->length - clip->fade_out));
 }
 
 void ClipEditor::set_fade_out(ClipId id, std::int64_t fade_out)
 {
 	const auto* clip = project.find_clip(id);
-	edits.begin("Clip Fade", "fade:" + juce::String(id.value)).set(id, &Clip::fade_out, std::clamp<std::int64_t>(fade_out, 0, clip->length - clip->fade_in));
+	edits.begin("Clip Fade Out", "fade:" + juce::String(id.value)).set(id, &Clip::fade_out, std::clamp<std::int64_t>(fade_out, 0, clip->length - clip->fade_in));
+}
+
+void ClipEditor::set_trim_left(ClipId id, std::int64_t trim_left)
+{
+	const auto* clip = project.find_clip(id);
+	const auto clip_trim = std::clamp<std::int64_t>(trim_left, -clip->source_offset, std::max<std::int64_t>(0, clip->length - min_clip_length(project)));
+	const auto clip_length = clip->length - clip_trim;
+	const auto fade_out = std::min(clip->fade_out, clip_length);
+	const auto fade_in = std::min(clip->fade_in, clip_length - fade_out);
+
+	auto edit = edits.begin("Clip Trim Left", "trim:" + juce::String(id.value));
+	edit.set(id, &Clip::start, clip->start + clip_trim);
+	edit.set(id, &Clip::source_offset, clip->source_offset + clip_trim);
+	edit.set(id, &Clip::length, clip_length);
+	edit.set(id, &Clip::fade_in, fade_in);
+	edit.set(id, &Clip::fade_out, fade_out);
+}
+
+void ClipEditor::set_trim_right(ClipId id, std::int64_t trim_right)
+{
+	const auto* clip = project.find_clip(id);
+	const auto source_left = clip->source_length - clip->source_offset - clip->length;
+	const auto clip_trim = std::clamp<std::int64_t>(trim_right, -std::max<std::int64_t>(0, source_left), std::max<std::int64_t>(0, clip->length - min_clip_length(project)));
+	const auto clip_length = clip->length - clip_trim;
+	const auto fade_in = std::min(clip->fade_in, clip_length);
+	const auto fade_out = std::min(clip->fade_out, clip_length - fade_in);
+
+	auto edit = edits.begin("Clip Trim Right", "trim:" + juce::String(id.value));
+	edit.set(id, &Clip::length, clip_length);
+	edit.set(id, &Clip::fade_in, fade_in);
+	edit.set(id, &Clip::fade_out, fade_out);
 }

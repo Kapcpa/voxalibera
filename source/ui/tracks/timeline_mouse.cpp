@@ -21,12 +21,17 @@ ClipZone TimelineMouse::zone_at(juce::Point<int> position, const ClipUnder& clip
 	const auto handles = fade_handles(clip.area, model_clip->length, model_clip->fade_in, model_clip->fade_out);
 	const auto to_fade_in = point.getDistanceFrom({handles.fade_in_x, handles.y});
 	const auto to_fade_out = point.getDistanceFrom({handles.fade_out_x, handles.y});
+	const auto to_trim_left = std::abs(point.x - clip.area.getX());
+	const auto to_trim_right = std::abs(point.x - clip.area.getRight());
 
 	if (std::min(to_fade_in, to_fade_out) < HANDLE_SIZE)
 		return to_fade_in <= to_fade_out ? ClipZone::fade_in : ClipZone::fade_out;
 
 	if (point.y < clip.area.getY() + CLIP_HEADER_HEIGHT)
 		return ClipZone::gain;
+
+	if (std::min(to_trim_left, to_trim_right) < HANDLE_SIZE)
+		return to_trim_left <= to_trim_right ? ClipZone::trim_left : ClipZone::trim_right;
 
 	return ClipZone::body;
 }
@@ -41,6 +46,8 @@ juce::MouseCursor TimelineMouse::cursor_at(juce::Point<int> position) const
 	switch (zone_at(position, *clip)) {
 		case ClipZone::fade_in:
 		case ClipZone::fade_out:
+		case ClipZone::trim_left:
+		case ClipZone::trim_right:
 			return juce::MouseCursor::LeftRightResizeCursor;
 		case ClipZone::gain:
 			return juce::MouseCursor::UpDownResizeCursor;
@@ -101,6 +108,10 @@ void TimelineMouse::drag(const juce::MouseEvent& event)
 		drag_fade_in(event);
 	else if (current->zone == ClipZone::fade_out)
 		drag_fade_out(event);
+	else if (current->zone == ClipZone::trim_left)
+		drag_trim_left(event);
+	else if (current->zone == ClipZone::trim_right)
+		drag_trim_right(event);
 }
 
 void TimelineMouse::drag_move(const juce::MouseEvent& event)
@@ -134,6 +145,22 @@ void TimelineMouse::drag_fade_out(const juce::MouseEvent& event)
 	const auto new_fade_out = model_clip->start + model_clip->length - layout.viewport.x_to_beat(event.x) * samples_per_beat(context.project.tempo, layout.sample_rate());
 
 	context.clips.set_fade_out(current->anchor, (std::int64_t) new_fade_out);
+}
+
+void TimelineMouse::drag_trim_left(const juce::MouseEvent& event)
+{
+	const auto* model_clip = context.project.find_clip(current->anchor);
+	const auto new_trim_left = layout.viewport.x_to_beat(event.x) * samples_per_beat(context.project.tempo, layout.sample_rate()) - model_clip->start;
+
+	context.clips.set_trim_left(current->anchor, (std::int64_t) new_trim_left);
+}
+
+void TimelineMouse::drag_trim_right(const juce::MouseEvent& event)
+{
+	const auto* model_clip = context.project.find_clip(current->anchor);
+	const auto new_trim_right = model_clip->start + model_clip->length - layout.viewport.x_to_beat(event.x) * samples_per_beat(context.project.tempo, layout.sample_rate());
+
+	context.clips.set_trim_right(current->anchor, (std::int64_t) new_trim_right);
 }
 
 void TimelineMouse::up(const juce::MouseEvent& event)

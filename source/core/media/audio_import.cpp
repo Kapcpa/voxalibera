@@ -84,6 +84,7 @@ bool import_audio_file(AppContext& context, const juce::File& file, ImportPlace 
 	Clip clip;
 	clip.file = relative_media_path(project.folder, target);
 	clip.length = convert_samples(reader->lengthInSamples, reader->sampleRate, timeline);
+	clip.source_length = clip.length;
 	clip.start = import_place.start;
 
 	const auto channels = reader->numChannels == 1 ? TrackChannels::mono : TrackChannels::stereo;

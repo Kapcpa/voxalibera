@@ -89,6 +89,7 @@ Project project_from_takes(const juce::File& folder)
 			project.sample_rate = file->sample_rate();
 
 		clip.length = convert_samples(file->length(), file->sample_rate(), project.sample_rate);
+		clip.source_length = clip.length;
 		track.clips.push_back(clip);
 
 		project.tracks.push_back(track);

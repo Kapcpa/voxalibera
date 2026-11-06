@@ -29,6 +29,7 @@ struct Clip
 	std::int64_t start = 0;
 	std::int64_t source_offset = 0;
 	std::int64_t length = 0;
+	std::int64_t source_length = 0;
 	float gain_db = 0.0f;
 	int lane = 0;
 	std::int64_t fade_in = 0;
