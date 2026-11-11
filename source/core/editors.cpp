@@ -244,6 +244,48 @@ void ClipEditor::remove_selected()
 	selection.forget_missing(project);
 }
 
+void ClipEditor::split_selected(std::int64_t position, double device_rate)
+{
+	if (selection.clips.empty())
+		return;
+
+	auto edit = edits.begin(selection.clips.size() == 1 ? "Split Clip" : "Split Clips");
+
+	position = convert_samples(position, device_rate, timeline_rate(project, device_rate));
+
+	std::vector<ClipId> right_clips;
+
+	for (const auto id : selection.clips) {
+		const auto* clip = project.find_clip(id);
+
+		if (position <= clip->start || clip->end() <= position)
+			continue;
+
+		const std::int64_t cut = position - clip->start;
+
+		auto right = *clip;
+		right.start = position;
+		right.source_offset += cut;
+		right.length -= cut;
+		right.fade_in = 0;
+		right.fade_out = std::min(clip->fade_out, clip->length - cut);
+
+		edit.set(id, &Clip::length, cut);
+		edit.set(id, &Clip::fade_in, std::min(clip->fade_in, cut));
+		edit.set(id, &Clip::fade_out, (std::int64_t) 0);
+
+		const auto right_clip_id = edit.add_clip(project.find_track_of(id)->id, right);
+
+		right_clips.push_back(right_clip_id);
+	}
+
+	if (right_clips.empty())
+		return;
+
+	selection.clips.insert(selection.clips.end(), right_clips.begin(), right_clips.end());
+	++selection.revision;
+}
+
 void ClipEditor::set_gain(ClipId id, float gain_db)
 {
 	edits.begin("Clip Gain", "gain:" + juce::String(id.value)).set(id, &Clip::gain_db, std::clamp(gain_db, MIN_GAIN_DB, MAX_GAIN_DB));

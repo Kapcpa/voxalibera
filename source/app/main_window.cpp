@@ -67,6 +67,7 @@ MainWindow::MainWindow(const juce::String& name, AppContext& context) : Document
 		{command::REDO, [this] { this->context.redo(); }},
 		{command::NEW_TRACK, [this] { show_new_track_dialog(); }},
 		{command::TRACK_SETTINGS, [this] { show_track_settings(this->context.selection.tracks.front()); }},
+		{command::SPLIT, [this] { this->context.clips.split_selected(this->context.engine.transport.position(), this->context.engine.sample_rate.load()); }},
 		{command::DELETE_SELECTION, [this] { this->context.delete_selection(); }},
 		{command::RECORD, [this] { this->context.toggle_recording(); }},
 		{command::ARM_TRACKS, [this] { this->context.tracks.toggle_selected(&Track::armed, "Arm Track"); }},
@@ -195,6 +196,8 @@ bool MainWindow::is_available(juce::CommandID id) const
 		case command::SAVE_PROJECT_AS:
 		case command::CLEAN_UP_PROJECT:
 			return !context.recorder.is_recording();
+		case command::SPLIT:
+			return !context.selection.clips.empty() && !context.recorder.is_recording();
 		case command::DELETE_SELECTION:
 			return !context.selection.tracks.empty() || !context.selection.clips.empty() || context.selection.plugin.is_valid();
 		case command::TRACK_SETTINGS:

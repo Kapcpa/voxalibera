@@ -15,6 +15,7 @@ namespace command
 	constexpr juce::CommandID IMPORT_FILE = 7;
 	constexpr juce::CommandID UNDO = 10;
 	constexpr juce::CommandID REDO = 11;
+	constexpr juce::CommandID SPLIT = 12;
 	constexpr juce::CommandID TOGGLE_MIXER = 20;
 	constexpr juce::CommandID TOGGLE_PLUGIN_CHAIN = 21;
 	constexpr juce::CommandID PLAY_STOP = 25;
