@@ -67,6 +67,34 @@ std::shared_ptr<PluginChain> PluginPool::chain_for(const Track& track)
 	return chain;
 }
 
+std::shared_ptr<PluginChain> PluginPool::export_chain_for(const Track& track, double rate)
+{
+	std::vector<PluginChain::Slot> slots;
+
+	for (const auto& plugin : track.plugins) {
+		auto instance = create_instance(plugin, current_state(plugin), rate);
+
+		if (instance == nullptr)
+			continue;
+
+		instance->set_non_realtime(true);
+		slots.push_back({std::move(instance), plugin.bypass || track.plugins_bypassed});
+	}
+
+	return slots.empty() ? nullptr : std::make_shared<PluginChain>(std::move(slots));
+}
+
+juce::MemoryBlock PluginPool::current_state(const Plugin& plugin) const
+{
+	if (const auto processor = find_instance(plugin.id))
+		return processor->get_state();
+
+	if (const auto retired = retired_states.find(plugin.id); retired != retired_states.end())
+		return retired->second;
+
+	return plugin.state;
+}
+
 std::shared_ptr<PluginProcessor> PluginPool::find_instance(PluginId id) const
 {
 	const auto found = instances.find(id);
@@ -103,12 +131,8 @@ bool PluginPool::take_changes()
 void PluginPool::store_states(Project& project) const
 {
 	for (auto& track : project.tracks)
-		for (auto& plugin : track.plugins) {
-			if (const auto processor = find_instance(plugin.id))
-				plugin.state = processor->get_state();
-			else if (const auto retired = retired_states.find(plugin.id); retired != retired_states.end())
-				plugin.state = retired->second;
-		}
+		for (auto& plugin : track.plugins)
+			plugin.state = current_state(plugin);
 }
 
 void PluginPool::clear()
@@ -126,14 +150,15 @@ std::shared_ptr<PluginProcessor> PluginPool::instance_for(const Plugin& plugin)
 	if (const auto found = instances.find(plugin.id); found != instances.end())
 		return found->second.processor;
 
-	auto processor = create_instance(plugin);
+	const auto retired = retired_states.extract(plugin.id);
+	auto processor = create_instance(plugin, retired.empty() ? plugin.state : retired.mapped(), sample_rate);
 	instances[plugin.id] = {processor, processor != nullptr ? processor->changes() : 0};
 	return processor;
 }
 
-std::shared_ptr<PluginProcessor> PluginPool::create_instance(const Plugin& plugin)
+std::shared_ptr<PluginProcessor> PluginPool::create_instance(const Plugin& plugin, const juce::MemoryBlock& state, double rate)
 {
-	auto instance = plugin.format == BUILTIN_FORMAT ? create_builtin_plugin(plugin.identifier) : create_hosted(plugin);
+	auto instance = plugin.format == BUILTIN_FORMAT ? create_builtin_plugin(plugin.identifier) : create_hosted(plugin, rate);
 
 	if (instance == nullptr && plugin.format == BUILTIN_FORMAT)
 		log_plugin_problem(plugin, "is not a built-in effect of this version");
@@ -144,13 +169,12 @@ std::shared_ptr<PluginProcessor> PluginPool::create_instance(const Plugin& plugi
 	if (auto* builtin = dynamic_cast<BuiltinProcessor*>(instance.get()))
 		builtin->use_media_folder(media_folder);
 
-	const auto retired = retired_states.extract(plugin.id);
-	instance->set_state(retired.empty() ? plugin.state : retired.mapped());
-	instance->prepare({sample_rate, MixRenderer::CHUNK_SAMPLES});
+	instance->set_state(state);
+	instance->prepare({rate, MixRenderer::CHUNK_SAMPLES});
 	return instance;
 }
 
-std::shared_ptr<PluginProcessor> PluginPool::create_hosted(const Plugin& plugin)
+std::shared_ptr<PluginProcessor> PluginPool::create_hosted(const Plugin& plugin, double rate)
 {
 	const auto description = library.find(plugin);
 
@@ -160,7 +184,7 @@ std::shared_ptr<PluginProcessor> PluginPool::create_hosted(const Plugin& plugin)
 	}
 
 	juce::String error;
-	auto loaded = library.formats.createPluginInstance(*description, sample_rate, MixRenderer::CHUNK_SAMPLES, error);
+	auto loaded = library.formats.createPluginInstance(*description, rate, MixRenderer::CHUNK_SAMPLES, error);
 
 	if (loaded == nullptr) {
 		log_plugin_problem(plugin, "could not be loaded: " + error);

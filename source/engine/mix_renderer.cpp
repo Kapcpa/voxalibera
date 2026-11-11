@@ -111,8 +111,9 @@ void MixRenderer::read_resampled(const ClipPlayback& clip, std::int64_t from, in
 {
 	const auto first = clip.file_position(from);
 	const auto last = clip.file_position(from + count - 1);
-	const auto lowest = (std::int64_t) std::floor(first) - ResamplingKernel::HALF_TAPS + 1;
-	const auto highest = (std::int64_t) std::floor(last) + ResamplingKernel::HALF_TAPS;
+	const auto half_taps = clip.resampler->half_taps();
+	const auto lowest = (std::int64_t) std::floor(first) - half_taps + 1;
+	const auto highest = (std::int64_t) std::floor(last) + half_taps;
 	const auto needed = (int) std::min<std::int64_t>(highest - lowest + 1, RESAMPLE_SAMPLES);
 	const auto readable_from = std::max<std::int64_t>(lowest, 0);
 	const auto readable_to = std::min<std::int64_t>(lowest + needed, clip.file->length());

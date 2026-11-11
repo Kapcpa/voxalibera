@@ -44,7 +44,7 @@ void WindowContent::resized()
 	main_view.setBounds(area);
 }
 
-MainWindow::MainWindow(const juce::String& name, AppContext& context) : DocumentWindow(name, theme::WINDOW_BACKGROUND, allButtons), context(context), main_view(context), settings_view(context), track_dialog(context), plugin_browser(context)
+MainWindow::MainWindow(const juce::String& name, AppContext& context) : DocumentWindow(name, theme::WINDOW_BACKGROUND, allButtons), context(context), main_view(context), settings_view(context), track_dialog(context), plugin_browser(context), export_dialog(context)
 {
 	actions = {
 		{command::NEW_PROJECT, [this] { project_dialogs.new_project(); }},
@@ -53,6 +53,7 @@ MainWindow::MainWindow(const juce::String& name, AppContext& context) : Document
 		{command::SAVE_PROJECT_AS, [this] { project_dialogs.save_as(); }},
 		{command::CLEAN_UP_PROJECT, [this] { project_dialogs.clean_up(); }},
 		{command::IMPORT_FILE, [this] { import_file(); }},
+		{command::EXPORT_MIX, [this] { show_export_dialog(); }},
 		{command::QUIT, [this] { request_quit(); }},
 		{command::TOGGLE_MIXER, [this] { toggle_mixer(); }},
 		{command::TOGGLE_PLUGIN_CHAIN, [this] { toggle_plugin_chain(); }},
@@ -90,7 +91,12 @@ MainWindow::MainWindow(const juce::String& name, AppContext& context) : Document
 	setResizeLimits(MIN_WIDTH, MIN_HEIGHT, MAX_SIZE, MAX_SIZE);
 	centreWithSize(getWidth(), getHeight());
 
-	overlay.on_close = [this] { command_manager.commandStatusChanged(); };
+	overlay.on_close = [this] {
+		this->context.exporter.cancel();
+		command_manager.commandStatusChanged();
+	};
+	export_dialog.on_closed = [this] { close_overlay(); };
+	export_dialog.on_finished = [this](const ExportResult& result) { show_export_result(result); };
 	track_dialog.on_finished = [this] { close_overlay(); };
 	message_dialog.on_finished = [this] { close_overlay(); };
 	plugin_browser.on_finished = [this] { close_overlay(); };
@@ -161,6 +167,7 @@ void MainWindow::timerCallback()
 	show_title();
 	quit_after_recording();
 	release_focus_outside_text_fields();
+	export_dialog.update();
 
 	if (overlay.is_open()) {
 		settings_view.update();
@@ -196,6 +203,8 @@ bool MainWindow::is_available(juce::CommandID id) const
 		case command::SAVE_PROJECT_AS:
 		case command::CLEAN_UP_PROJECT:
 			return !context.recorder.is_recording();
+		case command::EXPORT_MIX:
+			return !context.recorder.is_recording() && project_end(context.project) > 0;
 		case command::SPLIT:
 			return !context.selection.clips.empty() && !context.recorder.is_recording();
 		case command::DELETE_SELECTION:
@@ -289,6 +298,26 @@ void MainWindow::import_file()
 		if (!import_audio_file(context, file))
 			show_message("Import Failed", "Couldn't read " + file.getFileName() + " as audio.", {{"OK", {}}});
 	});
+}
+
+void MainWindow::show_export_dialog()
+{
+	export_dialog.prepare();
+	overlay.open("Export Mix", export_dialog, false);
+	command_manager.commandStatusChanged();
+}
+
+void MainWindow::show_export_result(const ExportResult& result)
+{
+	if (result.outcome == ExportResult::Outcome::failed) {
+		show_message("Export Failed", result.problem, {{"OK", {}}});
+		return;
+	}
+
+	const auto peak = juce::String(juce::Decibels::gainToDecibels(result.peak), 1) + " dBFS";
+	const auto clipping = result.clipped ? "\nThe mix clipped. Lower the master or the loudest tracks and export again." : "";
+	const auto file = result.file;
+	show_message("Export Finished", "Saved " + file.getFileName() + ", peak " + peak + "." + clipping, {{"Show in Folder", [file] { file.revealToUser(); }}, {"OK", {}}});
 }
 
 void MainWindow::toggle_mixer()

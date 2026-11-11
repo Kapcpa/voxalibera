@@ -138,3 +138,4 @@ struct Project
 };
 
 double timeline_rate(const Project& project, double device_rate);
+std::int64_t project_end(const Project& project);

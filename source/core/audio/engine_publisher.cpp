@@ -42,14 +42,37 @@ int EnginePublisher::meter_of(TrackId id) const
 void EnginePublisher::publish(double now)
 {
 	const auto rate = engine.sample_rate.load();
-	const auto solo_active = any_solo(project.tracks);
-	std::vector<ReadAheadRegion> regions;
+	SnapshotProblems problems;
 
 	forget_removed_tracks();
 	plugins.use_rate(rate);
 	plugins.forget_removed(project);
-	files_missing = false;
-	mismatched_rate = 0.0;
+
+	auto snapshot = build_snapshot(rate, [this](const Track& track) { return plugins.chain_for(track); }, ResamplingKernel::REALTIME_TAPS, problems);
+	std::vector<ReadAheadRegion> regions;
+
+	for (size_t index = 0; index < snapshot->tracks.size(); ++index) {
+		auto& track = snapshot->tracks[index];
+		track.meter = assign_meter(project.tracks[index].id);
+
+		for (const auto& clip : track.clips)
+			regions.push_back({clip.file, clip.start, clip.length, clip.file_start, clip.resampler != nullptr ? clip.resampler->step() : 1.0});
+	}
+
+	engine.snapshots.publish(std::move(snapshot));
+	read_ahead.set_regions(std::move(regions), rate);
+
+	files_missing = problems.files_missing;
+	mismatched_rate = problems.mismatched_rate;
+	published_revision = project.revision;
+	published_plugin_revision = plugins.revision();
+	published_rate = rate;
+	next_retry = now + MISSING_FILE_RETRY_SECONDS;
+}
+
+std::unique_ptr<EngineSnapshot> EnginePublisher::build_snapshot(double rate, const ChainForTrack& chain_for, int resampler_taps, SnapshotProblems& problems)
+{
+	const auto solo_active = any_solo(project.tracks);
 
 	auto snapshot = std::make_unique<EngineSnapshot>();
 	snapshot->tempo = project.tempo;
@@ -57,21 +80,14 @@ void EnginePublisher::publish(double now)
 	snapshot->master_gain = fader_gain(project.master_volume_db);
 
 	for (const auto& track : project.tracks)
-		snapshot->tracks.push_back(build_track(track, solo_active, rate, regions));
+		snapshot->tracks.push_back(build_track(track, solo_active, rate, chain_for, resampler_taps, problems));
 
-	engine.snapshots.publish(std::move(snapshot));
-	read_ahead.set_regions(std::move(regions), rate);
-
-	published_revision = project.revision;
-	published_plugin_revision = plugins.revision();
-	published_rate = rate;
-	next_retry = now + MISSING_FILE_RETRY_SECONDS;
+	return snapshot;
 }
 
-TrackPlayback EnginePublisher::build_track(const Track& track, bool solo_active, double sample_rate, std::vector<ReadAheadRegion>& regions)
+TrackPlayback EnginePublisher::build_track(const Track& track, bool solo_active, double rate, const ChainForTrack& chain_for, int resampler_taps, SnapshotProblems& problems)
 {
 	TrackPlayback playback;
-	playback.meter = assign_meter(track.id);
 	playback.channels = channel_count(track.channels);
 	playback.first_input = track.input.first_channel;
 	playback.monitors_input = track.armed && track.input.is_connected();
@@ -81,70 +97,64 @@ TrackPlayback EnginePublisher::build_track(const Track& track, bool solo_active,
 	const auto pan = playback.channels == 1 ? mono_pan_gains(track.pan) : stereo_balance_gains(track.pan);
 	playback.gains = {gain * pan.left, gain * pan.right};
 
-	playback.plugins = plugins.chain_for(track);
+	playback.plugins = chain_for(track);
 
-	for (const auto& clip : track.clips) {
-		const auto built = build_clip(clip, sample_rate);
-
-		if (!built)
-			continue;
-
-		playback.clips.push_back(*built);
-		regions.push_back({built->file, built->start, built->length, built->file_start, built->resampler != nullptr ? built->resampler->step() : 1.0});
-	}
+	for (const auto& clip : track.clips)
+		if (const auto built = build_clip(clip, rate, resampler_taps, problems))
+			playback.clips.push_back(*built);
 
 	return playback;
 }
 
-std::optional<ClipPlayback> EnginePublisher::build_clip(const Clip& clip, double device_rate)
+std::optional<ClipPlayback> EnginePublisher::build_clip(const Clip& clip, double rate, int resampler_taps, SnapshotProblems& problems)
 {
-	if (device_rate <= 0.0)
+	if (rate <= 0.0)
 		return std::nullopt;
 
 	const auto path = project.folder.getChildFile(clip.file);
-	const auto timeline = timeline_rate(project, device_rate);
+	const auto timeline = timeline_rate(project, rate);
 	auto file = files.get(path, 0);
 
 	if (file != nullptr)
 		file = files.get(path, std::max<std::int64_t>(0, convert_samples(clip.source_offset + clip.length, timeline, file->sample_rate()) - ROUNDING_SAMPLES));
 
 	if (file == nullptr) {
-		files_missing = true;
+		problems.files_missing = true;
 		return std::nullopt;
 	}
 
 	const auto file_rate = file->sample_rate();
-	const auto step = file_rate / device_rate;
+	const auto step = file_rate / rate;
 
 	if (step > ResamplingKernel::MAX_STEP) {
-		mismatched_rate = file_rate;
+		problems.mismatched_rate = file_rate;
 
 		if (reported_rate_mismatches.insert(clip.file).second)
-			log_event(clip.file + " is at " + juce::String(file_rate, 0) + " Hz, too far from the device's " + juce::String(device_rate, 0) + " Hz to play");
+			log_event(clip.file + " is at " + juce::String(file_rate, 0) + " Hz, too far from " + juce::String(rate, 0) + " Hz to play");
 
 		return std::nullopt;
 	}
 
 	ClipPlayback playback;
 	playback.file = file;
-	playback.start = convert_samples(clip.start, timeline, device_rate);
-	playback.length = convert_samples(clip.length, timeline, device_rate);
+	playback.start = convert_samples(clip.start, timeline, rate);
+	playback.length = convert_samples(clip.length, timeline, rate);
 	playback.file_start = (double) clip.source_offset * file_rate / timeline;
 	playback.gain = fader_gain(clip.gain_db);
-	playback.resampler = same_rate(file_rate, device_rate) ? nullptr : resampler_for(step);
+	playback.resampler = same_rate(file_rate, rate) ? nullptr : resampler_for(step, resampler_taps);
 
-	const auto micro_fade = std::min((std::int64_t) (device_rate * MICRO_FADE_SECONDS), playback.length / 2);
-	playback.fade_in = std::clamp(convert_samples(clip.fade_in, timeline, device_rate), micro_fade, playback.length - micro_fade);
-	playback.fade_out = std::clamp(convert_samples(clip.fade_out, timeline, device_rate), micro_fade, playback.length - playback.fade_in);
+	const auto micro_fade = std::min((std::int64_t) (rate * MICRO_FADE_SECONDS), playback.length / 2);
+	playback.fade_in = std::clamp(convert_samples(clip.fade_in, timeline, rate), micro_fade, playback.length - micro_fade);
+	playback.fade_out = std::clamp(convert_samples(clip.fade_out, timeline, rate), micro_fade, playback.length - playback.fade_in);
 	return playback;
 }
 
-std::shared_ptr<const ResamplingKernel> EnginePublisher::resampler_for(double step)
+std::shared_ptr<const ResamplingKernel> EnginePublisher::resampler_for(double step, int taps)
 {
-	auto& kernel = resamplers[std::llround(step * STEP_KEY_SCALE)];
+	auto& kernel = resamplers[{std::llround(step * STEP_KEY_SCALE), taps}];
 
 	if (kernel == nullptr)
-		kernel = std::make_shared<const ResamplingKernel>(step);
+		kernel = std::make_shared<const ResamplingKernel>(step, taps);
 
 	return kernel;
 }

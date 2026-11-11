@@ -14,6 +14,7 @@ namespace
 		{command::SAVE_PROJECT_AS, "Save As...", "File", 's', CONTROL_SHIFT},
 		{command::CLEAN_UP_PROJECT, "Clean Up Project...", "File", 0, NO_MODIFIERS},
 		{command::IMPORT_FILE, "Import File...", "File", 0, NO_MODIFIERS},
+		{command::EXPORT_MIX, "Export Mix...", "File", 'e', CONTROL_SHIFT},
 		{command::QUIT, "Quit", "File", 'q', CONTROL},
 		{command::UNDO, "Undo", "Edit", 'z', CONTROL},
 		{command::REDO, "Redo", "Edit", 'z', CONTROL_SHIFT},

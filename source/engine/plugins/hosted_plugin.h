@@ -16,6 +16,7 @@ public:
 	void process(juce::AudioBuffer<float>& buffer, int sample_count, const PluginPlayhead& playhead) override;
 	juce::MemoryBlock get_state() const override;
 	void set_state(const juce::MemoryBlock& state) override;
+	void set_non_realtime(bool non_realtime) override;
 	int latency_samples() const override;
 	int tail_samples() const override { return tail; }
 	std::unique_ptr<juce::Component> create_editor() override;

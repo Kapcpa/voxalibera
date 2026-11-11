@@ -16,6 +16,7 @@ public:
 	void use_media_folder(const juce::File& folder);
 	void forget_removed(const Project& project);
 	std::shared_ptr<PluginChain> chain_for(const Track& track);
+	std::shared_ptr<PluginChain> export_chain_for(const Track& track, double rate);
 	std::shared_ptr<PluginProcessor> find_instance(PluginId id) const;
 	bool is_missing(PluginId id) const;
 	bool take_changes();
@@ -32,8 +33,9 @@ private:
 	};
 
 	std::shared_ptr<PluginProcessor> instance_for(const Plugin& plugin);
-	std::shared_ptr<PluginProcessor> create_instance(const Plugin& plugin);
-	std::shared_ptr<PluginProcessor> create_hosted(const Plugin& plugin);
+	std::shared_ptr<PluginProcessor> create_instance(const Plugin& plugin, const juce::MemoryBlock& state, double rate);
+	std::shared_ptr<PluginProcessor> create_hosted(const Plugin& plugin, double rate);
+	juce::MemoryBlock current_state(const Plugin& plugin) const;
 	void log_plugin_problem(const Plugin& plugin, const juce::String& problem) const;
 	void retire(PluginId id);
 
