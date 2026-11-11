@@ -17,6 +17,7 @@ namespace
 		{command::QUIT, "Quit", "File", 'q', CONTROL},
 		{command::UNDO, "Undo", "Edit", 'z', CONTROL},
 		{command::REDO, "Redo", "Edit", 'z', CONTROL_SHIFT},
+		{command::SPLIT, "Split", "Edit", 'e', CONTROL},
 		{command::TOGGLE_MIXER, "Mixer", "View", 'x', NO_MODIFIERS},
 		{command::TOGGLE_PLUGIN_CHAIN, "Plugin Chain", "View", 'v', NO_MODIFIERS},
 		{command::PLAY_STOP, "Play / Stop", "Transport", juce::KeyPress::spaceKey, NO_MODIFIERS},

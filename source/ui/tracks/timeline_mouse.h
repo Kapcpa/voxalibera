@@ -13,6 +13,8 @@ enum class ClipZone
 	fade_in,
 	fade_out,
 	gain,
+	trim_left,
+	trim_right
 };
 
 struct ClipGesture
@@ -44,6 +46,8 @@ private:
 	void drag_gain(const juce::MouseEvent& event);
 	void drag_fade_in(const juce::MouseEvent& event);
 	void drag_fade_out(const juce::MouseEvent& event);
+	void drag_trim_left(const juce::MouseEvent& event);
+	void drag_trim_right(const juce::MouseEvent& event);
 
 	AppContext& context;
 	const TimelineLayout& layout;

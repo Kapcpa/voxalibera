@@ -20,7 +20,7 @@ Starting the program, windows, commands and menus.
 Application state. `project/` is the song document and its files, `audio/` talks to the engine and the devices, `media/` handles audio files and waveforms, `plugins/` effects.
 
 - `app_context` - `AppContext`, the one shared object: settings, engine, devices, project, edits, selection, recorder, project session.
-- `editors` - `TrackEditor` (add, change settings, delete, rename, colour, volume, arm, mute, solo, add/insert/move/remove/bypass plugins) and `ClipEditor` (move the selection in time and across tracks, delete).
+- `editors` - `TrackEditor` (add, change settings, delete, rename, colour, volume, arm, mute, solo, add/insert/move/remove/bypass plugins) and `ClipEditor` (move the selection in time and across tracks, split at the playhead, delete).
 - `selection` - which tracks and clips are selected; outside undo.
 - `settings` - `settings.json`: device, test monitor, hardware controls, extra plugin folders.
 - `log` - the log file under `~/.local/state/voxalibera/`, and `XrunWatch`, which logs dropouts at most every two seconds.

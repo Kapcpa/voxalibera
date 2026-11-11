@@ -38,6 +38,7 @@ namespace
 		object->setProperty("start", (juce::int64) clip.start);
 		object->setProperty("source-offset", (juce::int64) clip.source_offset);
 		object->setProperty("length", (juce::int64) clip.length);
+		object->setProperty("source-length", (juce::int64) clip.source_length);
 		object->setProperty("gain-db", clip.gain_db);
 		object->setProperty("lane", clip.lane);
 		object->setProperty("fade-in", (juce::int64) clip.fade_in);
@@ -99,6 +100,7 @@ namespace
 		clip.start = read_samples(json, "start");
 		clip.source_offset = read_samples(json, "source-offset");
 		clip.length = read_samples(json, "length");
+		clip.source_length = std::max(read_samples(json, "source-length"), clip.source_offset + clip.length);
 		clip.gain_db = (float) read(json, "gain-db", 0.0);
 		clip.lane = (int) read(json, "lane", 0);
 		clip.fade_in = read_samples(json, "fade-in");

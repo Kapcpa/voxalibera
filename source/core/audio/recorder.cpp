@@ -212,6 +212,7 @@ void Recorder::add_recorded_clips(std::int64_t start)
 		clip.start = convert_samples(start, device_rate, timeline);
 		clip.source_offset = convert_samples(latency, device_rate, timeline);
 		clip.length = convert_samples(written - latency, device_rate, timeline);
+		clip.source_length = convert_samples(written, device_rate, timeline);
 
 		peak_store.store(clip.file, std::move(live[position].peaks));
 		edit.add_clip(live[position].track, clip);
