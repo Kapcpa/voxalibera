@@ -11,6 +11,7 @@ file(GLOB_RECURSE VOXALIBERA_EFFECT_SOURCES CONFIGURE_DEPENDS ${PROJECT_SOURCE_D
 target_sources(voxalibera_tests PRIVATE
     ${VOXALIBERA_TEST_SOURCES}
     ${VOXALIBERA_EFFECT_SOURCES}
+    ${PROJECT_SOURCE_DIR}/source/core/audio/mix_export.cpp
     ${PROJECT_SOURCE_DIR}/source/core/project/edit_history.cpp
     ${PROJECT_SOURCE_DIR}/source/core/project/model.cpp
     ${PROJECT_SOURCE_DIR}/source/core/project/project_file.cpp

@@ -90,6 +90,11 @@ void HostedPlugin::set_state(const juce::MemoryBlock& state)
 		instance->setStateInformation(state.getData(), (int) state.getSize());
 }
 
+void HostedPlugin::set_non_realtime(bool non_realtime)
+{
+	instance->setNonRealtime(non_realtime);
+}
+
 int HostedPlugin::latency_samples() const
 {
 	return instance->getLatencySamples();

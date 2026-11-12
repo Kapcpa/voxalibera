@@ -135,6 +135,13 @@ The UI writes those atomics and saves `Settings`; the engine never sees `Setting
 - Positions in the project (clip start, length, source offset) are samples at the project's rate (`timeline_rate(project, device_rate)`); the transport, the playhead and recording work in device samples. Convert at the edges with `convert_samples`: the publisher for clips, the timeline for the playhead and live takes, the recorder for new clips. Peaks carry their file's rate.
 - A clip whose file rate differs from the device plays through `ResamplingKernel` (32-tap windowed sinc, built once per rate ratio on the message thread and shared through the snapshot); matching files keep the direct path. Ratios beyond 4x stay silent, logged and shown in the transport bar (`publisher.mismatched_file_rate()`).
 
+### Export
+
+- File > Export Mix (Ctrl+Shift+E) renders the whole song to WAV at the project's rate: 16-bit with TPDF dither, 24-bit or 32-bit float. It runs on its own thread (`MixExport`), so playback and the UI keep going; the dialog stays open with a progress bar and blocks other commands.
+- `AppContext::start_export` builds a separate snapshot with `EnginePublisher::build_snapshot`: clips at the project's rate, 128-tap resampling instead of 32, and new plugin instances from `PluginPool::export_chain_for` with the live instances' current state, in non-realtime mode. The audio thread's instances are never touched. They are created and destroyed on the message thread (`take_result` frees them).
+- Rendering starts the longest chain latency before zero, so tracks behind latent plugins don't lose their first samples, and continues past the last clip by the longest effect tail, stopping at the first silent block.
+- Written to a temporary file next to the target and renamed at the end, so a cancel or failure leaves no half-written file. The result reports the peak and whether a fixed-point export clipped.
+
 ### Plugins
 
 - A track's effects are `Track::plugins` in the model: identity (`format`, `identifier`, name, manufacturer, version), `bypass` and the last stored `state`. `Track::plugins_bypassed` bypasses the whole chain (B, the chain's Bypass button) without touching each effect's own bypass; `PluginPool::chain_for` combines the two. They change through edits like everything else (`context.tracks.add_plugin`, `insert_plugin`, `move_plugin` within or across tracks, `remove_plugin`, `toggle_plugin_bypass`; `edit.set(plugin_id, &Plugin::field, value)`). Positions are indexes in the chain; moving to a position counts it after the plugin has left its old place.

@@ -13,6 +13,7 @@ namespace command
 	constexpr juce::CommandID QUIT = 5;
 	constexpr juce::CommandID CLEAN_UP_PROJECT = 6;
 	constexpr juce::CommandID IMPORT_FILE = 7;
+	constexpr juce::CommandID EXPORT_MIX = 8;
 	constexpr juce::CommandID UNDO = 10;
 	constexpr juce::CommandID REDO = 11;
 	constexpr juce::CommandID SPLIT = 12;

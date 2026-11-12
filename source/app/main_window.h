@@ -3,6 +3,7 @@
 #include "app/main_menu.h"
 #include "app/project_dialogs.h"
 #include "core/app_context.h"
+#include "ui/export_dialog.h"
 #include "ui/main_view.h"
 #include "ui/parts/message_dialog.h"
 #include "ui/parts/modal_overlay.h"
@@ -54,6 +55,8 @@ private:
 	void close_overlay();
 	void release_focus_outside_text_fields();
 	void import_file();
+	void show_export_dialog();
+	void show_export_result(const ExportResult& result);
 	void toggle_mixer();
 	void toggle_plugin_chain();
 	void show_plugins_of(TrackId track);
@@ -70,6 +73,7 @@ private:
 	SettingsView settings_view;
 	TrackDialog track_dialog;
 	PluginBrowser plugin_browser;
+	ExportDialog export_dialog;
 	MessageDialog message_dialog;
 	ProjectDialogs project_dialogs{context, [this](const auto& title, const auto& message, auto choices) { show_message(title, message, std::move(choices)); }};
 	ModalOverlay overlay;

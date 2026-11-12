@@ -141,3 +141,14 @@ double timeline_rate(const Project& project, double device_rate)
 {
 	return project.sample_rate > 0.0 ? project.sample_rate : device_rate;
 }
+
+std::int64_t project_end(const Project& project)
+{
+	std::int64_t end = 0;
+
+	for (const auto& track : project.tracks)
+		for (const auto& clip : track.clips)
+			end = std::max(end, clip.end());
+
+	return end;
+}

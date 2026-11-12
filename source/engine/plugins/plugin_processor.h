@@ -37,6 +37,7 @@ public:
 
 	virtual juce::MemoryBlock get_state() const { return {}; }
 	virtual void set_state(const juce::MemoryBlock&) {}
+	virtual void set_non_realtime(bool) {}
 	virtual int latency_samples() const { return 0; }
 	virtual int tail_samples() const { return 0; }
 	virtual std::unique_ptr<juce::Component> create_editor();

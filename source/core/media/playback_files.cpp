@@ -55,6 +55,6 @@ void ReadAhead::touch(const std::vector<ReadAheadRegion>& targets, std::int64_t 
 		const auto overlap_end = std::min(to, region.start + region.length);
 
 		if (overlap_start < overlap_end)
-			region.file->touch((std::int64_t) (region.file_start + (double) (overlap_start - region.start) * region.file_step), (std::int64_t) ((double) (overlap_end - overlap_start) * region.file_step) + ResamplingKernel::TAPS);
+			region.file->touch((std::int64_t) (region.file_start + (double) (overlap_start - region.start) * region.file_step), (std::int64_t) ((double) (overlap_end - overlap_start) * region.file_step) + ResamplingKernel::MAX_TAPS);
 	}
 }

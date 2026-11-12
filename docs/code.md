@@ -32,9 +32,10 @@ Application state. `project/` is the song document and its files, `audio/` talks
 - `project/project_cleanup` - takes no clip uses, deleting them with their waveform caches, and when to hint about them (`~/.local/state/voxalibera/cleanup-hints.json`).
 - `project/recent_projects` - the last opened projects, in `~/.local/state/voxalibera/recent.json`.
 - `audio/device_session` - opening devices, borrowing them from PipeWire, PipeWire properties for JACK, re-applying saved interface settings (input source, hardware monitor).
-- `audio/engine_publisher` - turns the project into engine snapshots when it changes: solo, gains, pan, opened files, meter slots, project positions converted to device samples, resamplers.
+- `audio/engine_publisher` - turns the project into engine snapshots when it changes: solo, gains, pan, opened files, meter slots, project positions converted to device samples, resamplers; `build_snapshot` also builds the export's snapshot at another rate with its own plugin chains.
+- `audio/mix_export` - `MixExport`: renders an export snapshot to a WAV file on its own thread (pre-roll for plugin latency, effect tail, dither at 16 bit), with progress, cancel and the result.
 - `audio/recorder` - runs a recording: arms, creates take files, hands them to the engine, turns them into clips.
-- `plugins/plugin_pool` - the running plugin instances per `PluginId` and each track's `PluginChain`; recreates them on a rate change, keeps the state of removed ones for undo, copies live states into the model before saving.
+- `plugins/plugin_pool` - the running plugin instances per `PluginId` and each track's `PluginChain`; recreates them on a rate change, keeps the state of removed ones for undo, copies live states into the model before saving; `export_chain_for` makes separate non-realtime instances for an export.
 - `plugins/plugin_library` - the format manager and the list of installed plugins with the blacklist (`~/.cache/voxalibera/plugins.xml`); search for the browser; `plugin_from(description)` turns a JUCE description into a `Plugin`.
 - `plugins/plugin_scanner` - finds and scans plugins on a background thread through a child process (`--scan-plugins`), blacklists the ones that crash or hang, reports progress and failures; also the child's side (`run_plugin_scan`).
 - `media/project_folders` - where takes go and how they're named; the temporary folders of unsaved projects.
@@ -52,6 +53,7 @@ Application state. `project/` is the song document and its files, `audio/` talks
 `context.plugins.find_instance(id)` - the running effect for a plugin in the project, or `nullptr` (missing, or no device yet); `is_missing(id)` tells which.
 `context.tracks.add(new_track)` - creates a track below the selected one and selects it.
 `context.clips.move_selected(move)` - moves all selected clips by a time and track offset, kept within limits.
+`context.start_export(file, bit_depth)` - starts exporting the mix; returns a problem to show, or nothing. `context.exporter.take_result()` gives the result once it's done.
 `context.recorder.start()` / `stop()` - starts and stops recording on the armed (or selected) tracks.
 `context.tracks.set_volume(id, db)` / `set_pan(id, pan)` - fader and pan, merged into one undo step while dragging.
 `context.publisher.meter_of(id)` - which meter in `engine.mixer.track_meters` belongs to a track.
@@ -67,7 +69,7 @@ Everything the audio thread touches. Nothing here allocates, locks or touches fi
 - `audio_engine` - `AudioEngine`: the audio callback; owns the device manager, transport, metronome, meters and snapshots.
 - `engine_snapshot` - `EngineSnapshot`: the read-only copy of the project the audio thread plays from (tracks, clips, gains).
 - `mix_renderer` - plays clips and monitored inputs through each track's gain and pan into the master, fills the meters.
-- `resampler` - `ResamplingKernel`: plays a file at another sample rate in real time (windowed sinc, a table per rate ratio).
+- `resampler` - `ResamplingKernel`: plays a file at another sample rate (windowed sinc, a table per rate ratio; 32 taps in real time, 128 for export).
 - `audio_file` - a memory-mapped WAV file the audio thread can read from without system calls.
 - `levels` - fader decibels to gain, the mono pan law and stereo balance; `LevelMeter`, peak meters filled by the audio thread and read by the UI.
 - `lock_free` - `SnapshotExchange` swaps snapshots in atomically and frees old ones only after the audio thread is done; `LockFreeQueue` is a fixed-size single-producer single-consumer queue.
@@ -107,6 +109,7 @@ Views. They read state every frame and call into `core/` on user input; they nev
 - `main_view` - the main window's zones: transport bar, tracks area, mixer.
 - `mixer/mixer_view` - the master strip on the left, then one strip per track, scrolling sideways.
 - `mixer/mixer_strip` - pan, values, fader with meter, FX, mute, solo and a colour name plate; the master keeps the same sections so all faders line up.
+- `export_dialog` - the Export Mix dialog: file, format, length, progress.
 - `transport_bar` - play, stop, record, position (or the count-in beats), tempo, time signature, metronome, count-in, and a warning when clips don't match the device's sample rate.
 - `parts/modal_overlay` - dims the window and shows a dialog in the middle.
 - `parts/message_dialog` - a message with a row of buttons (Save changes, problems, About), shown in the overlay.
@@ -135,4 +138,4 @@ Views. They read state every frame and call into `core/` on user input; they nev
 
 ## tests/
 
-Base tests for things that must never silently break: musical time, edit history, playback and mixing, the test monitor, device matching, PipeWire properties, the project file, the count-in, resampling. Run with `./test.sh`.
+Base tests for things that must never silently break: musical time, edit history, playback and mixing, the test monitor, device matching, PipeWire properties, the project file, the count-in, resampling, export. Run with `./test.sh`.

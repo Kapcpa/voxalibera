@@ -150,3 +150,42 @@ void AppContext::redo()
 	edits.redo();
 	selection.forget_missing(project);
 }
+
+double AppContext::export_rate() const
+{
+	return timeline_rate(project, engine.sample_rate.load());
+}
+
+juce::String AppContext::start_export(const juce::File& file, int bit_depth)
+{
+	const auto rate = export_rate();
+
+	if (rate <= 0.0)
+		return "The project has no sample rate yet. Open an audio device first.";
+
+	SnapshotProblems problems;
+	auto snapshot = publisher.build_snapshot(rate, [&](const Track& track) { return plugins.export_chain_for(track, rate); }, ResamplingKernel::EXPORT_TAPS, problems);
+
+	if (problems.files_missing)
+		return "Some clips' audio files are missing, so the export would be incomplete.";
+
+	if (problems.mismatched_rate > 0.0)
+		return "Some clips are at " + juce::String(problems.mismatched_rate, 0) + " Hz, too far from the project's " + juce::String(rate, 0) + " Hz to export.";
+
+	ExportJob job;
+	job.file = file;
+	job.sample_rate = rate;
+	job.bit_depth = bit_depth;
+	job.length = project_end(project);
+
+	for (const auto& track : snapshot->tracks)
+		if (track.plugins != nullptr) {
+			job.pre_roll = std::max<std::int64_t>(job.pre_roll, track.plugins->total_latency());
+			job.tail = std::max<std::int64_t>(job.tail, track.plugins->longest_tail());
+		}
+
+	job.snapshot = std::move(snapshot);
+	exporter.start(std::move(job));
+	log_event("Exporting the mix to " + file.getFullPathName());
+	return {};
+}

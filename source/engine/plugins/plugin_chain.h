@@ -20,11 +20,10 @@ public:
 
 	const std::vector<Slot>& slots() const { return chain; }
 	int total_latency() const;
+	int longest_tail() const;
 	void process(juce::AudioBuffer<float>& buffer, int sample_count, const PluginPlayhead& playhead);
 
 private:
-	int longest_tail() const;
-
 	std::vector<Slot> chain;
 	int remaining_tail = 0;
 	bool ringing = false;

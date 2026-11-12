@@ -2,6 +2,7 @@
 
 #include "core/audio/device_session.h"
 #include "core/audio/engine_publisher.h"
+#include "core/audio/mix_export.h"
 #include "core/audio/recorder.h"
 #include "core/editors.h"
 #include "core/log.h"
@@ -37,6 +38,8 @@ struct AppContext
 	void set_time_signature(TimeSignature signature);
 	void undo();
 	void redo();
+	double export_rate() const;
+	juce::String start_export(const juce::File& file, int bit_depth);
 
 	Settings settings;
 	PluginLibrary library;
@@ -59,4 +62,5 @@ struct AppContext
 	AudioFilePool files;
 	ReadAhead read_ahead{engine.transport};
 	EnginePublisher publisher{engine, project, files, plugins, read_ahead};
+	MixExport exporter;
 };

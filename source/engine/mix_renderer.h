@@ -13,7 +13,7 @@ class MixRenderer
 public:
 	static constexpr int CHUNK_SAMPLES = 2048;
 	static constexpr size_t MAX_TRACK_METERS = 256;
-	static constexpr int RESAMPLE_SAMPLES = (int) (CHUNK_SAMPLES * ResamplingKernel::MAX_STEP) + ResamplingKernel::TAPS + 2;
+	static constexpr int RESAMPLE_SAMPLES = (int) (CHUNK_SAMPLES * ResamplingKernel::MAX_STEP) + ResamplingKernel::MAX_TAPS + 2;
 
 	struct Inputs
 	{
