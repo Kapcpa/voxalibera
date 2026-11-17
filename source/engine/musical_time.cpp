@@ -31,6 +31,17 @@ std::int64_t beat_start_sample(std::int64_t beat_index, const Tempo& tempo, doub
 	return std::llround((double) beat_index * samples_per_beat(tempo, sample_rate));
 }
 
+std::int64_t ticks_to_samples(std::int64_t ticks, const Tempo& tempo, double sample_rate)
+{
+	return std::llround((double) ticks / TICKS_PER_BEAT * samples_per_beat(tempo, sample_rate));
+}
+
+std::int64_t samples_to_ticks(std::int64_t samples, const Tempo& tempo, double sample_rate)
+{
+	const auto spacing = samples_per_beat(tempo, sample_rate);
+	return spacing > 0.0 ? std::llround((double) samples / spacing * TICKS_PER_BEAT) : 0;
+}
+
 MusicalPosition to_musical_position(std::int64_t sample, const Tempo& tempo, double sample_rate)
 {
 	const auto beats = (double) sample / samples_per_beat(tempo, sample_rate);

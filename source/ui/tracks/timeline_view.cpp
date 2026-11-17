@@ -9,7 +9,6 @@
 
 namespace
 {
-	constexpr double MIN_BEAT_LINE_SPACING = 6.0;
 	constexpr float PLAYHEAD_WIDTH = 1.5f;
 	constexpr float HINT_FONT_SIZE = 14.0f;
 	constexpr auto EMPTY_HINT = "No tracks yet. Press Ctrl+T or + Track to add one.";
@@ -39,8 +38,7 @@ ImportPlace TimelineView::import_place_at(int x, int y) const
 	const auto index = layout.track_index_at(y);
 	const auto& tracks = context.project.tracks;
 	const auto spacing = samples_per_beat(context.project.tempo, layout.sample_rate());
-	const auto beat = std::max(0.0, viewport.x_to_beat(x));
-	const auto snapped_beat = juce::ModifierKeys::currentModifiers.isCommandDown() ? beat : std::round(beat);
+	const auto snapped_beat = std::max(0.0, layout.snap(viewport.x_to_beat(x), juce::ModifierKeys::currentModifiers));
 
 	ImportPlace place;
 	place.start = spacing > 0.0 ? (std::int64_t) (snapped_beat * spacing) : 0;
@@ -78,6 +76,7 @@ void TimelineView::paint(juce::Graphics& graphics)
 	graphics.fillAll(theme::WINDOW_BACKGROUND);
 	paint_lanes(graphics);
 	paint_grid(graphics);
+	paint_loop_range(graphics);
 	paint_clips(graphics);
 	paint_live_takes(graphics);
 	paint_drop_place(graphics);
@@ -110,19 +109,24 @@ void TimelineView::paint_lanes(juce::Graphics& graphics)
 
 void TimelineView::paint_grid(juce::Graphics& graphics)
 {
-	const auto beats_per_bar = context.project.tempo.signature.beats_per_bar;
-	const auto first_beat = (int) std::floor(viewport.first_beat);
-	const auto last_beat = (int) std::ceil(viewport.x_to_beat(getWidth()));
-
-	for (auto beat = first_beat; beat <= last_beat; ++beat) {
-		const auto is_bar = beat % beats_per_bar == 0;
-
-		if (!is_bar && viewport.pixels_per_beat < MIN_BEAT_LINE_SPACING)
-			continue;
-
-		graphics.setColour(is_bar ? theme::GRID_BAR : theme::GRID_BEAT);
-		graphics.drawVerticalLine((int) viewport.beat_to_x(beat), 0.0f, (float) getHeight());
+	for (const auto& line : layout.visible_grid_lines(getWidth())) {
+		graphics.setColour(line.is_bar ? theme::GRID_BAR : theme::GRID_BEAT);
+		graphics.drawVerticalLine((int) std::round(viewport.beat_to_x(line.beat)), 0.0f, (float) getHeight());
 	}
+}
+
+void TimelineView::paint_loop_range(juce::Graphics& graphics)
+{
+	const auto& loop = context.project.loop;
+
+	if (loop.end <= loop.start)
+		return;
+
+	const auto start_x = layout.tick_to_x(loop.start);
+	const auto end_x = layout.tick_to_x(loop.end);
+
+	graphics.setColour(loop.enabled ? theme::LOOP_RANGE : theme::TIME_SELECTION);
+	graphics.fillRect(juce::Rectangle<float>(start_x, 0.0f, end_x - start_x, (float) getHeight()));
 }
 
 void TimelineView::paint_drop_place(juce::Graphics& graphics)
@@ -175,18 +179,18 @@ void TimelineView::paint_clips(juce::Graphics& graphics)
 
 void TimelineView::paint_live_takes(juce::Graphics& graphics)
 {
-	const auto start = context.recorder.start_sample();
-
-	if (start == RecordingSession::NOT_STARTED || layout.sample_rate() <= 0.0)
+	if (context.recorder.start_sample() == RecordingSession::NOT_STARTED || layout.sample_rate() <= 0.0)
 		return;
 
 	const auto device_rate = context.engine.sample_rate.load();
-	const auto timeline_start = convert_samples(start, device_rate, layout.sample_rate());
-	const auto length = convert_samples(context.engine.transport.position() - start, device_rate, layout.sample_rate());
+	const auto to_timeline = [&](std::int64_t samples) { return convert_samples(samples, device_rate, layout.sample_rate()); };
+	const auto pass = context.recorder.live_range();
+	const auto start = to_timeline(pass.start);
+	const auto length = to_timeline(pass.length);
 
 	for (const auto& take : context.recorder.live_takes())
 		if (const auto index = context.project.index_of(take.track); index != Project::NOT_FOUND)
-			paint_clip(graphics, layout.clip_area((size_t) index, timeline_start, length), {take.file.getFileNameWithoutExtension(), theme::RECORD, &take.peaks, 0, length, layout.sample_rate(), channel_count(context.project.tracks[(size_t) index].channels), false, true});
+			paint_clip(graphics, layout.clip_area((size_t) index, start, length), {take.file.getFileNameWithoutExtension(), theme::RECORD, &take.peaks, to_timeline(pass.source_offset), length, layout.sample_rate(), channel_count(context.project.tracks[(size_t) index].channels), false, true});
 }
 
 void TimelineView::mouseDown(const juce::MouseEvent& event)

@@ -28,6 +28,12 @@ struct ClipGesture
 	ClipMove move;
 };
 
+struct TimeSelectionGesture
+{
+	std::int64_t grab_tick = 0;
+	bool selected = false;
+};
+
 class TimelineMouse
 {
 public:
@@ -42,6 +48,7 @@ public:
 private:
 	ClipZone zone_at(juce::Point<int> position, const ClipUnder& clip) const;
 	void select_track_at(const juce::MouseEvent& event);
+	void drag_time_selection(const juce::MouseEvent& event);
 	void drag_move(const juce::MouseEvent& event);
 	void drag_gain(const juce::MouseEvent& event);
 	void drag_fade_in(const juce::MouseEvent& event);
@@ -52,4 +59,5 @@ private:
 	AppContext& context;
 	const TimelineLayout& layout;
 	std::optional<ClipGesture> current;
+	std::optional<TimeSelectionGesture> time_selection;
 };

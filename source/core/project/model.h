@@ -1,6 +1,6 @@
 #pragma once
 
-#include "engine/musical_time.h"
+#include "engine/musical_grid.h"
 
 #include <juce_core/juce_core.h>
 
@@ -106,6 +106,13 @@ juce::String describe_input(const TrackInput& input, TrackChannels channels);
 bool any_solo(const std::vector<Track>& tracks);
 bool is_audible(const Track& track, bool solo_active);
 
+struct LoopRange
+{
+	bool enabled = false;
+	std::int64_t start = 0;
+	std::int64_t end = 0;
+};
+
 struct Project
 {
 	static constexpr double MIN_TEMPO = 20.0;
@@ -131,6 +138,8 @@ struct Project
 	Tempo tempo;
 	bool metronome = true;
 	bool count_in = false;
+	LoopRange loop;
+	Grid grid;
 	float master_volume_db = 0.0f;
 	std::vector<Track> tracks;
 	int next_id = 1;

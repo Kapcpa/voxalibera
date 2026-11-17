@@ -26,6 +26,16 @@ std::int64_t Recorder::start_sample() const
 	return session != nullptr ? session->start_sample.load(std::memory_order_acquire) : RecordingSession::NOT_STARTED;
 }
 
+RecordedRange Recorder::live_range() const
+{
+	const auto start = start_sample();
+
+	if (start == RecordingSession::NOT_STARTED || session->takes.empty())
+		return {};
+
+	return current_pass(start, session->takes.front()->written.load(std::memory_order_acquire), engine.transport.loop());
+}
+
 std::vector<TrackId> Recorder::tracks_to_record()
 {
 	const auto armed_with_input = [&] {
@@ -207,11 +217,13 @@ void Recorder::add_recorded_clips(std::int64_t start)
 			continue;
 		}
 
+		const auto range = last_full_pass(start, written, latency, engine.transport.loop());
+
 		Clip clip;
 		clip.file = relative_media_path(project.folder, live[position].file);
-		clip.start = convert_samples(start, device_rate, timeline);
-		clip.source_offset = convert_samples(latency, device_rate, timeline);
-		clip.length = convert_samples(written - latency, device_rate, timeline);
+		clip.start = convert_samples(range.start, device_rate, timeline);
+		clip.source_offset = convert_samples(range.source_offset, device_rate, timeline);
+		clip.length = convert_samples(range.length, device_rate, timeline);
 		clip.source_length = convert_samples(written, device_rate, timeline);
 
 		peak_store.store(clip.file, std::move(live[position].peaks));

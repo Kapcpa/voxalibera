@@ -195,6 +195,48 @@ namespace
 		const auto highest = ids.empty() ? 0 : *ids.rbegin();
 		project.next_id = std::max(project.next_id, highest + 1);
 	}
+
+	juce::var write_grid(const Grid& grid)
+	{
+		Object object = new juce::DynamicObject();
+		object->setProperty("snap", grid.snap);
+		object->setProperty("adaptive", grid.adaptive);
+		object->setProperty("density", grid.density);
+		object->setProperty("division", grid_division_name(grid.division));
+		object->setProperty("triplets", grid.triplets);
+		return object.get();
+	}
+
+	Grid read_grid(const juce::var& object)
+	{
+		const Grid defaults;
+		Grid grid;
+		grid.snap = (bool) read(object, "snap", defaults.snap);
+		grid.adaptive = (bool) read(object, "adaptive", defaults.adaptive);
+		grid.density = std::clamp((int) read(object, "density", defaults.density), Grid::MIN_DENSITY, Grid::MAX_DENSITY);
+		grid.division = parse_grid_division(read(object, "division", "").toString()).value_or(defaults.division);
+		grid.triplets = (bool) read(object, "triplets", defaults.triplets);
+		return grid;
+	}
+
+	juce::var write_loop_range(const LoopRange& loop)
+	{
+		Object object = new juce::DynamicObject();
+		object->setProperty("enabled", loop.enabled);
+		object->setProperty("start", (juce::int64) loop.start);
+		object->setProperty("end", (juce::int64) loop.end);
+		return object.get();
+	}
+
+	LoopRange read_loop_range(const juce::var& object)
+	{
+		const LoopRange defaults;
+		LoopRange loop;
+		loop.enabled = (bool) read(object, "enabled", defaults.enabled);
+		loop.start = (std::int64_t) (juce::int64) read(object, "start", (juce::int64) defaults.start);
+		loop.end = (std::int64_t) (juce::int64) read(object, "end", (juce::int64) defaults.end);
+		return loop;
+	}
 }
 
 juce::String write_project(const Project& project, const juce::String& app_version)
@@ -215,6 +257,8 @@ juce::String write_project(const Project& project, const juce::String& app_versi
 	root->setProperty("tempo", tempo.get());
 	root->setProperty("metronome", project.metronome);
 	root->setProperty("count-in", project.count_in);
+	root->setProperty("loop", write_loop_range(project.loop));
+	root->setProperty("grid", write_grid(project.grid));
 	root->setProperty("master-volume-db", project.master_volume_db);
 	root->setProperty("next-id", project.next_id);
 	root->setProperty("tracks", tracks);
@@ -242,6 +286,8 @@ std::optional<LoadedProject> read_project(const juce::String& text)
 
 	project.metronome = (bool) read(json, "metronome", true);
 	project.count_in = (bool) read(json, "count-in", false);
+	project.loop = read_loop_range(read(json, "loop", juce::var()));
+	project.grid = read_grid(read(json, "grid", juce::var()));
 	project.master_volume_db = (float) read(json, "master-volume-db", 0.0);
 	project.next_id = (int) read(json, "next-id", 1);
 

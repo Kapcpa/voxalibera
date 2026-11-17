@@ -27,6 +27,10 @@ private:
 	void show_running(bool running);
 	juce::File default_file() const;
 	juce::String describe_mix() const;
+	bool has_loop_range() const;
+	bool exports_loop_range() const;
+	std::int64_t export_length(double rate) const;
+	void refresh_range();
 
 	AppContext& context;
 	juce::File file;
@@ -36,6 +40,8 @@ private:
 	juce::TextButton choose_button{"Choose..."};
 	juce::Label format_title{{}, "Format"};
 	juce::ComboBox format;
+	juce::Label range_title{{}, "Range"};
+	juce::ComboBox range;
 	juce::Label details;
 	double progress = 0.0;
 	juce::ProgressBar progress_bar{progress};

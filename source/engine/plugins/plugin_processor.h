@@ -1,6 +1,7 @@
 #pragma once
 
 #include "engine/musical_time.h"
+#include "engine/transport.h"
 
 #include <juce_audio_basics/juce_audio_basics.h>
 
@@ -25,6 +26,7 @@ struct PluginPlayhead
 	bool recording = false;
 	std::int64_t sample = 0;
 	Tempo tempo;
+	Transport::Loop loop;
 };
 
 class PluginProcessor

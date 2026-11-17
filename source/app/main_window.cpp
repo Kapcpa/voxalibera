@@ -20,6 +20,12 @@ namespace
 		return "Delete";
 	}
 
+	Grid with_toggled(Grid grid, bool Grid::* flag)
+	{
+		grid.*flag = !(grid.*flag);
+		return grid;
+	}
+
 	constexpr int FRAMES_PER_SECOND = 30;
 	constexpr int MIN_WIDTH = 1000;
 	constexpr int MIN_HEIGHT = 700;
@@ -62,8 +68,14 @@ MainWindow::MainWindow(const juce::String& name, AppContext& context) : Document
 			 if (!main_view.plugin_chain.activate_selection())
 				 this->context.return_to_start();
 		 }},
+		{command::TOGGLE_LOOP, [this] { this->context.toggle_loop(); }},
 		{command::TOGGLE_METRONOME, [this] { this->context.toggle_metronome(); }},
 		{command::TOGGLE_COUNT_IN, [this] { this->context.toggle_count_in(); }},
+		{command::FINER_GRID, [this] { this->context.set_grid(finer_grid(this->context.project.grid)); }},
+		{command::COARSER_GRID, [this] { this->context.set_grid(coarser_grid(this->context.project.grid)); }},
+		{command::TRIPLET_GRID, [this] { this->context.set_grid(with_toggled(this->context.project.grid, &Grid::triplets)); }},
+		{command::TOGGLE_SNAP, [this] { this->context.set_grid(with_toggled(this->context.project.grid, &Grid::snap)); }},
+		{command::ADAPTIVE_GRID, [this] { this->context.set_grid(with_toggled(this->context.project.grid, &Grid::adaptive)); }},
 		{command::UNDO, [this] { this->context.undo(); }},
 		{command::REDO, [this] { this->context.redo(); }},
 		{command::NEW_TRACK, [this] { show_new_track_dialog(); }},
@@ -202,6 +214,7 @@ bool MainWindow::is_available(juce::CommandID id) const
 		case command::SAVE_PROJECT:
 		case command::SAVE_PROJECT_AS:
 		case command::CLEAN_UP_PROJECT:
+		case command::TOGGLE_LOOP:
 			return !context.recorder.is_recording();
 		case command::EXPORT_MIX:
 			return !context.recorder.is_recording() && project_end(context.project) > 0;
@@ -238,11 +251,23 @@ void MainWindow::describe_dynamic_command(juce::CommandID id, juce::ApplicationC
 	if (id == command::TOGGLE_PLUGIN_CHAIN)
 		info.setTicked(main_view.is_plugin_chain_visible());
 
+	if (id == command::TOGGLE_LOOP)
+		info.setTicked(context.project.loop.enabled);
+
 	if (id == command::TOGGLE_METRONOME)
 		info.setTicked(context.project.metronome);
 
 	if (id == command::TOGGLE_COUNT_IN)
 		info.setTicked(context.project.count_in);
+
+	if (id == command::TOGGLE_SNAP)
+		info.setTicked(context.project.grid.snap);
+
+	if (id == command::ADAPTIVE_GRID)
+		info.setTicked(context.project.grid.adaptive);
+
+	if (id == command::TRIPLET_GRID)
+		info.setTicked(context.project.grid.triplets);
 }
 
 juce::ApplicationCommandTarget* MainWindow::getNextCommandTarget()

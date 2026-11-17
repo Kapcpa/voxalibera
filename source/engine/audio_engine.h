@@ -36,6 +36,8 @@ public:
 	std::atomic<int> device_starts{0};
 
 private:
+	void render_segment(const EngineSnapshot* snapshot, RecordingSession* session, MixRenderer::Inputs inputs, float* const* outputs, int output_count, int offset, const Transport::Block& block);
+
 	std::atomic<bool> audio_thread_prepared{false};
 	Metronome metronome;
 };

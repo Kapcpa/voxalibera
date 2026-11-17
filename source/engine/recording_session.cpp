@@ -4,11 +4,38 @@
 #include <array>
 #include <cmath>
 
+RecordedRange last_full_pass(std::int64_t start, std::int64_t written, std::int64_t latency, const Transport::Loop& loop)
+{
+	const auto heard = written - latency;
+	const RecordedRange whole{start, latency, heard};
+
+	if (!loop.is_active() || start >= loop.end || heard <= loop.end - start)
+		return whole;
+
+	const auto first_pass = loop.end - start;
+	const auto full_passes = (heard - first_pass) / loop.length();
+
+	if (full_passes == 0)
+		return {start, latency, first_pass};
+
+	return {loop.start, latency + first_pass + (full_passes - 1) * loop.length(), loop.length()};
+}
+
+RecordedRange current_pass(std::int64_t start, std::int64_t written, const Transport::Loop& loop)
+{
+	if (!loop.is_active() || start >= loop.end || written <= loop.end - start)
+		return {start, 0, written};
+
+	const auto first_pass = loop.end - start;
+	const auto passes = (written - first_pass) / loop.length();
+	return {loop.start, first_pass + passes * loop.length(), (written - first_pass) % loop.length()};
+}
+
 RecordingSession::RecordingSession() : silence((size_t) SILENCE_SAMPLES, 0.0f)
 {
 }
 
-void RecordingSession::write(const float* const* inputs, int input_count, int sample_count, std::int64_t block_start, std::int64_t record_from)
+void RecordingSession::write(const float* const* inputs, int input_count, int buffer_offset, int sample_count, std::int64_t block_start, std::int64_t record_from)
 {
 	const auto first = (int) std::clamp<std::int64_t>(record_from - block_start, 0, sample_count);
 
@@ -20,7 +47,7 @@ void RecordingSession::write(const float* const* inputs, int input_count, int sa
 
 	for (auto& take : takes)
 		for (int offset = first; offset < sample_count; offset += SILENCE_SAMPLES)
-			write_take(*take, inputs, input_count, offset, std::min(SILENCE_SAMPLES, sample_count - offset));
+			write_take(*take, inputs, input_count, buffer_offset + offset, std::min(SILENCE_SAMPLES, sample_count - offset));
 }
 
 void RecordingSession::write_take(RecordingTake& take, const float* const* inputs, int input_count, int offset, int sample_count)

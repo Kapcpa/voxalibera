@@ -48,7 +48,7 @@ TEST_CASE("a clip plays the right part of its file at the right place and level"
 	std::vector<float> left(256), right(256);
 	float* outputs[]{left.data(), right.data()};
 	MixRenderer renderer;
-	renderer.render(snapshot, {}, outputs, 2, 256, {true, false, 0});
+	renderer.render(snapshot, {}, outputs, 2, 256, {.playing = true, .start = 0});
 
 	CHECK(near(left[99], 0.0f));
 	CHECK(near(left[100], 0.5f * 200.0f / FILE_LENGTH));
@@ -78,7 +78,7 @@ TEST_CASE("clip fades shape the start and end of a clip across blocks")
 	for (int start = 0; start < FILE_LENGTH; start += BLOCK) {
 		const auto count = std::min(BLOCK, FILE_LENGTH - start);
 		float* outputs[]{left.data() + start, right.data() + start};
-		renderer.render(snapshot, {}, outputs, 2, count, {true, false, start});
+		renderer.render(snapshot, {}, outputs, 2, count, {.playing = true, .start = start});
 	}
 
 	const auto expected = [](int sample, float fade) { return 0.5f * (float) sample / FILE_LENGTH * fade; };
@@ -106,7 +106,7 @@ TEST_CASE("nothing plays from clips while the transport is stopped")
 
 	std::vector<float> left(64, 1.0f), right(64, 1.0f);
 	float* outputs[]{left.data(), right.data()};
-	MixRenderer().render(snapshot, {}, outputs, 2, 64, {false, false, 500});
+	MixRenderer().render(snapshot, {}, outputs, 2, 64, {.playing = false, .start = 500});
 
 	CHECK(near(left[63], 0.0f));
 	CHECK(near(right[63], 0.0f));
@@ -128,7 +128,7 @@ TEST_CASE("a clip at another sample rate is resampled to the device")
 
 	std::vector<float> left(1024), right(1024);
 	float* outputs[]{left.data(), right.data()};
-	MixRenderer().render(snapshot, {}, outputs, 2, 1024, {true, false, 0});
+	MixRenderer().render(snapshot, {}, outputs, 2, 1024, {.playing = true, .start = 0});
 
 	CHECK(std::abs(right[400] - (float) (400.0 * step / FILE_LENGTH)) < 0.005f);
 	CHECK(std::abs(right[800] - (float) (800.0 * step / FILE_LENGTH)) < 0.005f);
@@ -180,7 +180,7 @@ namespace
 
 		std::vector<float> left(256), right(256);
 		float* outputs[]{left.data(), right.data()};
-		MixRenderer().render(snapshot, {}, outputs, 2, 256, {true, false, 0});
+		MixRenderer().render(snapshot, {}, outputs, 2, 256, {.playing = true, .start = 0});
 		return right;
 	}
 }
@@ -193,6 +193,33 @@ TEST_CASE("clips on a track with plugin latency are read ahead so they still pla
 	CHECK(near(output[99], 0.0f));
 	CHECK(near(output[100], 200.0f / FILE_LENGTH));
 	CHECK(near(output[255], 355.0f / FILE_LENGTH));
+	file.deleteFile();
+}
+
+TEST_CASE("a track with plugin latency reads the loop start before the playhead wraps")
+{
+	const auto file = write_ramp_file();
+
+	TrackPlayback track;
+	track.channels = 1;
+	track.gains = {1.0f, 1.0f};
+	track.clips.push_back({AudioFile::open(file), 0, FILE_LENGTH, 0.0, 1.0f, nullptr});
+	track.plugins = std::make_shared<PluginChain>(std::vector<PluginChain::Slot>{{std::make_shared<DelayProcessor>(PLUGIN_LATENCY), false}});
+
+	EngineSnapshot snapshot;
+	snapshot.tracks.push_back(track);
+
+	std::vector<float> left(PLUGIN_LATENCY * 2), right(PLUGIN_LATENCY * 2);
+	float* outputs[]{left.data(), right.data()};
+	Transport::Block block{.playing = true, .start = 500 - PLUGIN_LATENCY * 2, .length = PLUGIN_LATENCY * 2, .loop = {true, 100, 500}};
+	MixRenderer renderer;
+	renderer.render(snapshot, {}, outputs, 2, PLUGIN_LATENCY * 2, block);
+
+	block.start = 100;
+	renderer.render(snapshot, {}, outputs, 2, PLUGIN_LATENCY, block);
+
+	CHECK(near(right[0], 100.0f / FILE_LENGTH));
+	CHECK(near(right[PLUGIN_LATENCY - 1], (100.0f + PLUGIN_LATENCY - 1) / FILE_LENGTH));
 	file.deleteFile();
 }
 

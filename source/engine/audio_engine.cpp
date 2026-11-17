@@ -21,32 +21,42 @@ void AudioEngine::audioDeviceIOCallbackWithContext(const float* const* inputs, i
 		running_realtime = make_current_thread_realtime();
 
 	const auto* snapshot = snapshots.begin_block();
+	auto* session = recording.begin_block();
 
 	input_meter.measure(inputs, input_count, sample_count);
 
-	const auto block = transport.advance(sample_count);
-
-	if (auto* session = recording.begin_block(); session != nullptr && block.recording)
-		session->write(inputs, input_count, sample_count, block.start, block.record_from);
+	for (int done = 0; done < sample_count;) {
+		const auto block = transport.advance(sample_count - done);
+		render_segment(snapshot, session, {inputs, input_count}, outputs, output_count, done, block);
+		done += block.length;
+	}
 
 	recording.end_block();
-
-	if (snapshot != nullptr)
-		mixer.render(*snapshot, {inputs, input_count}, outputs, output_count, sample_count, block);
-	else
-		for (int channel = 0; channel < output_count; ++channel)
-			juce::FloatVectorOperations::clear(outputs[channel], sample_count);
-
 	passthrough.add_to(inputs, input_count, outputs, output_count, sample_count);
+	snapshots.end_block();
+}
 
-	const auto metronome_on = snapshot != nullptr && snapshot->metronome && block.playing;
+void AudioEngine::render_segment(const EngineSnapshot* snapshot, RecordingSession* session, MixRenderer::Inputs inputs, float* const* outputs, int output_count, int offset, const Transport::Block& block)
+{
+	if (session != nullptr && block.recording)
+		session->write(inputs.channels, inputs.count, offset, block.length, block.start, block.record_from);
 
-	if (metronome_on || (snapshot != nullptr && block.is_counting_in()))
-		metronome.render(outputs, output_count, sample_count, block.start, metronome_on ? std::numeric_limits<std::int64_t>::max() : block.record_from, snapshot->tempo);
+	if (snapshot == nullptr) {
+		for (int channel = 0; channel < output_count; ++channel)
+			juce::FloatVectorOperations::clear(outputs[channel] + offset, block.length);
+
+		metronome.reset();
+		return;
+	}
+
+	mixer.render(*snapshot, inputs, outputs, output_count, block.length, block, offset);
+
+	const auto metronome_on = snapshot->metronome && block.playing;
+
+	if (metronome_on || block.is_counting_in())
+		metronome.render(outputs, output_count, offset, block.length, block.start, metronome_on ? std::numeric_limits<std::int64_t>::max() : block.record_from, snapshot->tempo);
 	else
 		metronome.reset();
-
-	snapshots.end_block();
 }
 
 void AudioEngine::audioDeviceAboutToStart(juce::AudioIODevice* device)

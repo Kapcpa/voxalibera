@@ -31,15 +31,22 @@ struct AppContext
 	void remove_selected_plugin();
 	void return_to_start();
 	void locate(std::int64_t sample);
+	void locate_to_tick(std::int64_t tick);
 	void toggle_metronome();
 	void toggle_count_in();
+	void set_grid(const Grid& grid);
+	void set_loop(const LoopRange& loop);
+	void toggle_loop();
+	void select_loop_range(std::int64_t from_tick, std::int64_t to_tick);
+	void clear_loop_range();
+	void sync_loop();
 	void set_master_volume(float volume_db);
 	void set_tempo(double quarter_notes_per_minute);
 	void set_time_signature(TimeSignature signature);
 	void undo();
 	void redo();
 	double export_rate() const;
-	juce::String start_export(const juce::File& file, int bit_depth);
+	juce::String start_export(const juce::File& file, int bit_depth, bool loop_only = false);
 
 	Settings settings;
 	PluginLibrary library;
@@ -63,4 +70,5 @@ struct AppContext
 	ReadAhead read_ahead{engine.transport};
 	EnginePublisher publisher{engine, project, files, plugins, read_ahead};
 	MixExport exporter;
+	Transport::Loop sent_loop;
 };

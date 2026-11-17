@@ -76,18 +76,24 @@ ExportResult MixExport::render()
 
 	const auto renderer = std::make_unique<MixRenderer>();
 	juce::AudioBuffer<float> mix(CHANNELS, MixRenderer::CHUNK_SAMPLES);
-	const auto end = job.length + job.tail;
-	const auto total = (double) (end + job.pre_roll);
+	const auto clips_end = job.start + job.length;
+	const auto end = clips_end + job.tail;
+	const auto first = job.start - job.pre_roll;
+	const auto total = (double) (end - first);
 	auto peak = 0.0f;
 
-	for (auto position = -job.pre_roll; position < end; position += MixRenderer::CHUNK_SAMPLES) {
+	for (auto position = first; position < end;) {
 		if (threadShouldExit())
 			return {ExportResult::Outcome::cancelled, job.file, 0.0f, false, {}};
 
-		const auto count = (int) std::min<std::int64_t>(MixRenderer::CHUNK_SAMPLES, end - position);
-		renderer->render(*job.snapshot, {}, mix.getArrayOfWritePointers(), CHANNELS, count, {true, false, position});
+		const auto playing = position < clips_end;
+		const auto chunk_end = std::min(position + MixRenderer::CHUNK_SAMPLES, playing ? clips_end : end);
+		const auto count = (int) (chunk_end - position);
+		renderer->render(*job.snapshot, {}, mix.getArrayOfWritePointers(), CHANNELS, count, {.playing = playing, .start = position});
 
-		const auto skip = (int) std::clamp<std::int64_t>(-position, 0, count);
+		const auto block_start = position;
+		position = chunk_end;
+		const auto skip = (int) std::clamp<std::int64_t>(job.start - block_start, 0, count);
 		const auto audible = count - skip;
 
 		if (audible == 0)
@@ -95,7 +101,7 @@ ExportResult MixExport::render()
 
 		const auto block_peak = mix.getMagnitude(skip, audible);
 
-		if (position >= job.length && block_peak < SILENCE)
+		if (!playing && block_peak < SILENCE)
 			break;
 
 		peak = std::max(peak, block_peak);
@@ -106,7 +112,7 @@ ExportResult MixExport::render()
 		if (!writer->writeFromAudioSampleBuffer(mix, skip, audible))
 			return failure("Couldn't write the file. Is the disk full?");
 
-		rendered.store((double) (position + count + job.pre_roll) / total, std::memory_order_relaxed);
+		rendered.store((double) (position - first) / total, std::memory_order_relaxed);
 	}
 
 	writer.reset();

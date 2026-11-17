@@ -21,7 +21,7 @@ public:
 		int count = 0;
 	};
 
-	void render(const EngineSnapshot& snapshot, Inputs inputs, float* const* outputs, int output_count, int sample_count, Transport::Block block);
+	void render(const EngineSnapshot& snapshot, Inputs inputs, float* const* outputs, int output_count, int sample_count, Transport::Block block, int buffer_offset = 0);
 
 	std::array<LevelMeter, MAX_TRACK_METERS> track_meters;
 	LevelMeter master_meter;
@@ -29,7 +29,8 @@ public:
 private:
 	void render_chunk(const EngineSnapshot& snapshot, Inputs inputs, int offset, int sample_count, Transport::Block block);
 	void render_track(const TrackPlayback& track, Inputs inputs, int offset, int sample_count, Transport::Block block, const Tempo& tempo);
-	void add_clip(const TrackPlayback& track, const ClipPlayback& clip, std::int64_t position, int sample_count);
+	void add_clips(const TrackPlayback& track, std::int64_t position, int sample_count, int destination);
+	void add_clip(const TrackPlayback& track, const ClipPlayback& clip, std::int64_t position, int sample_count, int destination);
 	void read_clip(const ClipPlayback& clip, std::int64_t from, int count, int destination);
 	void read_resampled(const ClipPlayback& clip, std::int64_t from, int count, int destination);
 	void add_input(const TrackPlayback& track, Inputs inputs, int offset, int sample_count);

@@ -39,6 +39,25 @@ void AppContext::update()
 
 	session.update(now);
 	publisher.update(now);
+	sync_loop();
+}
+
+void AppContext::sync_loop()
+{
+	if (recorder.is_recording())
+		return;
+
+	const auto rate = engine.sample_rate.load();
+	const Transport::Loop loop{project.loop.enabled, ticks_to_samples(project.loop.start, project.tempo, rate), ticks_to_samples(project.loop.end, project.tempo, rate)};
+
+	if (loop == sent_loop)
+		return;
+
+	sent_loop = loop;
+	engine.transport.set_loop(loop);
+
+	if (loop.is_active())
+		load_ahead_of(loop.start);
 }
 
 void AppContext::toggle_playback()
@@ -105,6 +124,14 @@ void AppContext::locate(std::int64_t sample)
 	engine.transport.locate(sample);
 }
 
+void AppContext::locate_to_tick(std::int64_t tick)
+{
+	const auto rate = engine.sample_rate.load();
+
+	if (rate > 0.0)
+		locate(ticks_to_samples(tick, project.tempo, rate));
+}
+
 void AppContext::load_ahead_of(std::int64_t sample)
 {
 	read_ahead.load_now(sample, (std::int64_t) (LOAD_SECONDS * engine.sample_rate.load()));
@@ -118,6 +145,35 @@ void AppContext::toggle_metronome()
 void AppContext::toggle_count_in()
 {
 	edits.set_without_undo(&Project::count_in, !project.count_in);
+}
+
+void AppContext::set_grid(const Grid& grid)
+{
+	edits.set_without_undo(&Project::grid, grid);
+}
+
+void AppContext::set_loop(const LoopRange& loop)
+{
+	if (!recorder.is_recording())
+		edits.set_without_undo(&Project::loop, loop);
+}
+
+void AppContext::toggle_loop()
+{
+	auto loop = project.loop;
+	loop.enabled = !loop.enabled;
+	set_loop(loop);
+}
+
+void AppContext::select_loop_range(std::int64_t from_tick, std::int64_t to_tick)
+{
+	set_loop({project.loop.enabled, std::min(from_tick, to_tick), std::max(from_tick, to_tick)});
+}
+
+void AppContext::clear_loop_range()
+{
+	if (project.loop.end > project.loop.start)
+		set_loop({project.loop.enabled, 0, 0});
 }
 
 void AppContext::set_master_volume(float volume_db)
@@ -156,7 +212,7 @@ double AppContext::export_rate() const
 	return timeline_rate(project, engine.sample_rate.load());
 }
 
-juce::String AppContext::start_export(const juce::File& file, int bit_depth)
+juce::String AppContext::start_export(const juce::File& file, int bit_depth, bool loop_only)
 {
 	const auto rate = export_rate();
 
@@ -177,6 +233,11 @@ juce::String AppContext::start_export(const juce::File& file, int bit_depth)
 	job.sample_rate = rate;
 	job.bit_depth = bit_depth;
 	job.length = project_end(project);
+
+	if (loop_only) {
+		job.start = ticks_to_samples(project.loop.start, project.tempo, rate);
+		job.length = ticks_to_samples(project.loop.end, project.tempo, rate) - job.start;
+	}
 
 	for (const auto& track : snapshot->tracks)
 		if (track.plugins != nullptr) {

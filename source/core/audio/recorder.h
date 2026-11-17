@@ -31,6 +31,7 @@ public:
 	bool is_counting_in() const;
 	std::int64_t count_in_samples(double sample_rate) const;
 	std::int64_t start_sample() const;
+	RecordedRange live_range() const;
 	const std::vector<LiveTake>& live_takes() const { return live; }
 
 private:

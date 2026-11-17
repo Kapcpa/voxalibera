@@ -87,7 +87,7 @@ The core loop: arm a track, record, hear it back, record again.
 - Import audio files as clips (drag and drop or File > Import), copied into the project's `audio/` folder.
 - Trim, split, duplicate clips; fades and clip gain.
 - Channel operations on clips: left only, right only, swap, mix down to mono.
-- Snap and grid, loop range, markers.
+- Snap and grid, loop range.
 - Takes: cycle recording into take lanes, pick or swipe-comp the best parts.
 - Selection across tracks, copy and paste.
 - Export the mix to WAV (and later FLAC/MP3).
@@ -120,4 +120,4 @@ The core loop: arm a track, record, hear it back, record again.
 
 CPU strategies, in order of need: freeze (render a track with its effects to a file in the background and play that instead, until it's unfrozen), spreading independent tracks across processor cores, anticipative processing (render tracks that aren't live ahead of time on worker threads, keeping only live tracks at low latency).
 
-Clip launcher (session grid), CLAP, out-of-process plugin sandboxing, time-stretch (Rubber Band), stem separation (offline, open models), DAWproject import/export, scripting (Lua), tempo changes and time-signature changes, video.
+Clip launcher (session grid), markers, CLAP, out-of-process plugin sandboxing, time-stretch (Rubber Band), stem separation (offline, open models), DAWproject import/export, scripting (Lua), tempo changes and time-signature changes, video.
