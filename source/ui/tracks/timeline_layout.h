@@ -5,6 +5,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 
 #include <optional>
+#include <vector>
 
 struct TimelineViewport
 {
@@ -32,6 +33,9 @@ struct ClipUnder
 struct TimelineLayout
 {
 	double sample_rate() const;
+	std::int64_t grid_step() const;
+	double snap(double beat, const juce::ModifierKeys& modifiers) const;
+	std::vector<GridLine> visible_grid_lines(int width) const;
 	double sample_to_x(std::int64_t sample) const;
 	juce::Rectangle<float> clip_area(size_t track_index, std::int64_t start, std::int64_t length) const;
 	std::optional<ClipUnder> clip_at(juce::Point<int> position) const;

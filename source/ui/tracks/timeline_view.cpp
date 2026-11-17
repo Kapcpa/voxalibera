@@ -9,7 +9,6 @@
 
 namespace
 {
-	constexpr double MIN_BEAT_LINE_SPACING = 6.0;
 	constexpr float PLAYHEAD_WIDTH = 1.5f;
 	constexpr float HINT_FONT_SIZE = 14.0f;
 	constexpr auto EMPTY_HINT = "No tracks yet. Press Ctrl+T or + Track to add one.";
@@ -39,8 +38,7 @@ ImportPlace TimelineView::import_place_at(int x, int y) const
 	const auto index = layout.track_index_at(y);
 	const auto& tracks = context.project.tracks;
 	const auto spacing = samples_per_beat(context.project.tempo, layout.sample_rate());
-	const auto beat = std::max(0.0, viewport.x_to_beat(x));
-	const auto snapped_beat = juce::ModifierKeys::currentModifiers.isCommandDown() ? beat : std::round(beat);
+	const auto snapped_beat = std::max(0.0, layout.snap(viewport.x_to_beat(x), juce::ModifierKeys::currentModifiers));
 
 	ImportPlace place;
 	place.start = spacing > 0.0 ? (std::int64_t) (snapped_beat * spacing) : 0;
@@ -110,18 +108,9 @@ void TimelineView::paint_lanes(juce::Graphics& graphics)
 
 void TimelineView::paint_grid(juce::Graphics& graphics)
 {
-	const auto beats_per_bar = context.project.tempo.signature.beats_per_bar;
-	const auto first_beat = (int) std::floor(viewport.first_beat);
-	const auto last_beat = (int) std::ceil(viewport.x_to_beat(getWidth()));
-
-	for (auto beat = first_beat; beat <= last_beat; ++beat) {
-		const auto is_bar = beat % beats_per_bar == 0;
-
-		if (!is_bar && viewport.pixels_per_beat < MIN_BEAT_LINE_SPACING)
-			continue;
-
-		graphics.setColour(is_bar ? theme::GRID_BAR : theme::GRID_BEAT);
-		graphics.drawVerticalLine((int) viewport.beat_to_x(beat), 0.0f, (float) getHeight());
+	for (const auto& line : layout.visible_grid_lines(getWidth())) {
+		graphics.setColour(line.is_bar ? theme::GRID_BAR : theme::GRID_BEAT);
+		graphics.drawVerticalLine((int) std::round(viewport.beat_to_x(line.beat)), 0.0f, (float) getHeight());
 	}
 }
 

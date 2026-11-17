@@ -77,6 +77,7 @@ Everything the audio thread touches. Nothing here allocates, locks or touches fi
 - `recording_session` - the audio thread side of recording: writes inputs into each take's writer, collects peaks.
 - `metronome` - a sample-accurate synthesized click.
 - `musical_time` - samples to bars, beats and ticks and back; time signature parsing.
+- `musical_grid` - `Grid` (snap, adaptive or a fixed note value, triplets) and its math in ticks: step for a zoom level, snapping (restarts every bar, so odd meters work), lines to draw, names like `1/8T`.
 - `passthrough` - the test monitor: input straight to output, bypassing tracks.
 - `plugins/plugin_processor` - `PluginProcessor`, what the engine needs from any effect: prepare, process (with a `PluginPlayhead`), state, latency, tail, its editor, and a change counter (`mark_changed()`) for unsaved changes.
 - `plugins/plugin_chain` - `PluginChain`: a track's effects in order with their bypass flags, immutable once built; sleeps while the input is silent and the tails have ended.
@@ -119,7 +120,7 @@ Views. They read state every frame and call into `core/` on user input; they nev
 - `tracks/track_area_view` - headers, ruler and timeline together; scrolling, zoom, following the playhead.
 - `tracks/track_header` - one track's name, colour, FX, arm, mute, solo and volume; double-clicking its channels and input opens Track Settings.
 - `tracks/timeline_view` - lanes, grid, clips, live takes, playhead; clip selection and dragging; audio files dropped on it become clips, with a preview of where they land. `TimelineViewport` holds the zoom and scroll state shared by ruler and timeline.
-- `tracks/ruler_view` - bar numbers; click or drag to move the playhead.
+- `tracks/ruler_view` - bar numbers, grid ticks and the current grid step; click or drag to move the playhead (snapped).
 - `tracks/clip_painter` - draws a clip with its waveform (one band per channel).
 - `tracks/track_dialog` - the New Track and Track Settings dialog: name, mono or stereo, input.
 - `plugins/plugin_chain_view` - the effect chain panel above the mixer: the chain row in a sideways scroll, the side menu (Add, Open, Remove, Bypass), and the plugin windows.

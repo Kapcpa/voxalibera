@@ -20,6 +20,12 @@ namespace
 		return "Delete";
 	}
 
+	Grid with_toggled(Grid grid, bool Grid::* flag)
+	{
+		grid.*flag = !(grid.*flag);
+		return grid;
+	}
+
 	constexpr int FRAMES_PER_SECOND = 30;
 	constexpr int MIN_WIDTH = 1000;
 	constexpr int MIN_HEIGHT = 700;
@@ -64,6 +70,11 @@ MainWindow::MainWindow(const juce::String& name, AppContext& context) : Document
 		 }},
 		{command::TOGGLE_METRONOME, [this] { this->context.toggle_metronome(); }},
 		{command::TOGGLE_COUNT_IN, [this] { this->context.toggle_count_in(); }},
+		{command::FINER_GRID, [this] { this->context.set_grid(finer_grid(this->context.project.grid)); }},
+		{command::COARSER_GRID, [this] { this->context.set_grid(coarser_grid(this->context.project.grid)); }},
+		{command::TRIPLET_GRID, [this] { this->context.set_grid(with_toggled(this->context.project.grid, &Grid::triplets)); }},
+		{command::TOGGLE_SNAP, [this] { this->context.set_grid(with_toggled(this->context.project.grid, &Grid::snap)); }},
+		{command::ADAPTIVE_GRID, [this] { this->context.set_grid(with_toggled(this->context.project.grid, &Grid::adaptive)); }},
 		{command::UNDO, [this] { this->context.undo(); }},
 		{command::REDO, [this] { this->context.redo(); }},
 		{command::NEW_TRACK, [this] { show_new_track_dialog(); }},
@@ -243,6 +254,15 @@ void MainWindow::describe_dynamic_command(juce::CommandID id, juce::ApplicationC
 
 	if (id == command::TOGGLE_COUNT_IN)
 		info.setTicked(context.project.count_in);
+
+	if (id == command::TOGGLE_SNAP)
+		info.setTicked(context.project.grid.snap);
+
+	if (id == command::ADAPTIVE_GRID)
+		info.setTicked(context.project.grid.adaptive);
+
+	if (id == command::TRIPLET_GRID)
+		info.setTicked(context.project.grid.triplets);
 }
 
 juce::ApplicationCommandTarget* MainWindow::getNextCommandTarget()

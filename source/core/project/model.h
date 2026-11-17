@@ -1,6 +1,6 @@
 #pragma once
 
-#include "engine/musical_time.h"
+#include "engine/musical_grid.h"
 
 #include <juce_core/juce_core.h>
 
@@ -131,6 +131,7 @@ struct Project
 	Tempo tempo;
 	bool metronome = true;
 	bool count_in = false;
+	Grid grid;
 	float master_volume_db = 0.0f;
 	std::vector<Track> tracks;
 	int next_id = 1;

@@ -5,6 +5,7 @@
 namespace
 {
 	constexpr float CLIP_MARGIN = 3.0f;
+	constexpr double MIN_GRID_LINE_SPACING = 6.0;
 }
 
 void TimelineViewport::zoom_around(double x, double factor)
@@ -24,6 +25,29 @@ void TimelineViewport::scroll_beats(double beats)
 double TimelineLayout::sample_rate() const
 {
 	return timeline_rate(context.project, context.engine.sample_rate.load());
+}
+
+std::int64_t TimelineLayout::grid_step() const
+{
+	return grid_step_ticks(context.project.grid, context.project.tempo.signature, viewport.pixels_per_beat);
+}
+
+double TimelineLayout::snap(double beat, const juce::ModifierKeys& modifiers) const
+{
+	if (!context.project.grid.snap || modifiers.isCommandDown())
+		return beat;
+
+	return snap_to_grid(beat, grid_step(), context.project.tempo.signature);
+}
+
+std::vector<GridLine> TimelineLayout::visible_grid_lines(int width) const
+{
+	const auto& signature = context.project.tempo.signature;
+	const auto step = grid_step();
+	const auto pixels_per_step = (double) step / TICKS_PER_BEAT * viewport.pixels_per_beat;
+	const auto drawn_step = pixels_per_step >= MIN_GRID_LINE_SPACING ? step : grid_step_ticks(Grid{}, signature, viewport.pixels_per_beat);
+
+	return grid_lines(viewport.first_beat, viewport.x_to_beat(width), drawn_step, signature);
 }
 
 double TimelineLayout::sample_to_x(std::int64_t sample) const

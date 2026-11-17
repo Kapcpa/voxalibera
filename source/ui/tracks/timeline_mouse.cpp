@@ -118,8 +118,7 @@ void TimelineMouse::drag_move(const juce::MouseEvent& event)
 {
 	const auto spacing = samples_per_beat(context.project.tempo, layout.sample_rate());
 	const auto start_beat = (double) current->anchor_start / spacing + layout.viewport.x_to_beat(event.x) - current->grab_beat;
-	const auto snapped_beat = event.mods.isCommandDown() ? start_beat : std::round(start_beat);
-	const auto new_start = (std::int64_t) (std::max(0.0, snapped_beat) * spacing);
+	const auto new_start = (std::int64_t) (std::max(0.0, layout.snap(start_beat, event.mods)) * spacing);
 
 	current->move = context.clips.limit_move({new_start - current->anchor_start, layout.track_index_at(event.y) - current->grab_track});
 }
@@ -150,7 +149,7 @@ void TimelineMouse::drag_fade_out(const juce::MouseEvent& event)
 void TimelineMouse::drag_trim_left(const juce::MouseEvent& event)
 {
 	const auto* model_clip = context.project.find_clip(current->anchor);
-	const auto new_trim_left = layout.viewport.x_to_beat(event.x) * samples_per_beat(context.project.tempo, layout.sample_rate()) - model_clip->start;
+	const auto new_trim_left = layout.snap(layout.viewport.x_to_beat(event.x), event.mods) * samples_per_beat(context.project.tempo, layout.sample_rate()) - model_clip->start;
 
 	context.clips.set_trim_left(current->anchor, (std::int64_t) new_trim_left);
 }
@@ -158,7 +157,7 @@ void TimelineMouse::drag_trim_left(const juce::MouseEvent& event)
 void TimelineMouse::drag_trim_right(const juce::MouseEvent& event)
 {
 	const auto* model_clip = context.project.find_clip(current->anchor);
-	const auto new_trim_right = model_clip->start + model_clip->length - layout.viewport.x_to_beat(event.x) * samples_per_beat(context.project.tempo, layout.sample_rate());
+	const auto new_trim_right = model_clip->start + model_clip->length - layout.snap(layout.viewport.x_to_beat(event.x), event.mods) * samples_per_beat(context.project.tempo, layout.sample_rate());
 
 	context.clips.set_trim_right(current->anchor, (std::int64_t) new_trim_right);
 }

@@ -17,8 +17,11 @@ public:
 	void mouseDrag(const juce::MouseEvent& event) override;
 
 private:
-	void locate_to(int x);
+	void paint_bar_labels(juce::Graphics& graphics);
+	void paint_grid_name(juce::Graphics& graphics);
+	void locate_to(const juce::MouseEvent& event);
 
 	AppContext& context;
 	const TimelineViewport& viewport;
+	TimelineLayout layout;
 };

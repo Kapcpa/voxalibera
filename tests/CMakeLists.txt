@@ -18,6 +18,7 @@ target_sources(voxalibera_tests PRIVATE
     ${PROJECT_SOURCE_DIR}/source/engine/audio_file.cpp
     ${PROJECT_SOURCE_DIR}/source/engine/levels.cpp
     ${PROJECT_SOURCE_DIR}/source/engine/mix_renderer.cpp
+    ${PROJECT_SOURCE_DIR}/source/engine/musical_grid.cpp
     ${PROJECT_SOURCE_DIR}/source/engine/musical_time.cpp
     ${PROJECT_SOURCE_DIR}/source/engine/passthrough.cpp
     ${PROJECT_SOURCE_DIR}/source/engine/plugins/plugin_chain.cpp

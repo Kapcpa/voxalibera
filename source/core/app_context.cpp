@@ -120,6 +120,11 @@ void AppContext::toggle_count_in()
 	edits.set_without_undo(&Project::count_in, !project.count_in);
 }
 
+void AppContext::set_grid(const Grid& grid)
+{
+	edits.set_without_undo(&Project::grid, grid);
+}
+
 void AppContext::set_master_volume(float volume_db)
 {
 	tracks.set_master_volume(volume_db);

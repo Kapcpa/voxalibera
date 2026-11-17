@@ -33,6 +33,7 @@ struct AppContext
 	void locate(std::int64_t sample);
 	void toggle_metronome();
 	void toggle_count_in();
+	void set_grid(const Grid& grid);
 	void set_master_volume(float volume_db);
 	void set_tempo(double quarter_notes_per_minute);
 	void set_time_signature(TimeSignature signature);
