@@ -1,6 +1,7 @@
 #include "ui/tracks/timeline_layout.h"
 
 #include <algorithm>
+#include <cmath>
 
 namespace
 {
@@ -38,6 +39,16 @@ double TimelineLayout::snap(double beat, const juce::ModifierKeys& modifiers) co
 		return beat;
 
 	return snap_to_grid(beat, grid_step(), context.project.tempo.signature);
+}
+
+std::int64_t TimelineLayout::tick_at(int x, const juce::ModifierKeys& modifiers) const
+{
+	return std::llround(std::max(0.0, snap(viewport.x_to_beat(x), modifiers)) * TICKS_PER_BEAT);
+}
+
+float TimelineLayout::tick_to_x(std::int64_t tick) const
+{
+	return (float) viewport.beat_to_x((double) tick / TICKS_PER_BEAT);
 }
 
 std::vector<GridLine> TimelineLayout::visible_grid_lines(int width) const

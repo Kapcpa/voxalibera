@@ -62,7 +62,14 @@ void TimelineMouse::down(const juce::MouseEvent& event)
 {
 	const auto clip = layout.clip_at(event.getPosition());
 
-	if (!clip || layout.sample_rate() <= 0.0) {
+	if (!clip) {
+		select_track_at(event);
+		time_selection = TimeSelectionGesture{layout.tick_at(event.x, event.mods), false};
+		context.locate_to_tick(time_selection->grab_tick);
+		return;
+	}
+
+	if (layout.sample_rate() <= 0.0) {
 		select_track_at(event);
 		return;
 	}
@@ -97,6 +104,11 @@ void TimelineMouse::select_track_at(const juce::MouseEvent& event)
 
 void TimelineMouse::drag(const juce::MouseEvent& event)
 {
+	if (time_selection && event.mouseWasDraggedSinceMouseDown()) {
+		drag_time_selection(event);
+		return;
+	}
+
 	if (!current || !event.mouseWasDraggedSinceMouseDown())
 		return;
 
@@ -112,6 +124,17 @@ void TimelineMouse::drag(const juce::MouseEvent& event)
 		drag_trim_left(event);
 	else if (current->zone == ClipZone::trim_right)
 		drag_trim_right(event);
+}
+
+void TimelineMouse::drag_time_selection(const juce::MouseEvent& event)
+{
+	const auto tick = layout.tick_at(event.x, event.mods);
+
+	if (std::abs(tick - time_selection->grab_tick) < layout.grid_step() && !time_selection->selected)
+		return;
+
+	time_selection->selected = true;
+	context.select_loop_range(time_selection->grab_tick, tick);
 }
 
 void TimelineMouse::drag_move(const juce::MouseEvent& event)
@@ -164,6 +187,16 @@ void TimelineMouse::drag_trim_right(const juce::MouseEvent& event)
 
 void TimelineMouse::up(const juce::MouseEvent& event)
 {
+	if (time_selection) {
+		if (time_selection->selected)
+			context.locate_to_tick(context.project.loop.start);
+		else
+			context.clear_loop_range();
+
+		time_selection.reset();
+		return;
+	}
+
 	if (!current)
 		return;
 

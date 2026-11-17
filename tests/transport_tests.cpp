@@ -35,3 +35,45 @@ TEST_CASE("recording while playing punches in without a count-in")
 	CHECK(block.record_from == 256);
 	CHECK_FALSE(block.is_counting_in());
 }
+
+TEST_CASE("a block that reaches the loop end stops there and the next one starts at the loop start")
+{
+	Transport transport;
+	transport.set_loop({true, 1000, 2000});
+	transport.locate(1900);
+	transport.play();
+
+	const auto first = transport.advance(256);
+	CHECK(first.start == 1900);
+	CHECK(first.length == 100);
+
+	const auto second = transport.advance(156);
+	CHECK(second.start == 1000);
+	CHECK(second.length == 156);
+}
+
+TEST_CASE("playing from after the loop end does not wrap")
+{
+	Transport transport;
+	transport.set_loop({true, 1000, 2000});
+	transport.locate(2100);
+	transport.play();
+
+	const auto block = transport.advance(256);
+	CHECK(block.length == 256);
+	CHECK(transport.position() == 2356);
+}
+
+TEST_CASE("recording keeps going after the loop wraps")
+{
+	Transport transport;
+	transport.set_loop({true, 1000, 2000});
+	transport.locate(1500);
+	transport.record();
+
+	transport.advance(500);
+	const auto wrapped = transport.advance(256);
+	CHECK(wrapped.start == 1000);
+	CHECK(wrapped.record_from <= wrapped.start);
+	CHECK_FALSE(wrapped.is_counting_in());
+}

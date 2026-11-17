@@ -73,8 +73,8 @@ Everything the audio thread touches. Nothing here allocates, locks or touches fi
 - `audio_file` - a memory-mapped WAV file the audio thread can read from without system calls.
 - `levels` - fader decibels to gain, the mono pan law and stereo balance; `LevelMeter`, peak meters filled by the audio thread and read by the UI.
 - `lock_free` - `SnapshotExchange` swaps snapshots in atomically and frees old ones only after the audio thread is done; `LockFreeQueue` is a fixed-size single-producer single-consumer queue.
-- `transport` - play, stop, record (with an optional count-in), locate; commands in through a queue, position out through atomics.
-- `recording_session` - the audio thread side of recording: writes inputs into each take's writer, collects peaks.
+- `transport` - play, stop, record (with an optional count-in), locate, loop; commands in through a queue, position out through atomics. Blocks end at the loop end.
+- `recording_session` - the audio thread side of recording: writes inputs into each take's writer, collects peaks; which part of a looped take becomes the clip.
 - `metronome` - a sample-accurate synthesized click.
 - `musical_time` - samples to bars, beats and ticks and back; time signature parsing.
 - `musical_grid` - `Grid` (snap, adaptive or a fixed note value, triplets) and its math in ticks: step for a zoom level, snapping (restarts every bar, so odd meters work), lines to draw, names like `1/8T`.
@@ -110,7 +110,7 @@ Views. They read state every frame and call into `core/` on user input; they nev
 - `main_view` - the main window's zones: transport bar, tracks area, mixer.
 - `mixer/mixer_view` - the master strip on the left, then one strip per track, scrolling sideways.
 - `mixer/mixer_strip` - pan, values, fader with meter, FX, mute, solo and a colour name plate; the master keeps the same sections so all faders line up.
-- `export_dialog` - the Export Mix dialog: file, format, length, progress.
+- `export_dialog` - the Export Mix dialog: file, format, range (whole song or the loop range), length, progress.
 - `transport_bar` - play, stop, record, position (or the count-in beats), tempo, time signature, metronome, count-in, and a warning when clips don't match the device's sample rate.
 - `parts/modal_overlay` - dims the window and shows a dialog in the middle.
 - `parts/message_dialog` - a message with a row of buttons (Save changes, problems, About), shown in the overlay.
@@ -120,7 +120,7 @@ Views. They read state every frame and call into `core/` on user input; they nev
 - `tracks/track_area_view` - headers, ruler and timeline together; scrolling, zoom, following the playhead.
 - `tracks/track_header` - one track's name, colour, FX, arm, mute, solo and volume; double-clicking its channels and input opens Track Settings.
 - `tracks/timeline_view` - lanes, grid, clips, live takes, playhead; clip selection and dragging; audio files dropped on it become clips, with a preview of where they land. `TimelineViewport` holds the zoom and scroll state shared by ruler and timeline.
-- `tracks/ruler_view` - bar numbers, grid ticks and the current grid step; click or drag to move the playhead (snapped).
+- `tracks/ruler_view` - bar numbers, grid ticks, the current grid step and the loop range; click to move the playhead (and clear the range), drag to select a range, drag its edges to change it.
 - `tracks/clip_painter` - draws a clip with its waveform (one band per channel).
 - `tracks/track_dialog` - the New Track and Track Settings dialog: name, mono or stereo, input.
 - `plugins/plugin_chain_view` - the effect chain panel above the mixer: the chain row in a sideways scroll, the side menu (Add, Open, Remove, Bypass), and the plugin windows.

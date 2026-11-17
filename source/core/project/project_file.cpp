@@ -218,6 +218,25 @@ namespace
 		grid.triplets = (bool) read(object, "triplets", defaults.triplets);
 		return grid;
 	}
+
+	juce::var write_loop_range(const LoopRange& loop)
+	{
+		Object object = new juce::DynamicObject();
+		object->setProperty("enabled", loop.enabled);
+		object->setProperty("start", (juce::int64) loop.start);
+		object->setProperty("end", (juce::int64) loop.end);
+		return object.get();
+	}
+
+	LoopRange read_loop_range(const juce::var& object)
+	{
+		const LoopRange defaults;
+		LoopRange loop;
+		loop.enabled = (bool) read(object, "enabled", defaults.enabled);
+		loop.start = (std::int64_t) (juce::int64) read(object, "start", (juce::int64) defaults.start);
+		loop.end = (std::int64_t) (juce::int64) read(object, "end", (juce::int64) defaults.end);
+		return loop;
+	}
 }
 
 juce::String write_project(const Project& project, const juce::String& app_version)
@@ -238,6 +257,7 @@ juce::String write_project(const Project& project, const juce::String& app_versi
 	root->setProperty("tempo", tempo.get());
 	root->setProperty("metronome", project.metronome);
 	root->setProperty("count-in", project.count_in);
+	root->setProperty("loop", write_loop_range(project.loop));
 	root->setProperty("grid", write_grid(project.grid));
 	root->setProperty("master-volume-db", project.master_volume_db);
 	root->setProperty("next-id", project.next_id);
@@ -266,6 +286,7 @@ std::optional<LoadedProject> read_project(const juce::String& text)
 
 	project.metronome = (bool) read(json, "metronome", true);
 	project.count_in = (bool) read(json, "count-in", false);
+	project.loop = read_loop_range(read(json, "loop", juce::var()));
 	project.grid = read_grid(read(json, "grid", juce::var()));
 	project.master_volume_db = (float) read(json, "master-volume-db", 0.0);
 	project.next_id = (int) read(json, "next-id", 1);

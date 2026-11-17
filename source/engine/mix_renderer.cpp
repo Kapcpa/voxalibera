@@ -9,16 +9,23 @@ namespace
 	constexpr int LEFT = 0;
 	constexpr int RIGHT = 1;
 	constexpr float MONO_SUM_GAIN = 0.5f;
+
+	std::int64_t wrapped_into_loop(std::int64_t position, const Transport::Loop& loop)
+	{
+		return position < loop.end ? position : loop.start + (position - loop.end) % loop.length();
+	}
 }
 
-void MixRenderer::render(const EngineSnapshot& snapshot, Inputs inputs, float* const* outputs, int output_count, int sample_count, Transport::Block block)
+void MixRenderer::render(const EngineSnapshot& snapshot, Inputs inputs, float* const* outputs, int output_count, int sample_count, Transport::Block block, int buffer_offset)
 {
 	for (int offset = 0; offset < sample_count; offset += CHUNK_SAMPLES) {
 		const auto chunk = std::min(CHUNK_SAMPLES, sample_count - offset);
-		const Transport::Block chunk_block{block.playing, block.recording, block.start + offset};
+		auto chunk_block = block;
+		chunk_block.start = block.start + offset;
+		chunk_block.length = chunk;
 
-		render_chunk(snapshot, inputs, offset, chunk, chunk_block);
-		write_outputs(outputs, output_count, offset, chunk);
+		render_chunk(snapshot, inputs, buffer_offset + offset, chunk, chunk_block);
+		write_outputs(outputs, output_count, buffer_offset + offset, chunk);
 	}
 }
 
@@ -36,13 +43,17 @@ void MixRenderer::render_chunk(const EngineSnapshot& snapshot, Inputs inputs, in
 void MixRenderer::render_track(const TrackPlayback& track, Inputs inputs, int offset, int sample_count, Transport::Block block, const Tempo& tempo)
 {
 	const auto latency = track.plugins != nullptr ? track.plugins->total_latency() : 0;
-	const auto source_position = block.start + latency;
+	const auto source_position = block.wraps_ahead() ? wrapped_into_loop(block.start + latency, block.loop) : block.start + latency;
+	const auto before_loop_end = block.wraps_ahead() && source_position < block.loop.end ? (int) std::min<std::int64_t>(sample_count, block.loop.end - source_position) : sample_count;
 
 	track_buffer.clear(0, sample_count);
 
-	if (block.playing)
-		for (const auto& clip : track.clips)
-			add_clip(track, clip, source_position, sample_count);
+	if (block.playing) {
+		add_clips(track, source_position, before_loop_end, 0);
+
+		if (before_loop_end < sample_count)
+			add_clips(track, block.loop.start, sample_count - before_loop_end, before_loop_end);
+	}
 
 	if (track.monitors_input)
 		add_input(track, inputs, offset, sample_count);
@@ -51,7 +62,7 @@ void MixRenderer::render_track(const TrackPlayback& track, Inputs inputs, int of
 		track_buffer.copyFrom(RIGHT, 0, track_buffer, LEFT, 0, sample_count);
 
 	if (track.plugins != nullptr)
-		track.plugins->process(track_buffer, sample_count, {block.playing, block.recording, source_position, tempo});
+		track.plugins->process(track_buffer, sample_count, {block.playing, block.recording, source_position, tempo, block.wraps_ahead() ? block.loop : Transport::Loop{}});
 
 	track_buffer.applyGain(LEFT, 0, sample_count, track.audible ? track.gains.left : 0.0f);
 	track_buffer.applyGain(RIGHT, 0, sample_count, track.audible ? track.gains.right : 0.0f);
@@ -63,7 +74,13 @@ void MixRenderer::render_track(const TrackPlayback& track, Inputs inputs, int of
 	master_buffer.addFrom(RIGHT, 0, track_buffer, RIGHT, 0, sample_count);
 }
 
-void MixRenderer::add_clip(const TrackPlayback& track, const ClipPlayback& clip, std::int64_t position, int sample_count)
+void MixRenderer::add_clips(const TrackPlayback& track, std::int64_t position, int sample_count, int destination)
+{
+	for (const auto& clip : track.clips)
+		add_clip(track, clip, position, sample_count, destination);
+}
+
+void MixRenderer::add_clip(const TrackPlayback& track, const ClipPlayback& clip, std::int64_t position, int sample_count, int first_destination)
 {
 	const auto from = std::max(position, clip.start);
 	const auto to = std::min(position + sample_count, clip.start + clip.length);
@@ -71,7 +88,7 @@ void MixRenderer::add_clip(const TrackPlayback& track, const ClipPlayback& clip,
 	if (from >= to)
 		return;
 
-	const auto destination = (int) (from - position);
+	const auto destination = first_destination + (int) (from - position);
 	const auto count = (int) (to - from);
 	const auto file_channels = clip.file->channels();
 	read_clip(clip, from, count, destination);

@@ -115,8 +115,9 @@ juce::Optional<juce::AudioPlayHead::PositionInfo> HostedPlugin::getPosition() co
 
 	const auto& signature = playhead_now.tempo.signature;
 	const auto quarters_per_minute = playhead_now.tempo.quarter_notes_per_minute;
+	const auto to_quarters = [&](std::int64_t sample) { return (double) sample / sample_rate * quarters_per_minute / SECONDS_PER_MINUTE; };
 	const auto seconds = (double) playhead_now.sample / sample_rate;
-	const auto quarters = seconds * quarters_per_minute / SECONDS_PER_MINUTE;
+	const auto quarters = to_quarters(playhead_now.sample);
 	const auto quarters_per_bar = signature.beats_per_bar * QUARTERS_PER_WHOLE_NOTE / signature.beat_unit;
 	const auto bars = std::floor(quarters / quarters_per_bar);
 
@@ -130,6 +131,11 @@ juce::Optional<juce::AudioPlayHead::PositionInfo> HostedPlugin::getPosition() co
 	position.setPpqPosition(quarters);
 	position.setPpqPositionOfLastBarStart(bars * quarters_per_bar);
 	position.setBarCount((juce::int64) bars);
+	position.setIsLooping(playhead_now.loop.is_active());
+
+	if (playhead_now.loop.is_active())
+		position.setLoopPoints(juce::AudioPlayHead::LoopPoints{to_quarters(playhead_now.loop.start), to_quarters(playhead_now.loop.end)});
+
 	return position;
 }
 

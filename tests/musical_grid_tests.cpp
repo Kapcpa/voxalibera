@@ -1,5 +1,6 @@
 #include "engine/musical_grid.h"
 
+#include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 
 namespace
@@ -38,10 +39,10 @@ TEST_CASE("adaptive grid gets finer as the view zooms in")
 
 TEST_CASE("snapping lands on the nearest step and restarts every bar")
 {
-	CHECK(snap_to_grid(1.4, 960, FOUR_FOUR) == 1.0);
-	CHECK(snap_to_grid(1.6, 960, FOUR_FOUR) == 2.0);
-	CHECK(snap_to_grid(6.9, 1920, SEVEN_EIGHT) == 7.0);
-	CHECK(snap_to_grid(8.1, 1920, SEVEN_EIGHT) == 9.0);
+	CHECK(snap_to_grid(1.4, 960, FOUR_FOUR) == Catch::Approx(1.0));
+	CHECK(snap_to_grid(1.6, 960, FOUR_FOUR) == Catch::Approx(2.0));
+	CHECK(snap_to_grid(6.9, 1920, SEVEN_EIGHT) == Catch::Approx(7.0));
+	CHECK(snap_to_grid(8.1, 1920, SEVEN_EIGHT) == Catch::Approx(9.0));
 }
 
 TEST_CASE("grid lines mark bars and steps")

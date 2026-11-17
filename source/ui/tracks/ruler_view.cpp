@@ -13,6 +13,7 @@ namespace
 	constexpr int STEP_TICK_HEIGHT = 5;
 	constexpr float LABEL_FONT_SIZE = 12.0f;
 	constexpr int GRID_NAME_WIDTH = 56;
+	constexpr float EDGE_GRAB = 6.0f;
 }
 
 RulerView::RulerView(AppContext& context, const TimelineViewport& viewport) : context(context), viewport(viewport), layout{context, viewport}
@@ -22,6 +23,7 @@ RulerView::RulerView(AppContext& context, const TimelineViewport& viewport) : co
 void RulerView::paint(juce::Graphics& graphics)
 {
 	graphics.fillAll(theme::PANEL_BACKGROUND);
+	paint_loop_range(graphics);
 
 	for (const auto& line : layout.visible_grid_lines(getWidth())) {
 		const auto tick_height = line.is_bar ? BAR_TICK_HEIGHT : STEP_TICK_HEIGHT;
@@ -34,6 +36,23 @@ void RulerView::paint(juce::Graphics& graphics)
 
 	graphics.setColour(theme::PANEL_BORDER);
 	graphics.drawHorizontalLine(getHeight() - 1, 0.0f, (float) getWidth());
+}
+
+void RulerView::paint_loop_range(juce::Graphics& graphics)
+{
+	const auto& loop = context.project.loop;
+
+	if (loop.end <= loop.start)
+		return;
+
+	const auto start_x = layout.tick_to_x(loop.start);
+	const auto end_x = layout.tick_to_x(loop.end);
+
+	graphics.setColour(loop.enabled ? theme::LOOP_RANGE : theme::TIME_SELECTION);
+	graphics.fillRect(juce::Rectangle<float>(start_x, 0.0f, end_x - start_x, (float) getHeight()));
+	graphics.setColour(loop.enabled ? theme::ACCENT : theme::DIM_TEXT);
+	graphics.drawVerticalLine((int) std::round(start_x), 0.0f, (float) getHeight());
+	graphics.drawVerticalLine((int) std::round(end_x), 0.0f, (float) getHeight());
 }
 
 void RulerView::paint_bar_labels(juce::Graphics& graphics)
@@ -67,21 +86,75 @@ void RulerView::paint_grid_name(juce::Graphics& graphics)
 
 void RulerView::mouseDown(const juce::MouseEvent& event)
 {
-	locate_to(event);
+	const auto zone = zone_at(event.x);
+	gesture = RulerGesture{zone, context.project.loop, layout.tick_at(event.x, event.mods), false};
+
+	if (zone == RulerZone::select)
+		context.locate_to_tick(gesture->grab_tick);
 }
 
 void RulerView::mouseDrag(const juce::MouseEvent& event)
 {
-	locate_to(event);
-}
-
-void RulerView::locate_to(const juce::MouseEvent& event)
-{
-	const auto rate = context.engine.sample_rate.load();
-
-	if (rate <= 0.0)
+	if (!gesture || !event.mouseWasDraggedSinceMouseDown())
 		return;
 
-	const auto beat = std::max(0.0, layout.snap(viewport.x_to_beat(event.x), event.mods));
-	context.locate(std::llround(beat * samples_per_beat(context.project.tempo, rate)));
+	if (gesture->zone == RulerZone::select)
+		drag_select(event);
+	else
+		drag_edge(event);
+}
+
+void RulerView::mouseUp(const juce::MouseEvent&)
+{
+	if (gesture && gesture->zone == RulerZone::select) {
+		if (gesture->selected)
+			context.locate_to_tick(context.project.loop.start);
+		else
+			context.clear_loop_range();
+	}
+
+	gesture.reset();
+}
+
+void RulerView::mouseMove(const juce::MouseEvent& event)
+{
+	const auto on_edge = zone_at(event.x) != RulerZone::select;
+	setMouseCursor(on_edge ? juce::MouseCursor::LeftRightResizeCursor : juce::MouseCursor::NormalCursor);
+}
+
+RulerView::RulerZone RulerView::zone_at(int x) const
+{
+	const auto& loop = context.project.loop;
+
+	if (loop.end <= loop.start)
+		return RulerZone::select;
+
+	if (std::abs((float) x - layout.tick_to_x(loop.start)) <= EDGE_GRAB)
+		return RulerZone::range_start;
+
+	if (std::abs((float) x - layout.tick_to_x(loop.end)) <= EDGE_GRAB)
+		return RulerZone::range_end;
+
+	return RulerZone::select;
+}
+
+void RulerView::drag_select(const juce::MouseEvent& event)
+{
+	const auto tick = layout.tick_at(event.x, event.mods);
+
+	if (std::abs(tick - gesture->grab_tick) < layout.grid_step() && !gesture->selected)
+		return;
+
+	gesture->selected = true;
+	context.select_loop_range(gesture->grab_tick, tick);
+}
+
+void RulerView::drag_edge(const juce::MouseEvent& event)
+{
+	const auto tick = layout.tick_at(event.x, event.mods);
+	const auto& original = gesture->original;
+	const auto fixed_edge = gesture->zone == RulerZone::range_start ? original.end : original.start;
+
+	if (tick != fixed_edge)
+		context.select_loop_range(fixed_edge, tick);
 }

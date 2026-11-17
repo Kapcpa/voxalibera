@@ -35,6 +35,8 @@ constexpr int TICKS_PER_BEAT = 960;
 double samples_per_beat(const Tempo& tempo, double sample_rate);
 std::int64_t convert_samples(std::int64_t samples, double from_rate, double to_rate);
 std::int64_t beat_start_sample(std::int64_t beat_index, const Tempo& tempo, double sample_rate);
+std::int64_t ticks_to_samples(std::int64_t ticks, const Tempo& tempo, double sample_rate);
+std::int64_t samples_to_ticks(std::int64_t samples, const Tempo& tempo, double sample_rate);
 MusicalPosition to_musical_position(std::int64_t sample, const Tempo& tempo, double sample_rate);
 std::int64_t to_sample(const MusicalPosition& position, const Tempo& tempo, double sample_rate);
 juce::String format_musical_position(const MusicalPosition& position);

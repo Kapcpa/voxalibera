@@ -22,6 +22,7 @@ struct ExportJob
 	juce::File file;
 	double sample_rate = 0.0;
 	int bit_depth = export_format::INTEGER_24_BIT;
+	std::int64_t start = 0;
 	std::int64_t length = 0;
 	std::int64_t tail = 0;
 	std::int64_t pre_roll = 0;

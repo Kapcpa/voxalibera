@@ -1,6 +1,7 @@
 #pragma once
 
 #include "engine/lock_free.h"
+#include "engine/transport.h"
 
 #include <juce_audio_formats/juce_audio_formats.h>
 
@@ -27,6 +28,18 @@ struct RecordingTake
 	int pending_peak_samples = 0;
 };
 
+struct RecordedRange
+{
+	std::int64_t start = 0;
+	std::int64_t source_offset = 0;
+	std::int64_t length = 0;
+
+	bool operator==(const RecordedRange&) const = default;
+};
+
+RecordedRange last_full_pass(std::int64_t start, std::int64_t written, std::int64_t latency, const Transport::Loop& loop);
+RecordedRange current_pass(std::int64_t start, std::int64_t written, const Transport::Loop& loop);
+
 class RecordingSession
 {
 public:
@@ -35,7 +48,7 @@ public:
 
 	RecordingSession();
 
-	void write(const float* const* inputs, int input_count, int sample_count, std::int64_t block_start, std::int64_t record_from);
+	void write(const float* const* inputs, int input_count, int buffer_offset, int sample_count, std::int64_t block_start, std::int64_t record_from);
 
 	std::vector<std::unique_ptr<RecordingTake>> takes;
 	std::atomic<std::int64_t> start_sample{NOT_STARTED};

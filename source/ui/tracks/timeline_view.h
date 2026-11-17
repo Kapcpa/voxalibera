@@ -33,6 +33,7 @@ private:
 	void paint_live_takes(juce::Graphics& graphics);
 	void paint_lanes(juce::Graphics& graphics);
 	void paint_grid(juce::Graphics& graphics);
+	void paint_loop_range(juce::Graphics& graphics);
 	void paint_playhead(juce::Graphics& graphics);
 	void paint_drop_place(juce::Graphics& graphics);
 

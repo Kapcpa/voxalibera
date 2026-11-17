@@ -16,6 +16,7 @@ namespace
 	constexpr int CLOCK_WIDTH = 100;
 	constexpr int TEMPO_WIDTH = 96;
 	constexpr int SIGNATURE_WIDTH = 72;
+	constexpr int LOOP_WIDTH = 56;
 	constexpr int METRONOME_WIDTH = 64;
 	constexpr int COUNT_IN_WIDTH = 80;
 	constexpr int CONTROL_HEIGHT = 28;
@@ -96,6 +97,11 @@ TransportBar::TransportBar(AppContext& context) : context(context), start_button
 	signature_box.onChange = [this] { choose_signature(); };
 	signature_box.setWantsKeyboardFocus(false);
 
+	loop_button.setColour(juce::TextButton::buttonOnColourId, theme::ACCENT);
+	loop_button.setWantsKeyboardFocus(false);
+	loop_button.onClick = [this] { this->context.toggle_loop(); };
+	loop_button.setTooltip("Loop the selected range (L)");
+
 	metronome_button.setColour(juce::TextButton::buttonOnColourId, theme::ACCENT);
 	metronome_button.setWantsKeyboardFocus(false);
 	metronome_button.onClick = [this] { this->context.toggle_metronome(); };
@@ -110,7 +116,7 @@ TransportBar::TransportBar(AppContext& context) : context(context), start_button
 	rate_warning.setJustificationType(juce::Justification::centredRight);
 	rate_warning.setMinimumHorizontalScale(1.0f);
 
-	for (auto* child : std::initializer_list<juce::Component*>{&start_button, &play_button, &record_button, &musical_position, &clock_position, &tempo_field, &signature_box, &metronome_button, &count_in_button, &rate_warning})
+	for (auto* child : std::initializer_list<juce::Component*>{&start_button, &play_button, &record_button, &musical_position, &clock_position, &tempo_field, &signature_box, &loop_button, &metronome_button, &count_in_button, &rate_warning})
 		addAndMakeVisible(child);
 
 	update();
@@ -190,6 +196,8 @@ void TransportBar::show_project_values()
 		signature_box.setText(format_time_signature(tempo.signature), juce::dontSendNotification);
 	}
 
+	loop_button.setToggleState(context.project.loop.enabled, juce::dontSendNotification);
+	loop_button.setEnabled(!context.recorder.is_recording());
 	metronome_button.setToggleState(context.project.metronome, juce::dontSendNotification);
 	count_in_button.setToggleState(context.project.count_in, juce::dontSendNotification);
 }
@@ -229,6 +237,8 @@ void TransportBar::resized()
 	area.removeFromLeft(GAP);
 	signature_box.setBounds(centred(area.removeFromLeft(SIGNATURE_WIDTH), CONTROL_HEIGHT));
 	area.removeFromLeft(GROUP_GAP);
+	loop_button.setBounds(centred(area.removeFromLeft(LOOP_WIDTH), CONTROL_HEIGHT));
+	area.removeFromLeft(GAP);
 	metronome_button.setBounds(centred(area.removeFromLeft(METRONOME_WIDTH), CONTROL_HEIGHT));
 	area.removeFromLeft(GAP);
 	count_in_button.setBounds(centred(area.removeFromLeft(COUNT_IN_WIDTH), CONTROL_HEIGHT));

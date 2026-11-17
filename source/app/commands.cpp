@@ -29,6 +29,7 @@ namespace
 		{command::PLAY_STOP, "Play / Stop", "Transport", juce::KeyPress::spaceKey, NO_MODIFIERS},
 		{command::RETURN_TO_START, "Return to Start", "Transport", juce::KeyPress::returnKey, NO_MODIFIERS},
 		{command::RECORD, "Record", "Transport", 'r', CONTROL},
+		{command::TOGGLE_LOOP, "Loop", "Transport", 'l', NO_MODIFIERS},
 		{command::TOGGLE_METRONOME, "Metronome", "Transport", 'k', NO_MODIFIERS},
 		{command::TOGGLE_COUNT_IN, "Count-in", "Transport", 'k', SHIFT},
 		{command::NEW_TRACK, "New Track...", "Track", 't', CONTROL},

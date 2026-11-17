@@ -9,7 +9,9 @@
 namespace
 {
 	constexpr int WIDTH = 560;
-	constexpr int HEIGHT = 196;
+	constexpr int HEIGHT = 232;
+	constexpr int WHOLE_SONG = 1;
+	constexpr int LOOP_RANGE = 2;
 	constexpr int SECONDS_PER_MINUTE = 60;
 	constexpr auto WAV_PATTERN = "*.wav";
 	constexpr auto WAV_EXTENSION = "wav";
@@ -28,6 +30,10 @@ ExportDialog::ExportDialog(AppContext& context) : context(context)
 	format.addItem("WAV 24-bit", export_format::INTEGER_24_BIT);
 	format.addItem("WAV 32-bit float", export_format::FLOAT_32_BIT);
 	format.setSelectedId(export_format::INTEGER_24_BIT, juce::dontSendNotification);
+	range.addItem("Whole song", WHOLE_SONG);
+	range.addItem("Loop range", LOOP_RANGE);
+	range.setSelectedId(WHOLE_SONG, juce::dontSendNotification);
+	range.onChange = [this] { details.setText(describe_mix(), juce::dontSendNotification); };
 
 	file_label.setColour(juce::Label::textColourId, theme::TEXT);
 	file_label.setMinimumHorizontalScale(1.0f);
@@ -39,7 +45,7 @@ ExportDialog::ExportDialog(AppContext& context) : context(context)
 	cancel_button.onClick = [this] { cancel(); };
 	export_button.onClick = [this] { start(); };
 
-	for (auto* child : std::initializer_list<juce::Component*>{&file_title, &file_label, &choose_button, &format_title, &format, &details, &cancel_button, &export_button})
+	for (auto* child : std::initializer_list<juce::Component*>{&file_title, &file_label, &choose_button, &format_title, &format, &range_title, &range, &details, &cancel_button, &export_button})
 		addAndMakeVisible(child);
 
 	addChildComponent(progress_bar);
@@ -52,7 +58,37 @@ void ExportDialog::prepare()
 		use_file(default_file());
 
 	file_project = context.session.project_file();
+	refresh_range();
 	show_running(false);
+}
+
+void ExportDialog::refresh_range()
+{
+	range.setItemEnabled(LOOP_RANGE, has_loop_range());
+
+	if (!has_loop_range())
+		range.setSelectedId(WHOLE_SONG, juce::dontSendNotification);
+
+	details.setText(describe_mix(), juce::dontSendNotification);
+}
+
+bool ExportDialog::has_loop_range() const
+{
+	return context.project.loop.end > context.project.loop.start;
+}
+
+bool ExportDialog::exports_loop_range() const
+{
+	return has_loop_range() && range.getSelectedId() == LOOP_RANGE;
+}
+
+std::int64_t ExportDialog::export_length(double rate) const
+{
+	if (!exports_loop_range())
+		return project_end(context.project);
+
+	const auto& loop = context.project.loop;
+	return ticks_to_samples(loop.end, context.project.tempo, rate) - ticks_to_samples(loop.start, context.project.tempo, rate);
 }
 
 juce::File ExportDialog::default_file() const
@@ -78,7 +114,7 @@ juce::String ExportDialog::describe_mix() const
 		return {};
 
 	const auto replaces = file.existsAsFile() ? ", replaces the existing file" : "";
-	return juce::String(rate, 0) + " Hz stereo, " + describe_length(project_end(context.project), rate) + " plus effect tails" + replaces;
+	return juce::String(rate, 0) + " Hz stereo, " + describe_length(export_length(rate), rate) + " plus effect tails" + replaces;
 }
 
 void ExportDialog::choose_file()
@@ -95,7 +131,7 @@ void ExportDialog::choose_file()
 
 void ExportDialog::start()
 {
-	const auto problem = context.start_export(file, format.getSelectedId());
+	const auto problem = context.start_export(file, format.getSelectedId(), exports_loop_range());
 
 	if (problem.isNotEmpty()) {
 		on_finished({ExportResult::Outcome::failed, file, 0.0f, false, problem});
@@ -136,6 +172,7 @@ void ExportDialog::show_running(bool running)
 	export_button.setEnabled(!running);
 	choose_button.setEnabled(!running);
 	format.setEnabled(!running);
+	range.setEnabled(!running);
 }
 
 void ExportDialog::resized()
@@ -153,6 +190,11 @@ void ExportDialog::resized()
 	auto format_row = area.removeFromTop(ROW_HEIGHT);
 	format_title.setBounds(format_row.removeFromLeft(LABEL_WIDTH));
 	format.setBounds(format_row);
+	area.removeFromTop(ROW_GAP);
+
+	auto range_row = area.removeFromTop(ROW_HEIGHT);
+	range_title.setBounds(range_row.removeFromLeft(LABEL_WIDTH));
+	range.setBounds(range_row);
 	area.removeFromTop(ROW_GAP);
 
 	auto status_row = area.removeFromTop(ROW_HEIGHT);

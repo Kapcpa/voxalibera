@@ -2,6 +2,8 @@
 
 #include "engine/resampler.h"
 
+#include <algorithm>
+
 namespace
 {
 	constexpr double SECONDS_AHEAD = 5.0;
@@ -33,7 +35,16 @@ int ReadAhead::useTimeSlice()
 {
 	const auto [current, current_rate] = copy_regions();
 	const auto from = transport.position();
-	touch(current, from, from + (std::int64_t) (SECONDS_AHEAD * current_rate));
+	const auto to = from + (std::int64_t) (SECONDS_AHEAD * current_rate);
+	const auto loop = transport.loop();
+
+	if (!loop.is_active() || from >= loop.end || to <= loop.end) {
+		touch(current, from, to);
+		return MILLISECONDS_BETWEEN_PASSES;
+	}
+
+	touch(current, from, loop.end);
+	touch(current, loop.start, loop.start + std::min(to - loop.end, loop.length()));
 	return MILLISECONDS_BETWEEN_PASSES;
 }
 

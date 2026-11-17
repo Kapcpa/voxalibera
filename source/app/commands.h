@@ -24,6 +24,7 @@ namespace command
 	constexpr juce::CommandID ADAPTIVE_GRID = 17;
 	constexpr juce::CommandID TOGGLE_MIXER = 20;
 	constexpr juce::CommandID TOGGLE_PLUGIN_CHAIN = 21;
+	constexpr juce::CommandID TOGGLE_LOOP = 24;
 	constexpr juce::CommandID PLAY_STOP = 25;
 	constexpr juce::CommandID RETURN_TO_START = 26;
 	constexpr juce::CommandID TOGGLE_METRONOME = 27;

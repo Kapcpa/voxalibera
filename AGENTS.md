@@ -116,6 +116,7 @@ The UI writes those atomics and saves `Settings`; the engine never sees `Setting
 
 - `EnginePublisher` notices a new revision once per frame, builds an `EngineSnapshot` (a read-only copy of what the audio thread needs) and publishes it through `SnapshotExchange`: an atomic pointer swap. Replaced snapshots are freed on the message thread once the audio thread has finished a block that started after the swap, never on the audio thread.
 - `Transport` takes play/stop/locate from the UI through a `LockFreeQueue` and publishes its state and position through atomics. Positions inside the engine are in samples; `engine/musical_time` converts to bars, beats and ticks.
+- Loop: the loop range is the time selection, as in Reaper. Dragging on the ruler or on an empty part of the tracks selects it, a single click clears it and moves the playhead there, and its edges can be dragged in the ruler. After selecting, the playhead goes to the range start, so playback always enters the loop. It only loops while Loop (L) is on. `Project::loop` is in ticks, so it stays on the bars when the tempo changes. `AppContext::sync_loop` sends it to the transport in device samples, never while recording. `advance` ends a block at the loop end, so the callback renders in segments. It wraps only when the playhead crosses the loop end from before it. Tracks with plugin latency read ahead past the loop end, so their reading wraps first (`MixRenderer::render_track`), and `ReadAhead` wraps as well.
 
 ### Recording
 
@@ -123,6 +124,7 @@ The UI writes those atomics and saves `Settings`; the engine never sees `Setting
 - The audio thread only copies input samples into each writer's lock-free buffer and collects waveform peaks into a `LockFreeQueue`; the disk thread writes the files and refreshes the WAV header every couple of seconds, so a crash leaves a valid file.
 - Count-in (`project.count_in`, only when starting from a stop): `transport.record(count_in_samples)` moves the playhead one bar back and keeps `record_from` at the start point. Blocks before it are pre-roll: clips play, the metronome clicks even when it's off, and `RecordingSession::write` skips everything before `record_from`, to the sample.
 - On stop, `Recorder` waits until the engine has really stopped recording, then adds all takes as clips in one "Record" edit, shifted by the device's reported latency (`source_offset`).
+- Recording in a loop writes one continuous file. The clip shows the last full pass (`last_full_pass`) and the earlier passes stay in the file for take lanes. While recording, the live take shows the pass in progress (`current_pass`).
 - Takes go to the project's folder; before the first save that's a temporary folder under `~/.local/share/voxalibera/unsaved/`. Files are never deleted silently (see `docs/projects.md`).
 - Clip `file` paths are relative to the project folder; never build a `juce::File` from them directly, resolve them against `project.folder`.
 
@@ -137,9 +139,9 @@ The UI writes those atomics and saves `Settings`; the engine never sees `Setting
 
 ### Export
 
-- File > Export Mix (Ctrl+Shift+E) renders the whole song to WAV at the project's rate: 16-bit with TPDF dither, 24-bit or 32-bit float. It runs on its own thread (`MixExport`), so playback and the UI keep going; the dialog stays open with a progress bar and blocks other commands.
+- File > Export Mix (Ctrl+Shift+E) renders the whole song or the loop range to WAV at the project's rate: 16-bit with TPDF dither, 24-bit or 32-bit float. It runs on its own thread (`MixExport`), so playback and the UI keep going; the dialog stays open with a progress bar and blocks other commands.
 - `AppContext::start_export` builds a separate snapshot with `EnginePublisher::build_snapshot`: clips at the project's rate, 128-tap resampling instead of 32, and new plugin instances from `PluginPool::export_chain_for` with the live instances' current state, in non-realtime mode. The audio thread's instances are never touched. They are created and destroyed on the message thread (`take_result` frees them).
-- Rendering starts the longest chain latency before zero, so tracks behind latent plugins don't lose their first samples, and continues past the last clip by the longest effect tail, stopping at the first silent block.
+- Rendering starts the longest chain latency before zero, so tracks behind latent plugins don't lose their first samples, and continues past the last clip (or the range end, where clips stop) by the longest effect tail, stopping at the first silent block.
 - Written to a temporary file next to the target and renamed at the end, so a cancel or failure leaves no half-written file. The result reports the peak and whether a fixed-point export clipped.
 
 ### Plugins

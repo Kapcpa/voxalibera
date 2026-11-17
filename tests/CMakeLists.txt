@@ -23,6 +23,7 @@ target_sources(voxalibera_tests PRIVATE
     ${PROJECT_SOURCE_DIR}/source/engine/passthrough.cpp
     ${PROJECT_SOURCE_DIR}/source/engine/plugins/plugin_chain.cpp
     ${PROJECT_SOURCE_DIR}/source/engine/plugins/plugin_processor.cpp
+    ${PROJECT_SOURCE_DIR}/source/engine/recording_session.cpp
     ${PROJECT_SOURCE_DIR}/source/engine/resampler.cpp
     ${PROJECT_SOURCE_DIR}/source/engine/transport.cpp
     ${PROJECT_SOURCE_DIR}/source/platform/alsa_cards.cpp

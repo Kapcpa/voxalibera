@@ -29,6 +29,7 @@ private:
 	juce::Label clock_position;
 	juce::Slider tempo_field{juce::Slider::LinearBarVertical, juce::Slider::TextBoxBelow};
 	juce::ComboBox signature_box;
+	juce::TextButton loop_button{"Loop"};
 	juce::TextButton metronome_button{"Click"};
 	juce::TextButton count_in_button{"Count-in"};
 	juce::Label rate_warning;

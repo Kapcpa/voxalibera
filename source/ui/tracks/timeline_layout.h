@@ -35,6 +35,8 @@ struct TimelineLayout
 	double sample_rate() const;
 	std::int64_t grid_step() const;
 	double snap(double beat, const juce::ModifierKeys& modifiers) const;
+	std::int64_t tick_at(int x, const juce::ModifierKeys& modifiers) const;
+	float tick_to_x(std::int64_t tick) const;
 	std::vector<GridLine> visible_grid_lines(int width) const;
 	double sample_to_x(std::int64_t sample) const;
 	juce::Rectangle<float> clip_area(size_t track_index, std::int64_t start, std::int64_t length) const;

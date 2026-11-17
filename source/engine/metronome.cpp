@@ -45,7 +45,7 @@ float Metronome::next_click_sample()
 	return value;
 }
 
-void Metronome::render(float* const* outputs, int output_count, int sample_count, std::int64_t block_start, std::int64_t clicks_until, const Tempo& tempo)
+void Metronome::render(float* const* outputs, int output_count, int buffer_offset, int sample_count, std::int64_t block_start, std::int64_t clicks_until, const Tempo& tempo)
 {
 	if (sample_rate <= 0.0)
 		return;
@@ -68,6 +68,6 @@ void Metronome::render(float* const* outputs, int output_count, int sample_count
 		const auto value = next_click_sample();
 
 		for (int channel = 0; channel < output_count; ++channel)
-			outputs[channel][offset] += value;
+			outputs[channel][buffer_offset + offset] += value;
 	}
 }
