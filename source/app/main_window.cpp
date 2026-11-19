@@ -57,10 +57,19 @@ MainWindow::MainWindow(const juce::String& name, AppContext& context) : Document
 		{command::OPEN_PROJECT, [this] { project_dialogs.open_project(); }},
 		{command::SAVE_PROJECT, [this] { project_dialogs.save(); }},
 		{command::SAVE_PROJECT_AS, [this] { project_dialogs.save_as(); }},
+		{command::QUIT, [this] { request_quit(); }},
 		{command::CLEAN_UP_PROJECT, [this] { project_dialogs.clean_up(); }},
 		{command::IMPORT_FILE, [this] { import_file(); }},
 		{command::EXPORT_MIX, [this] { show_export_dialog(); }},
-		{command::QUIT, [this] { request_quit(); }},
+		{command::COPY, [this] { this->context.clipboard.copy(this->context.selection, this->context.project); }},
+		{command::PASTE, [this] {
+			 this->context.clips.paste_clips(this->context.clipboard, this->context.engine.transport.position(), this->context.engine.sample_rate.load());
+		 }},
+		{command::DUPLICATE, [this] { this->context.clips.duplicate_selected(); }},
+		{command::CUT, [this] {
+			 this->context.clipboard.copy(this->context.selection, this->context.project);
+			 this->context.clips.remove_selected();
+		 }},
 		{command::TOGGLE_MIXER, [this] { toggle_mixer(); }},
 		{command::TOGGLE_PLUGIN_CHAIN, [this] { toggle_plugin_chain(); }},
 		{command::PLAY_STOP, [this] { this->context.toggle_playback(); }},

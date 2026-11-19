@@ -44,7 +44,7 @@ namespace
 	}
 }
 
-ProjectSession::ProjectSession(AudioEngine& engine, DeviceSession& devices, Project& project, EditHistory& edits, Selection& selection, PeakStore& peaks, PeakBuilder& peak_builder, PluginPool& plugins, juce::TimeSliceThread& disk_thread) : engine(engine), devices(devices), project(project), edits(edits), selection(selection), peaks(peaks), peak_builder(peak_builder), plugins(plugins), recovery(disk_thread)
+ProjectSession::ProjectSession(AudioEngine& engine, DeviceSession& devices, Project& project, EditHistory& edits, Selection& selection, Clipboard& clipboard, PeakStore& peaks, PeakBuilder& peak_builder, PluginPool& plugins, juce::TimeSliceThread& disk_thread) : engine(engine), devices(devices), project(project), edits(edits), selection(selection), clipboard(clipboard), peaks(peaks), peak_builder(peak_builder), plugins(plugins), recovery(disk_thread)
 {
 }
 
@@ -167,6 +167,7 @@ void ProjectSession::replace_project(Project next)
 	autosave_due.reset();
 	edits.clear();
 	selection.clear();
+	clipboard.clear();
 	peak_builder.cancel_all();
 	peaks.clear();
 	plugins.clear();

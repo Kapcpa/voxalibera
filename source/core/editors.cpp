@@ -1,5 +1,6 @@
 #include "core/editors.h"
 
+#include "core/clipboard.h"
 #include "core/project/model.h"
 
 #include <limits>
@@ -332,4 +333,71 @@ void ClipEditor::set_trim_right(ClipId id, std::int64_t trim_right)
 	edit.set(id, &Clip::length, clip_length);
 	edit.set(id, &Clip::fade_in, fade_in);
 	edit.set(id, &Clip::fade_out, fade_out);
+}
+
+void ClipEditor::paste_clips(const Clipboard& clipboard, std::int64_t position, double device_rate)
+{
+	if (clipboard.clips.empty())
+		return;
+
+	position = convert_samples(position, device_rate, timeline_rate(project, device_rate));
+
+	auto edit = edits.begin(clipboard.clips.size() == 1 ? "Paste Clip" : "Paste Clips");
+	std::vector<ClipId> pasted_clips;
+
+	for (auto entry : clipboard.clips) {
+		entry.clip.start += position;
+		const auto id = edit.add_clip(entry.track, entry.clip);
+
+		if (id.is_valid())
+			pasted_clips.push_back(id);
+	}
+
+	select_only(pasted_clips);
+}
+
+void ClipEditor::duplicate_selected()
+{
+	auto earliest_start = std::numeric_limits<std::int64_t>::max();
+	auto latest_end = std::numeric_limits<std::int64_t>::min();
+
+	for (const auto id : selection.clips) {
+		const auto* clip = project.find_clip(id);
+
+		if (clip == nullptr)
+			continue;
+
+		earliest_start = std::min(earliest_start, clip->start);
+		latest_end = std::max(latest_end, clip->end());
+	}
+
+	if (latest_end < earliest_start)
+		return;
+
+	const auto span = latest_end - earliest_start;
+	auto edit = edits.begin(selection.clips.size() == 1 ? "Duplicate Clip" : "Duplicate Clips");
+	std::vector<ClipId> duplicated_clips;
+
+	for (const auto id : selection.clips) {
+		const auto* clip = project.find_clip(id);
+		const auto* track = project.find_track_of(id);
+
+		if (clip == nullptr || track == nullptr)
+			continue;
+
+		auto duplicate = *clip;
+		duplicate.start += span;
+		duplicated_clips.push_back(edit.add_clip(track->id, duplicate));
+	}
+
+	select_only(duplicated_clips);
+}
+
+void ClipEditor::select_only(std::vector<ClipId> ids)
+{
+	if (ids.empty())
+		return;
+
+	selection.clips = std::move(ids);
+	++selection.revision;
 }

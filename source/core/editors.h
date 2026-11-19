@@ -3,6 +3,8 @@
 #include "core/project/edit_history.h"
 #include "core/selection.h"
 
+struct Clipboard;
+
 struct TrackSettings
 {
 	juce::String name;
@@ -64,8 +66,12 @@ public:
 	void set_fade_out(ClipId id, std::int64_t fade_out);
 	void set_trim_left(ClipId id, std::int64_t trim_left);
 	void set_trim_right(ClipId id, std::int64_t trim_right);
+	void paste_clips(const Clipboard& clipboard, std::int64_t position, double device_rate);
+	void duplicate_selected();
 
 private:
+	void select_only(std::vector<ClipId> ids);
+
 	Project& project;
 	EditHistory& edits;
 	Selection& selection;

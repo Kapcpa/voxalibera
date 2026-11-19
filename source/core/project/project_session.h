@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/audio/device_session.h"
+#include "core/clipboard.h"
 #include "core/media/peaks.h"
 #include "core/plugins/plugin_pool.h"
 #include "core/project/edit_history.h"
@@ -17,7 +18,7 @@ public:
 	static constexpr int MAX_BACKUPS = 10;
 	static constexpr double AUTOSAVE_SECONDS = 300.0;
 
-	ProjectSession(AudioEngine& engine, DeviceSession& devices, Project& project, EditHistory& edits, Selection& selection, PeakStore& peaks, PeakBuilder& peak_builder, PluginPool& plugins, juce::TimeSliceThread& disk_thread);
+	ProjectSession(AudioEngine& engine, DeviceSession& devices, Project& project, EditHistory& edits, Selection& selection, Clipboard& clipboard, PeakStore& peaks, PeakBuilder& peak_builder, PluginPool& plugins, juce::TimeSliceThread& disk_thread);
 
 	static juce::File projects_folder();
 
@@ -51,6 +52,7 @@ private:
 	Project& project;
 	EditHistory& edits;
 	Selection& selection;
+	Clipboard& clipboard;
 	PeakStore& peaks;
 	PeakBuilder& peak_builder;
 	PluginPool& plugins;
