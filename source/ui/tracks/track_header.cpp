@@ -1,7 +1,9 @@
 #include "ui/tracks/track_header.h"
 
 #include "core/project/model.h"
+#include "core/project/takes.h"
 #include "ui/theme.h"
+#include "ui/tracks/timeline_layout.h"
 
 namespace
 {
@@ -12,6 +14,11 @@ namespace
 	constexpr int PLUGINS_BUTTON_WIDTH = 28;
 	constexpr int TOGGLE_GAP = 3;
 	constexpr int DETAILS_WIDTH = 82;
+	constexpr int EXPANDER_HEIGHT = 11;
+	constexpr float CHEVRON_HALF_WIDTH = 5.0f;
+	constexpr float CHEVRON_HALF_HEIGHT = 2.5f;
+	constexpr float CHEVRON_THICKNESS = 1.5f;
+	constexpr int KEEP_COMP_WIDTH = 78;
 	constexpr int VOLUME_TEXT_WIDTH = 46;
 	constexpr float NAME_FONT_SIZE = 14.0f;
 	constexpr float DETAILS_FONT_SIZE = 12.0f;
@@ -36,6 +43,12 @@ TrackHeader::TrackHeader(AppContext& context, TrackId id) : context(context), id
 	style_toggle(arm_button, theme::RECORD);
 	style_toggle(mute_button, theme::MUTE);
 	style_toggle(solo_button, theme::SOLO);
+	keep_comp_button.setWantsKeyboardFocus(false);
+	keep_comp_button.setTooltip("Keep what plays now and remove the other takes");
+	keep_comp_button.onClick = [this] { this->context.clips.keep_comp(this->id); };
+	takes_count.setFont(juce::FontOptions(DETAILS_FONT_SIZE));
+	takes_count.setColour(juce::Label::textColourId, theme::DIM_TEXT);
+	takes_count.setInterceptsMouseClicks(false, false);
 	arm_button.onClick = [this] { this->context.tracks.toggle(this->id, &Track::armed, "Arm Track"); };
 	mute_button.onClick = [this] { this->context.tracks.toggle(this->id, &Track::mute, "Mute Track"); };
 	solo_button.onClick = [this] { this->context.tracks.toggle(this->id, &Track::solo, "Solo Track"); };
@@ -54,7 +67,7 @@ TrackHeader::TrackHeader(AppContext& context, TrackId id) : context(context), id
 	volume.setColour(juce::Slider::textBoxOutlineColourId, juce::Colours::transparentBlack);
 	volume.onValueChange = [this] { this->context.tracks.set_volume(this->id, (float) volume.getValue()); };
 
-	for (auto* child : std::initializer_list<juce::Component*>{&name, &details, &plugins_button, &arm_button, &mute_button, &solo_button, &volume})
+	for (auto* child : std::initializer_list<juce::Component*>{&name, &details, &plugins_button, &arm_button, &mute_button, &solo_button, &volume, &takes_count, &keep_comp_button})
 		addAndMakeVisible(child);
 }
 
@@ -74,6 +87,12 @@ void TrackHeader::show(const Track& track, bool is_selected)
 		name.setText(track.name, juce::dontSendNotification);
 
 	details.setText(describe_channels(track.channels) + " · " + describe_input(track.input, track.channels), juce::dontSendNotification);
+	expandable = has_takes(track);
+	expanded = shows_lanes(track);
+	takes_count.setText(juce::String(lane_count(track)) + " takes", juce::dontSendNotification);
+	takes_count.setVisible(expanded);
+	keep_comp_button.setVisible(expanded);
+
 	arm_button.setToggleState(track.armed, juce::dontSendNotification);
 	mute_button.setToggleState(track.mute, juce::dontSendNotification);
 	solo_button.setToggleState(track.solo, juce::dontSendNotification);
@@ -92,6 +111,29 @@ void TrackHeader::paint(juce::Graphics& graphics)
 	graphics.fillRect(getLocalBounds().removeFromLeft(COLOUR_STRIP_WIDTH));
 	graphics.setColour(theme::PANEL_BORDER);
 	graphics.drawHorizontalLine(getHeight() - 1, 0.0f, (float) getWidth());
+	paint_expander(graphics);
+}
+
+juce::Rectangle<int> TrackHeader::expander_area() const
+{
+	return getLocalBounds().withTrimmedLeft(COLOUR_STRIP_WIDTH).removeFromBottom(EXPANDER_HEIGHT);
+}
+
+void TrackHeader::paint_expander(juce::Graphics& graphics)
+{
+	if (!expandable)
+		return;
+
+	const auto centre = expander_area().toFloat().getCentre();
+	const auto tip = expanded ? -CHEVRON_HALF_HEIGHT : CHEVRON_HALF_HEIGHT;
+
+	juce::Path chevron;
+	chevron.startNewSubPath(centre.x - CHEVRON_HALF_WIDTH, centre.y - tip);
+	chevron.lineTo(centre.x, centre.y + tip);
+	chevron.lineTo(centre.x + CHEVRON_HALF_WIDTH, centre.y - tip);
+
+	graphics.setColour(expander_hovered ? theme::TEXT : theme::DIM_TEXT);
+	graphics.strokePath(chevron, juce::PathStrokeType(CHEVRON_THICKNESS, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
 }
 
 void TrackHeader::resized()
@@ -114,10 +156,39 @@ void TrackHeader::resized()
 	auto bottom = area.removeFromTop(ROW_HEIGHT);
 	details.setBounds(bottom.removeFromLeft(DETAILS_WIDTH));
 	volume.setBounds(bottom);
+
+	auto takes_row = getLocalBounds().withTrimmedLeft(COLOUR_STRIP_WIDTH).withTrimmedTop(TimelineViewport::TRACK_HEIGHT).reduced(PADDING, PADDING / 2).removeFromTop(ROW_HEIGHT);
+	keep_comp_button.setBounds(takes_row.removeFromRight(KEEP_COMP_WIDTH));
+	takes_row.removeFromRight(TOGGLE_GAP);
+	takes_count.setBounds(takes_row);
+}
+
+void TrackHeader::mouseMove(const juce::MouseEvent& event)
+{
+	const auto hovered = expandable && expander_area().contains(event.getPosition());
+
+	if (hovered == expander_hovered)
+		return;
+
+	expander_hovered = hovered;
+	setMouseCursor(hovered ? juce::MouseCursor::PointingHandCursor : juce::MouseCursor::NormalCursor);
+	repaint();
+}
+
+void TrackHeader::mouseExit(const juce::MouseEvent&)
+{
+	expander_hovered = false;
+	setMouseCursor(juce::MouseCursor::NormalCursor);
+	repaint();
 }
 
 void TrackHeader::mouseDown(const juce::MouseEvent& event)
 {
+	if (expandable && expander_area().contains(event.getPosition())) {
+		context.tracks.toggle(id, &Track::expanded, expanded ? "Collapse Track" : "Expand Track");
+		return;
+	}
+
 	if (event.x < COLOUR_STRIP_WIDTH + PADDING) {
 		choose_colour();
 		return;

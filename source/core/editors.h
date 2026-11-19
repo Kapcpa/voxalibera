@@ -61,6 +61,9 @@ public:
 	void move_selected(ClipMove move);
 	void remove_selected();
 	void split_selected(std::int64_t position, double device_rate);
+	void comp(TrackId track, int lane, std::int64_t start, std::int64_t end);
+	void choose_take(ClipId id);
+	void keep_comp(TrackId track);
 	void set_gain(ClipId id, float gain_db);
 	void set_fade_in(ClipId id, std::int64_t fade_in);
 	void set_fade_out(ClipId id, std::int64_t fade_out);
@@ -71,6 +74,7 @@ public:
 
 private:
 	void select_only(std::vector<ClipId> ids);
+	void forget_inactive();
 
 	Project& project;
 	EditHistory& edits;

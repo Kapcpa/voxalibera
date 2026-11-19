@@ -34,6 +34,14 @@ struct TimeSelectionGesture
 	bool selected = false;
 };
 
+struct CompGesture
+{
+	size_t track_index = 0;
+	int lane = 0;
+	std::int64_t grab_sample = 0;
+	std::int64_t current_sample = 0;
+};
+
 class TimelineMouse
 {
 public:
@@ -44,10 +52,13 @@ public:
 	void up(const juce::MouseEvent& event);
 	juce::MouseCursor cursor_at(juce::Point<int> position) const;
 	const std::optional<ClipGesture>& gesture() const { return current; }
+	const std::optional<CompGesture>& comp_gesture() const { return comp; }
 
 private:
 	ClipZone zone_at(juce::Point<int> position, const ClipUnder& clip) const;
 	void select_track_at(const juce::MouseEvent& event);
+	bool start_comp(const juce::MouseEvent& event);
+	void finish_comp(const juce::MouseEvent& event);
 	void drag_time_selection(const juce::MouseEvent& event);
 	void drag_move(const juce::MouseEvent& event);
 	void drag_gain(const juce::MouseEvent& event);
@@ -60,4 +71,5 @@ private:
 	const TimelineLayout& layout;
 	std::optional<ClipGesture> current;
 	std::optional<TimeSelectionGesture> time_selection;
+	std::optional<CompGesture> comp;
 };

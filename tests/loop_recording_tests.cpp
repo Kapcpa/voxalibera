@@ -10,25 +10,29 @@ namespace
 
 TEST_CASE("a take without a loop becomes one clip shifted by the latency")
 {
-	CHECK(last_full_pass(1500, 3000, LATENCY, {}) == RecordedRange{1500, LATENCY, 2950});
+	CHECK(recorded_passes(1500, 3000, LATENCY, {}) == std::vector<RecordedRange>{{1500, LATENCY, 2950}});
 }
 
 TEST_CASE("a take stopped before the loop wraps keeps everything")
 {
-	CHECK(last_full_pass(1500, 400, LATENCY, LOOP) == RecordedRange{1500, LATENCY, 350});
+	CHECK(recorded_passes(1500, 400, LATENCY, LOOP) == std::vector<RecordedRange>{{1500, LATENCY, 350}});
 }
 
 TEST_CASE("a take stopped during the second pass keeps the first one")
 {
-	CHECK(last_full_pass(1500, 1000, LATENCY, LOOP) == RecordedRange{1500, LATENCY, 500});
+	CHECK(recorded_passes(1500, 1000, LATENCY, LOOP) == std::vector<RecordedRange>{{1500, LATENCY, 500}});
 }
 
-TEST_CASE("a looped take keeps the last full pass")
+TEST_CASE("a looped take becomes one take per pass, dropping the unfinished one")
 {
 	const auto first_pass = 500;
 	const auto written = LATENCY + first_pass + 2 * 1000 + 300;
 
-	CHECK(last_full_pass(1500, written, LATENCY, LOOP) == RecordedRange{1000, LATENCY + first_pass + 1000, 1000});
+	CHECK(recorded_passes(1500, written, LATENCY, LOOP) == std::vector<RecordedRange>{
+															   {1500, LATENCY, first_pass},
+															   {1000, LATENCY + first_pass, 1000},
+															   {1000, LATENCY + first_pass + 1000, 1000},
+														   });
 }
 
 TEST_CASE("the live take shows the pass being recorded")

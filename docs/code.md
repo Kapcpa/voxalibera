@@ -28,6 +28,7 @@ Application state. `project/` is the song document and its files, `audio/` talks
 - `project/model` - the whole project as plain data: `Project` (tempo, tracks, folder, change counter), `Track`, `Clip`, `Plugin`, the id types `TrackId`, `ClipId` and `PluginId`, the track colour palette, and the solo rules.
 - `project/edit_history` - `Edit` and `EditHistory`: every change to the project, with undo and redo.
 - `project/project_file` - the `.vxl` format: a project to JSON and back; skips broken parts instead of refusing the file.
+- `project/takes` - take lanes and comping: a new take goes to the lane under everything it covers, comping makes a range play from one lane (splitting clips at its edges, short fades where takes meet); keeping the comp removes the takes that don't play. Lanes show only when a track has more than one.
 - `project/project_session` - the open project's file: new, open, save, save as (moves or copies the recordings), backups, unsaved changes.
 - `project/project_recovery` - the `.lock` file that tells a crash from a clean exit, autosave written on the disk thread, finding crashed projects and leftover unsaved sessions, rebuilding a project from bare takes.
 - `project/project_cleanup` - takes no clip uses, deleting them with their waveform caches, and when to hint about them (`~/.local/state/voxalibera/cleanup-hints.json`).
@@ -75,7 +76,7 @@ Everything the audio thread touches. Nothing here allocates, locks or touches fi
 - `levels` - fader decibels to gain, the mono pan law and stereo balance; `LevelMeter`, peak meters filled by the audio thread and read by the UI.
 - `lock_free` - `SnapshotExchange` swaps snapshots in atomically and frees old ones only after the audio thread is done; `LockFreeQueue` is a fixed-size single-producer single-consumer queue.
 - `transport` - play, stop, record (with an optional count-in), locate, loop; commands in through a queue, position out through atomics. Blocks end at the loop end.
-- `recording_session` - the audio thread side of recording: writes inputs into each take's writer, collects peaks; which part of a looped take becomes the clip.
+- `recording_session` - the audio thread side of recording: writes inputs into each take's writer, collects peaks; which passes of a looped take become takes.
 - `metronome` - a sample-accurate synthesized click.
 - `musical_time` - samples to bars, beats and ticks and back; time signature parsing.
 - `musical_grid` - `Grid` (snap, adaptive or a fixed note value, triplets) and its math in ticks: step for a zoom level, snapping (restarts every bar, so odd meters work), lines to draw, names like `1/8T`.
@@ -119,8 +120,8 @@ Views. They read state every frame and call into `core/` on user input; they nev
 - `parts/plugins_button` - the FX button of track headers and mixer strips: lit when the track has effects, orange when they are bypassed.
 - `parts/meter_view` - draws a `LevelMeter`, horizontally with labels (settings) or vertically (mixer).
 - `tracks/track_area_view` - headers, ruler and timeline together; scrolling, zoom, following the playhead.
-- `tracks/track_header` - one track's name, colour, FX, arm, mute, solo and volume; double-clicking its channels and input opens Track Settings.
-- `tracks/timeline_view` - lanes, grid, clips, live takes, playhead; clip selection and dragging; audio files dropped on it become clips, with a preview of where they land. `TimelineViewport` holds the zoom and scroll state shared by ruler and timeline.
+- `tracks/track_header` - one track's name, colour, FX, arm, mute, solo and volume; a chevron at the bottom expands the track to show its take lanes, with their count and Keep Comp; double-clicking its channels and input opens Track Settings.
+- `tracks/timeline_view` - tracks, take lanes, grid, clips, live takes, playhead; clip selection and dragging, comping on take lanes (click a take, or drag over a range); audio files dropped on it become clips, with a preview of where they land. `TimelineViewport` holds the zoom and scroll state shared by ruler and timeline.
 - `tracks/ruler_view` - bar numbers, grid ticks, the current grid step and the loop range; click to move the playhead (and clear the range), drag to select a range, drag its edges to change it.
 - `tracks/clip_painter` - draws a clip with its waveform (one band per channel).
 - `tracks/track_dialog` - the New Track and Track Settings dialog: name, mono or stereo, input.
