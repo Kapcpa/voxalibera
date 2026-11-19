@@ -99,6 +99,7 @@ The UI writes those atomics and saves `Settings`; the engine never sees `Setting
 - Adding a property to a track or the project: add the field. It's immediately editable and undoable with `edit.set`, nothing else to write. Structural changes (add/remove things) get one pair of operations in `Edit`, written once.
 - Higher-level actions live in editors like `TrackEditor` (`add`, `remove_selected`, `toggle_selected`...), which commands and views call. Views never touch the model directly.
 - Selection lives in `core/Selection`, outside the model and outside undo.
+- Copy, cut, paste, duplicate: `Clipboard` holds copies of clips (not ids) with their track, outside undo. Cut is copy then `remove_selected`. Paste puts them at the playhead on their original tracks; duplicate puts the selection right after its own end, without touching the clipboard. Both select what they added.
 - `project.revision` and `selection.revision` change with every edit; views compare them each frame and refresh only when they changed. Per-object views (track headers) are kept by id, so they survive reordering and keep their state.
 
 ### Project files

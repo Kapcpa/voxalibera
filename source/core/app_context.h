@@ -4,6 +4,7 @@
 #include "core/audio/engine_publisher.h"
 #include "core/audio/mix_export.h"
 #include "core/audio/recorder.h"
+#include "core/clipboard.h"
 #include "core/editors.h"
 #include "core/log.h"
 #include "core/media/peaks.h"
@@ -58,13 +59,14 @@ struct AppContext
 	Project project;
 	EditHistory edits{project};
 	Selection selection;
+	Clipboard clipboard;
 	TrackEditor tracks{project, edits, selection};
 	ClipEditor clips{project, edits, selection};
 	PeakStore peaks;
 	PeakBuilder peak_builder;
 	PluginPool plugins{library};
 	PluginScanner scanner{library, settings};
-	ProjectSession session{engine, devices, project, edits, selection, peaks, peak_builder, plugins, disk_thread};
+	ProjectSession session{engine, devices, project, edits, selection, clipboard, peaks, peak_builder, plugins, disk_thread};
 	Recorder recorder{engine, project, edits, selection, peaks, recording_thread};
 	AudioFilePool files;
 	ReadAhead read_ahead{engine.transport};
