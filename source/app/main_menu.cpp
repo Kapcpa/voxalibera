@@ -63,7 +63,7 @@ namespace
 		{"Edit", {command::UNDO, command::REDO, SEPARATOR, command::SPLIT, command::DELETE_SELECTION, SEPARATOR, command::TOGGLE_SNAP, command::ADAPTIVE_GRID, command::TRIPLET_GRID, command::FINER_GRID, command::COARSER_GRID}},
 		{"View", {command::TOGGLE_MIXER, command::TOGGLE_PLUGIN_CHAIN}},
 		{"Transport", {command::PLAY_STOP, command::RECORD, command::RETURN_TO_START, SEPARATOR, command::TOGGLE_LOOP, command::TOGGLE_METRONOME, command::TOGGLE_COUNT_IN}},
-		{"Track", {command::NEW_TRACK, command::TRACK_SETTINGS, SEPARATOR, command::ARM_TRACKS, command::MUTE_TRACKS, command::SOLO_TRACKS, command::BYPASS_TRACK_PLUGINS}},
+		{"Track", {command::NEW_TRACK, command::TRACK_SETTINGS, command::MOVE_TRACKS_UP, command::MOVE_TRACKS_DOWN, SEPARATOR, command::ARM_TRACKS, command::MUTE_TRACKS, command::SOLO_TRACKS, command::BYPASS_TRACK_PLUGINS}},
 		{"Settings", {command::AUDIO_SETTINGS, command::INTERFACE_SETTINGS, command::PLUGIN_SETTINGS}},
 		{"Help", {command::ABOUT}},
 	};

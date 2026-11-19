@@ -96,6 +96,8 @@ MainWindow::MainWindow(const juce::String& name, AppContext& context) : Document
 		{command::MUTE_TRACKS, [this] { this->context.tracks.toggle_selected(&Track::mute, "Mute Track"); }},
 		{command::SOLO_TRACKS, [this] { this->context.tracks.toggle_selected(&Track::solo, "Solo Track"); }},
 		{command::BYPASS_TRACK_PLUGINS, [this] { this->context.tracks.toggle_selected(&Track::plugins_bypassed, "Bypass Effects"); }},
+		{command::MOVE_TRACKS_UP, [this] { this->context.tracks.move_selected(-1); }},
+		{command::MOVE_TRACKS_DOWN, [this] { this->context.tracks.move_selected(1); }},
 		{command::AUDIO_SETTINGS, [this] { show_settings(SettingsView::AUDIO_PAGE); }},
 		{command::INTERFACE_SETTINGS, [this] { show_settings(SettingsView::INTERFACE_PAGE); }},
 		{command::PLUGIN_SETTINGS, [this] { show_settings(SettingsView::PLUGIN_PAGE); }},
@@ -238,6 +240,9 @@ bool MainWindow::is_available(juce::CommandID id) const
 		case command::SOLO_TRACKS:
 		case command::BYPASS_TRACK_PLUGINS:
 			return !context.selection.tracks.empty();
+		case command::MOVE_TRACKS_UP:
+		case command::MOVE_TRACKS_DOWN:
+			return !context.selection.tracks.empty() && !context.recorder.is_recording();
 		default:
 			return true;
 	}

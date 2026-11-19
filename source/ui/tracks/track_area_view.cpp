@@ -11,6 +11,7 @@ namespace
 	constexpr double FOLLOW_RIGHT_EDGE = 0.9;
 	constexpr double FOLLOW_LEFT_MARGIN = 0.1;
 	constexpr int ADD_BUTTON_MARGIN = 4;
+	constexpr float REORDER_LINE_HEIGHT = 2.0f;
 }
 
 TrackAreaView::TrackAreaView(AppContext& context) : context(context), ruler(context, viewport), timeline(context, viewport)
@@ -76,6 +77,8 @@ void TrackAreaView::sync_headers()
 				if (on_edit_track)
 					on_edit_track(id);
 			};
+			header->on_reorder_drag = [this](int y) { show_reorder_gap(y); };
+			header->on_reorder_drop = [this](TrackId id, int y) { drop_track(id, y); };
 			header_column.addAndMakeVisible(*header);
 		}
 
@@ -112,6 +115,45 @@ int TrackAreaView::content_height() const
 	return tracks_height(context.project);
 }
 
+size_t TrackAreaView::gap_at(int y) const
+{
+	const TimelineLayout layout{context, viewport};
+	const auto& tracks = context.project.tracks;
+	const auto index = layout.track_index_at(y);
+
+	if (index < 0)
+		return 0;
+
+	if ((size_t) index >= tracks.size())
+		return tracks.size();
+
+	const auto below_middle = y - layout.track_top((size_t) index) > track_height(tracks[(size_t) index]) / 2;
+	return (size_t) index + (below_middle ? 1 : 0);
+}
+
+void TrackAreaView::show_reorder_gap(int y)
+{
+	reorder_gap = context.recorder.is_recording() ? std::nullopt : std::optional<size_t>(gap_at(y));
+	repaint();
+}
+
+void TrackAreaView::drop_track(TrackId id, int y)
+{
+	reorder_gap.reset();
+	repaint();
+
+	const auto from = context.project.index_of(id);
+
+	if (from == Project::NOT_FOUND || context.recorder.is_recording())
+		return;
+
+	const auto gap = gap_at(y);
+	const auto position = gap > (size_t) from ? gap - 1 : gap;
+
+	if (position != (size_t) from)
+		context.tracks.move(id, position);
+}
+
 void TrackAreaView::clamp_vertical_scroll()
 {
 	viewport.scroll_y = std::clamp(viewport.scroll_y, 0, std::max(0, content_height() - timeline.getHeight()));
@@ -141,6 +183,18 @@ void TrackAreaView::paint(juce::Graphics& graphics)
 	graphics.fillAll(theme::PANEL_BACKGROUND);
 	graphics.setColour(theme::PANEL_BORDER);
 	graphics.drawVerticalLine(TrackHeader::WIDTH, 0.0f, (float) getHeight());
+}
+
+void TrackAreaView::paintOverChildren(juce::Graphics& graphics)
+{
+	if (!reorder_gap)
+		return;
+
+	const TimelineLayout layout{context, viewport};
+	const auto y = (float) (header_column.getY() + layout.track_top(*reorder_gap)) - REORDER_LINE_HEIGHT / 2.0f;
+
+	graphics.setColour(theme::ACCENT);
+	graphics.fillRect(0.0f, y, (float) getWidth(), REORDER_LINE_HEIGHT);
 }
 
 void TrackAreaView::resized()

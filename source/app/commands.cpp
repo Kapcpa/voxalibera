@@ -43,6 +43,8 @@ namespace
 		{command::MUTE_TRACKS, "Mute", "Track", 'm', NO_MODIFIERS},
 		{command::SOLO_TRACKS, "Solo", "Track", 's', NO_MODIFIERS},
 		{command::BYPASS_TRACK_PLUGINS, "Bypass Effects", "Track", 'b', NO_MODIFIERS},
+		{command::MOVE_TRACKS_UP, "Move Tracks Up", "Track", juce::KeyPress::upKey, CONTROL},
+		{command::MOVE_TRACKS_DOWN, "Move Tracks Down", "Track", juce::KeyPress::downKey, CONTROL},
 		{command::AUDIO_SETTINGS, "Audio...", "Settings", ',', CONTROL},
 		{command::INTERFACE_SETTINGS, "Interface...", "Settings", 0, NO_MODIFIERS},
 		{command::PLUGIN_SETTINGS, "Plugin...", "Settings", 0, NO_MODIFIERS},

@@ -15,6 +15,18 @@ namespace
 		++project.revision;
 	}
 
+	void relocate_track(Project& project, TrackId id, size_t position)
+	{
+		auto& tracks = project.tracks;
+		const auto from = tracks.begin() + project.index_of(id);
+		const auto to = tracks.begin() + (std::ptrdiff_t) position;
+
+		if (from < to)
+			std::rotate(from, from + 1, to + 1);
+		else
+			std::rotate(to, from, from + 1);
+	}
+
 	void transfer_clip(Project& project, ClipId id, TrackId target)
 	{
 		auto& source_clips = project.find_track_of(id)->clips;
@@ -102,6 +114,17 @@ void Edit::remove_track(TrackId id)
 		[id](Project& target) { target.tracks.erase(target.tracks.begin() + target.index_of(id)); },
 		[removed, index](Project& target) { target.tracks.insert(target.tracks.begin() + index, removed); },
 	});
+}
+
+void Edit::move_track(TrackId id, size_t position)
+{
+	const auto from = current_project().index_of(id);
+
+	if (from == Project::NOT_FOUND || position >= current_project().tracks.size() || (size_t) from == position)
+		return;
+
+	record({[id, position](Project& project) { relocate_track(project, id, position); },
+			[id, from](Project& project) { relocate_track(project, id, (size_t) from); }});
 }
 
 ClipId Edit::add_clip(TrackId track_id, Clip clip)

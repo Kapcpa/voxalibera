@@ -21,7 +21,7 @@ Application state. `project/` is the song document and its files, `audio/` talks
 
 - `app_context` - `AppContext`, the one shared object: settings, engine, devices, project, edits, selection, recorder, project session.
 - `clipboard` - copied clips with their tracks, starts relative to the earliest one; cleared when the project is replaced.
-- `editors` - `TrackEditor` (add, change settings, delete, rename, colour, volume, arm, mute, solo, add/insert/move/remove/bypass plugins) and `ClipEditor` (move the selection in time and across tracks, split at the playhead, paste at the playhead, duplicate after the selection, delete).
+- `editors` - `TrackEditor` (add, change settings, delete, rename, reorder, colour, volume, arm, mute, solo, add/insert/move/remove/bypass plugins) and `ClipEditor` (move the selection in time and across tracks, split at the playhead, paste at the playhead, duplicate after the selection, delete, comp takes, keep the comp).
 - `selection` - which tracks and clips are selected; outside undo.
 - `settings` - `settings.json`: device, test monitor, hardware controls, extra plugin folders.
 - `log` - the log file under `~/.local/state/voxalibera/`, and `XrunWatch`, which logs dropouts at most every two seconds.
@@ -47,13 +47,14 @@ Application state. `project/` is the song document and its files, `audio/` talks
 
 `context.edits.begin(name, merge_key)` - starts an undoable change; everything until it goes out of scope is one undo step.
 `edit.set(id, &Track::field, value)` - changes any track, clip or project field and remembers the old value.
-`edit.add_track(track, position)` / `edit.remove_track(id)` - adds or removes a track.
+`edit.add_track(track, position)` / `edit.remove_track(id)` / `edit.move_track(id, position)` - adds, removes or moves a track.
 `edit.add_clip(track, clip)` / `edit.remove_clip(id)` / `edit.move_clip(id, track)` - adds, removes or moves a clip to another track.
 `edit.add_plugin(track, plugin, position)` / `edit.remove_plugin(id)` / `edit.move_plugin(id, track, position)` - adds, removes or moves an effect, within a chain or to another track.
 `context.library.search(text)` - effects for the browser, ready to pass to `context.tracks.add_plugin` / `insert_plugin`.
 `context.scanner.start(rescan_everything)` / `progress()` / `failures` - plugin scanning for the UI.
 `context.plugins.find_instance(id)` - the running effect for a plugin in the project, or `nullptr` (missing, or no device yet); `is_missing(id)` tells which.
 `context.tracks.add(new_track)` - creates a track below the selected one and selects it.
+`context.tracks.move_selected(direction)` - moves the selected tracks one place up (-1) or down (1) as a block, or not at all at an edge.
 `context.clips.move_selected(move)` - moves all selected clips by a time and track offset, kept within limits.
 `context.start_export(file, bit_depth)` - starts exporting the mix; returns a problem to show, or nothing. `context.exporter.take_result()` gives the result once it's done.
 `context.recorder.start()` / `stop()` - starts and stops recording on the armed (or selected) tracks.
@@ -119,8 +120,8 @@ Views. They read state every frame and call into `core/` on user input; they nev
 - `theme` - all colours, and `ThemeLookAndFeel`, which applies them to every JUCE widget and draws our own faders and knobs.
 - `parts/plugins_button` - the FX button of track headers and mixer strips: lit when the track has effects, orange when they are bypassed.
 - `parts/meter_view` - draws a `LevelMeter`, horizontally with labels (settings) or vertically (mixer).
-- `tracks/track_area_view` - headers, ruler and timeline together; scrolling, zoom, following the playhead.
-- `tracks/track_header` - one track's name, colour, FX, arm, mute, solo and volume; a chevron at the bottom expands the track to show its take lanes, with their count and Keep Comp; double-clicking its channels and input opens Track Settings.
+- `tracks/track_area_view` - headers, ruler and timeline together; scrolling, zoom, following the playhead, the drop line while a track is dragged to a new place.
+- `tracks/track_header` - one track's name, colour, FX, arm, mute, solo and volume; a chevron at the bottom expands the track to show its take lanes, with their count and Keep Comp; dragging it moves the track; double-clicking its channels and input opens Track Settings.
 - `tracks/timeline_view` - tracks, take lanes, grid, clips, live takes, playhead; clip selection and dragging, comping on take lanes (click a take, or drag over a range); audio files dropped on it become clips, with a preview of where they land. `TimelineViewport` holds the zoom and scroll state shared by ruler and timeline.
 - `tracks/ruler_view` - bar numbers, grid ticks, the current grid step and the loop range; click to move the playhead (and clear the range), drag to select a range, drag its edges to change it.
 - `tracks/clip_painter` - draws a clip with its waveform (one band per channel).
