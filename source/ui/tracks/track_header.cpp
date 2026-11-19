@@ -5,6 +5,8 @@
 #include "ui/theme.h"
 #include "ui/tracks/timeline_layout.h"
 
+#include <cmath>
+
 namespace
 {
 	constexpr int COLOUR_STRIP_WIDTH = 6;
@@ -15,6 +17,7 @@ namespace
 	constexpr int TOGGLE_GAP = 3;
 	constexpr int DETAILS_WIDTH = 82;
 	constexpr int EXPANDER_HEIGHT = 11;
+	constexpr int REORDER_THRESHOLD = 4;
 	constexpr float CHEVRON_HALF_WIDTH = 5.0f;
 	constexpr float CHEVRON_HALF_HEIGHT = 2.5f;
 	constexpr float CHEVRON_THICKNESS = 1.5f;
@@ -184,6 +187,9 @@ void TrackHeader::mouseExit(const juce::MouseEvent&)
 
 void TrackHeader::mouseDown(const juce::MouseEvent& event)
 {
+	reorder_allowed = false;
+	reordering = false;
+
 	if (expandable && expander_area().contains(event.getPosition())) {
 		context.tracks.toggle(id, &Track::expanded, expanded ? "Collapse Track" : "Expand Track");
 		return;
@@ -199,13 +205,39 @@ void TrackHeader::mouseDown(const juce::MouseEvent& event)
 	else
 		context.selection.select_only(id);
 
-	if (event.getNumberOfClicks() != 2)
+	if (event.getNumberOfClicks() != 2) {
+		reorder_allowed = !event.mods.isShiftDown();
 		return;
+	}
 
 	if (name.getBounds().contains(event.getPosition()))
 		name.showEditor();
 	else if (details.getBounds().contains(event.getPosition()) && on_edit)
 		on_edit(id);
+}
+
+void TrackHeader::mouseDrag(const juce::MouseEvent& event)
+{
+	if (!reorder_allowed || (!reordering && std::abs(event.getDistanceFromDragStartY()) < REORDER_THRESHOLD))
+		return;
+
+	reordering = true;
+	setMouseCursor(juce::MouseCursor::DraggingHandCursor);
+
+	if (on_reorder_drag)
+		on_reorder_drag(event.getEventRelativeTo(getParentComponent()).y);
+}
+
+void TrackHeader::mouseUp(const juce::MouseEvent& event)
+{
+	if (!reordering)
+		return;
+
+	reordering = false;
+	setMouseCursor(juce::MouseCursor::NormalCursor);
+
+	if (on_reorder_drop)
+		on_reorder_drop(id, event.getEventRelativeTo(getParentComponent()).y);
 }
 
 void TrackHeader::choose_colour()

@@ -18,11 +18,15 @@ public:
 	void paint(juce::Graphics& graphics) override;
 	void resized() override;
 	void mouseDown(const juce::MouseEvent& event) override;
+	void mouseDrag(const juce::MouseEvent& event) override;
+	void mouseUp(const juce::MouseEvent& event) override;
 	void mouseMove(const juce::MouseEvent& event) override;
 	void mouseExit(const juce::MouseEvent& event) override;
 
 	std::function<void(TrackId)> on_show_plugins;
 	std::function<void(TrackId)> on_edit;
+	std::function<void(int)> on_reorder_drag;
+	std::function<void(TrackId, int)> on_reorder_drop;
 
 private:
 	void style_toggle(juce::TextButton& button, juce::Colour on_colour);
@@ -37,6 +41,8 @@ private:
 	bool expandable = false;
 	bool expanded = false;
 	bool expander_hovered = false;
+	bool reorder_allowed = false;
+	bool reordering = false;
 	juce::Label name;
 	juce::Label details;
 	PluginsButton plugins_button;

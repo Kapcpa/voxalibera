@@ -10,6 +10,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <optional>
 
 class TrackAreaView : public juce::Component
 {
@@ -18,6 +19,7 @@ public:
 
 	void update();
 	void paint(juce::Graphics& graphics) override;
+	void paintOverChildren(juce::Graphics& graphics) override;
 	void resized() override;
 	void mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel) override;
 
@@ -31,6 +33,9 @@ private:
 	void follow_playhead();
 	void clamp_vertical_scroll();
 	int content_height() const;
+	size_t gap_at(int y) const;
+	void show_reorder_gap(int y);
+	void drop_track(TrackId id, int y);
 
 	AppContext& context;
 	TimelineViewport viewport;
@@ -44,4 +49,5 @@ private:
 	int shown_viewport_revision = -1;
 	std::int64_t shown_position = -1;
 	int shown_peaks_revision = -1;
+	std::optional<size_t> reorder_gap;
 };

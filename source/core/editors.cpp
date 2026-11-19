@@ -106,6 +106,9 @@ void TrackEditor::move_selected(int direction)
 
 	std::erase_if(sorted_tracks, [this](TrackId id) { return project.index_of(id) == Project::NOT_FOUND; });
 
+	if (sorted_tracks.empty())
+		return;
+
 	std::sort(sorted_tracks.begin(), sorted_tracks.end(), [this](const TrackId& a, const TrackId& b) { return project.index_of(a) < project.index_of(b); });
 
 	if (direction == 1)
@@ -121,6 +124,11 @@ void TrackEditor::move_selected(int direction)
 
 	for (auto id : sorted_tracks)
 		edit.move_track(id, (size_t) (project.index_of(id) + direction));
+}
+
+void TrackEditor::move(TrackId id, size_t position)
+{
+	edits.begin("Move Track").move_track(id, position);
 }
 
 void TrackEditor::set_colour(TrackId id, std::uint32_t colour)
