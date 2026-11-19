@@ -86,11 +86,10 @@ The core loop: arm a track, record, hear it back, record again.
 
 - Import audio files as clips (drag and drop or File > Import), copied into the project's `audio/` folder.
 - Trim, split, duplicate clips; fades and clip gain.
-- Mix a stereo clip down to mono.
 - Snap and grid, loop range.
 - Takes: cycle recording into take lanes, pick or swipe-comp the best parts.
 - Selection across tracks, copy and paste.
-- Export the mix to WAV (and later FLAC/MP3).
+- Export the mix to WAV.
 
 ### 4. MIDI
 
@@ -120,4 +119,16 @@ The core loop: arm a track, record, hear it back, record again.
 
 CPU strategies, in order of need: freeze (render a track with its effects to a file in the background and play that instead, until it's unfrozen), spreading independent tracks across processor cores, anticipative processing (render tracks that aren't live ahead of time on worker threads, keeping only live tracks at low latency).
 
-Channel operations on clips (left only, right only, swap), clip launcher (session grid), markers, CLAP, out-of-process plugin sandboxing, time-stretch (Rubber Band), stem separation (offline, open models), DAWproject import/export, scripting (Lua), tempo changes and time-signature changes, video.
+Clip launcher (session grid), CLAP, out-of-process plugin sandboxing, time-stretch (Rubber Band), stem separation (offline, open models), DAWproject import/export, scripting (Lua), tempo changes and time-signature changes, video.
+
+## Good first contributions
+
+Self-contained and not urgent, each fits one pull request. Say in an issue which one you're taking.
+
+- **Mix to mono:** play a stereo clip as mono, as a clip setting read by `MixRenderer` (no new file).
+- **Channel operations on clips:** left only, right only, swap.
+- **Export to FLAC and MP3** next to WAV (`core/audio/mix_export`).
+- **Markers:** named positions on the ruler, saved under `markers` in the project file ([projects.md](projects.md)).
+- **Themes:** all colours are in `ui/theme.h`; make them switchable and add a light theme or two.
+- **Our own effects:** parametric EQ, compressor, reverb, delay, modulation (chorus, flanger, phaser), pitch shifter. Building blocks are in `engine/dsp/`, existing effects in `engine/plugins/builtin/`.
+- **AUR package:** a PKGBUILD that builds a tagged release.
