@@ -30,6 +30,8 @@ public:
 private:
 	ImportPlace import_place_at(int x, int y) const;
 	void paint_clips(juce::Graphics& graphics);
+	void paint_take(juce::Graphics& graphics, const Track& track, const Clip& clip, juce::Rectangle<float> area);
+	void paint_comp_gesture(juce::Graphics& graphics);
 	void paint_live_takes(juce::Graphics& graphics);
 	void paint_lanes(juce::Graphics& graphics);
 	void paint_grid(juce::Graphics& graphics);

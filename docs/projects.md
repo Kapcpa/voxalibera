@@ -47,6 +47,7 @@ JSON with `kebab-case` keys, stable key order and pretty printing, so diffs show
       "pan": 0.0,
       "mute": false,
       "solo": false,
+      "expanded": false,
       "plugins": [
         {
           "id": 12,
@@ -67,7 +68,8 @@ JSON with `kebab-case` keys, stable key order and pretty printing, so diffs show
           "source-offset": 0,
           "length": 1764000,
           "gain-db": 0.0,
-          "lane": 0
+          "lane": 0,
+          "active": true
         }
       ]
     }
@@ -79,6 +81,7 @@ JSON with `kebab-case` keys, stable key order and pretty printing, so diffs show
 - **Ids** are integers unique within the project and never reused. Everything that refers to something (clips to files, sends to tracks, automation to parameters) uses ids, never names or list positions.
 - **Positions and lengths are in samples** at the project's sample rate. Bars and beats are derived from the tempo, so changing the tempo of a recorded song doesn't silently move audio.
 - **`format`** is an integer bumped whenever the structure changes. Opening an older project runs small migration steps (format 1 to 2, 2 to 3...). A project from a newer app version opens read-only with a warning instead of being damaged.
+- **Takes** are ordinary clips. `lane` says which take lane a clip sits on, `active` whether it plays; the comp is simply the active clips.
 - The undo history isn't saved.
 
 ## Audio files

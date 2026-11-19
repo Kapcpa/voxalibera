@@ -60,6 +60,9 @@ juce::MouseCursor TimelineMouse::cursor_at(juce::Point<int> position) const
 
 void TimelineMouse::down(const juce::MouseEvent& event)
 {
+	if (start_comp(event))
+		return;
+
 	const auto clip = layout.clip_at(event.getPosition());
 
 	if (!clip) {
@@ -86,6 +89,35 @@ void TimelineMouse::down(const juce::MouseEvent& event)
 	current = ClipGesture{zone_at(event.getPosition(), *clip), clip->id, model_clip->start, layout.viewport.x_to_beat(event.x), layout.track_index_at(event.y), model_clip->gain_db, {}};
 }
 
+bool TimelineMouse::start_comp(const juce::MouseEvent& event)
+{
+	const auto lane = layout.lane_at(event.y);
+
+	if (!lane || layout.sample_rate() <= 0.0)
+		return false;
+
+	const auto sample = layout.sample_at(event.x, event.mods);
+	comp = CompGesture{lane->track_index, lane->lane, sample, sample};
+	return true;
+}
+
+void TimelineMouse::finish_comp(const juce::MouseEvent& event)
+{
+	const auto gesture = *comp;
+	comp.reset();
+
+	if (gesture.track_index >= context.project.tracks.size())
+		return;
+
+	if (event.mouseWasDraggedSinceMouseDown() && gesture.current_sample != gesture.grab_sample) {
+		context.clips.comp(context.project.tracks[gesture.track_index].id, gesture.lane, gesture.grab_sample, gesture.current_sample);
+		return;
+	}
+
+	if (const auto clip = layout.lane_clip_at(event.getPosition()))
+		context.clips.choose_take(clip->id);
+}
+
 void TimelineMouse::select_track_at(const juce::MouseEvent& event)
 {
 	const auto index = layout.track_index_at(event.y);
@@ -104,6 +136,11 @@ void TimelineMouse::select_track_at(const juce::MouseEvent& event)
 
 void TimelineMouse::drag(const juce::MouseEvent& event)
 {
+	if (comp) {
+		comp->current_sample = layout.sample_at(event.x, event.mods);
+		return;
+	}
+
 	if (time_selection && event.mouseWasDraggedSinceMouseDown()) {
 		drag_time_selection(event);
 		return;
@@ -187,6 +224,11 @@ void TimelineMouse::drag_trim_right(const juce::MouseEvent& event)
 
 void TimelineMouse::up(const juce::MouseEvent& event)
 {
+	if (comp) {
+		finish_comp(event);
+		return;
+	}
+
 	if (time_selection) {
 		if (time_selection->selected)
 			context.locate_to_tick(context.project.loop.start);

@@ -2,6 +2,7 @@
 
 #include "core/log.h"
 #include "core/media/project_folders.h"
+#include "core/project/takes.h"
 
 #include <cmath>
 
@@ -217,16 +218,22 @@ void Recorder::add_recorded_clips(std::int64_t start)
 			continue;
 		}
 
-		const auto range = last_full_pass(start, written, latency, engine.transport.loop());
+		const auto track = live[position].track;
+		const auto file = relative_media_path(project.folder, live[position].file);
+		peak_store.store(file, std::move(live[position].peaks));
 
-		Clip clip;
-		clip.file = relative_media_path(project.folder, live[position].file);
-		clip.start = convert_samples(range.start, device_rate, timeline);
-		clip.source_offset = convert_samples(range.source_offset, device_rate, timeline);
-		clip.length = convert_samples(range.length, device_rate, timeline);
-		clip.source_length = convert_samples(written, device_rate, timeline);
+		for (const auto& pass : recorded_passes(start, written, latency, engine.transport.loop())) {
+			Clip clip;
+			clip.file = file;
+			clip.start = convert_samples(pass.start, device_rate, timeline);
+			clip.source_offset = convert_samples(pass.source_offset, device_rate, timeline);
+			clip.length = convert_samples(pass.length, device_rate, timeline);
+			clip.source_length = convert_samples(written, device_rate, timeline);
 
-		peak_store.store(clip.file, std::move(live[position].peaks));
-		edit.add_clip(live[position].track, clip);
+			const auto* added = project.find_clip(add_take(edit, project, track, clip));
+
+			if (added != nullptr && added->lane > 0 && !project.find_track(track)->expanded)
+				edit.set(track, &Track::expanded, true);
+		}
 	}
 }

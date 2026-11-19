@@ -87,8 +87,10 @@ void TrackAreaView::layout_headers()
 {
 	const auto& tracks = context.project.tracks;
 
+	const TimelineLayout layout{context, viewport};
+
 	for (size_t position = 0; position < tracks.size(); ++position)
-		headers[tracks[position].id]->setBounds(0, (int) position * TimelineViewport::TRACK_HEIGHT - viewport.scroll_y, header_column.getWidth(), TimelineViewport::TRACK_HEIGHT);
+		headers[tracks[position].id]->setBounds(0, layout.track_top(position), header_column.getWidth(), track_height(tracks[position]));
 }
 
 void TrackAreaView::follow_playhead()
@@ -107,7 +109,7 @@ void TrackAreaView::follow_playhead()
 
 int TrackAreaView::content_height() const
 {
-	return (int) context.project.tracks.size() * TimelineViewport::TRACK_HEIGHT;
+	return tracks_height(context.project);
 }
 
 void TrackAreaView::clamp_vertical_scroll()

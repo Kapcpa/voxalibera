@@ -4,21 +4,21 @@
 #include <array>
 #include <cmath>
 
-RecordedRange last_full_pass(std::int64_t start, std::int64_t written, std::int64_t latency, const Transport::Loop& loop)
+std::vector<RecordedRange> recorded_passes(std::int64_t start, std::int64_t written, std::int64_t latency, const Transport::Loop& loop)
 {
 	const auto heard = written - latency;
-	const RecordedRange whole{start, latency, heard};
 
 	if (!loop.is_active() || start >= loop.end || heard <= loop.end - start)
-		return whole;
+		return {{start, latency, heard}};
 
 	const auto first_pass = loop.end - start;
 	const auto full_passes = (heard - first_pass) / loop.length();
+	std::vector<RecordedRange> passes{{start, latency, first_pass}};
 
-	if (full_passes == 0)
-		return {start, latency, first_pass};
+	for (std::int64_t pass = 0; pass < full_passes; ++pass)
+		passes.push_back({loop.start, latency + first_pass + pass * loop.length(), loop.length()});
 
-	return {loop.start, latency + first_pass + (full_passes - 1) * loop.length(), loop.length()};
+	return passes;
 }
 
 RecordedRange current_pass(std::int64_t start, std::int64_t written, const Transport::Loop& loop)

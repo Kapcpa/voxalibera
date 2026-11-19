@@ -21,6 +21,8 @@ namespace theme
 	inline const juce::Colour GRID_BAR{0xff3a3d43};
 	inline const juce::Colour GRID_BEAT{0xff2a2c31};
 	inline const juce::Colour LANE_SELECTED{0xff24262b};
+	inline const juce::Colour TAKE_LANES{0xff1a1b1e};
+	inline const juce::Colour INACTIVE_TAKE{0xff5a5d63};
 	inline const juce::Colour DROP_TARGET{0x335b8def};
 	inline const juce::Colour LOOP_RANGE{0x225b8def};
 	inline const juce::Colour TIME_SELECTION{0x14ffffff};

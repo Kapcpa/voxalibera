@@ -1,6 +1,7 @@
 #include "ui/tracks/timeline_view.h"
 
 #include "core/media/project_folders.h"
+#include "core/project/takes.h"
 #include "ui/theme.h"
 #include "ui/tracks/clip_painter.h"
 
@@ -79,6 +80,7 @@ void TimelineView::paint(juce::Graphics& graphics)
 	paint_loop_range(graphics);
 	paint_clips(graphics);
 	paint_live_takes(graphics);
+	paint_comp_gesture(graphics);
 	paint_drop_place(graphics);
 	paint_playhead(graphics);
 
@@ -94,16 +96,25 @@ void TimelineView::paint_lanes(juce::Graphics& graphics)
 	const auto& tracks = context.project.tracks;
 
 	for (size_t position = 0; position < tracks.size(); ++position) {
-		const auto y = (int) position * TimelineViewport::TRACK_HEIGHT - viewport.scroll_y;
-		const auto lane = juce::Rectangle<int>(0, y, getWidth(), TimelineViewport::TRACK_HEIGHT);
+		const auto top = layout.track_top(position);
+		const auto row = juce::Rectangle<int>(0, top, getWidth(), track_height(tracks[position]));
 
 		if (context.selection.contains(tracks[position].id)) {
 			graphics.setColour(theme::LANE_SELECTED);
-			graphics.fillRect(lane);
+			graphics.fillRect(row.withHeight(TimelineViewport::TRACK_HEIGHT));
+		}
+
+		if (shows_lanes(tracks[position])) {
+			graphics.setColour(theme::TAKE_LANES);
+			graphics.fillRect(row.withTrimmedTop(TimelineViewport::TRACK_HEIGHT));
+			graphics.setColour(theme::GRID_BEAT);
+
+			for (int lane = 0; lane < lane_count(tracks[position]); ++lane)
+				graphics.drawHorizontalLine(layout.lane_top(position, lane), 0.0f, (float) getWidth());
 		}
 
 		graphics.setColour(theme::GRID_BEAT);
-		graphics.drawHorizontalLine(lane.getBottom() - 1, 0.0f, (float) getWidth());
+		graphics.drawHorizontalLine(row.getBottom() - 1, 0.0f, (float) getWidth());
 	}
 }
 
@@ -135,7 +146,7 @@ void TimelineView::paint_drop_place(juce::Graphics& graphics)
 		return;
 
 	const auto row = drop_place->track ? context.project.index_of(*drop_place->track) : (int) context.project.tracks.size();
-	const auto y = row * TimelineViewport::TRACK_HEIGHT - viewport.scroll_y;
+	const auto y = layout.track_top((size_t) row);
 
 	graphics.setColour(theme::DROP_TARGET);
 	graphics.fillRect(0, y, getWidth(), TimelineViewport::TRACK_HEIGHT);
@@ -164,17 +175,46 @@ void TimelineView::paint_clips(juce::Graphics& graphics)
 
 	for (size_t index = 0; index < tracks.size(); ++index)
 		for (const auto& clip : tracks[index].clips) {
+			if (shows_lanes(tracks[index]))
+				paint_take(graphics, tracks[index], clip, layout.lane_clip_area(index, clip.lane, clip.start, clip.length));
+
+			if (!clip.active)
+				continue;
+
 			const auto& gesture = mouse.gesture();
 			const auto moved = gesture && gesture->zone == ClipZone::body && context.selection.contains(clip.id);
 			const auto start = moved ? clip.start + gesture->move.delta : clip.start;
-			const auto lane = moved ? (size_t) ((int) index + gesture->move.track_offset) : index;
-			const auto area = layout.clip_area(lane, start, clip.length);
+			const auto row = moved ? (size_t) ((int) index + gesture->move.track_offset) : index;
+			const auto area = layout.clip_area(row, start, clip.length);
 
 			if (area.getRight() < 0.0f || area.getX() > (float) getWidth())
 				continue;
 
 			paint_clip(graphics, area, {media_display_name(clip.file), juce::Colour(tracks[index].colour), context.peaks.find(clip.file), clip.source_offset, clip.length, layout.sample_rate(), channel_count(tracks[index].channels), context.selection.contains(clip.id), false, clip.gain_db, clip.fade_in, clip.fade_out});
 		}
+}
+
+void TimelineView::paint_take(juce::Graphics& graphics, const Track& track, const Clip& clip, juce::Rectangle<float> area)
+{
+	if (area.getRight() < 0.0f || area.getX() > (float) getWidth())
+		return;
+
+	const auto colour = clip.active ? juce::Colour(track.colour) : theme::INACTIVE_TAKE;
+	paint_clip(graphics, area, {media_display_name(clip.file), colour, context.peaks.find(clip.file), clip.source_offset, clip.length, layout.sample_rate(), channel_count(track.channels), false, false, clip.gain_db, clip.fade_in, clip.fade_out});
+}
+
+void TimelineView::paint_comp_gesture(juce::Graphics& graphics)
+{
+	const auto& gesture = mouse.comp_gesture();
+
+	if (!gesture || gesture->grab_sample == gesture->current_sample)
+		return;
+
+	const auto first = std::min(gesture->grab_sample, gesture->current_sample);
+	const auto last = std::max(gesture->grab_sample, gesture->current_sample);
+
+	graphics.setColour(theme::DROP_TARGET);
+	graphics.fillRect(layout.lane_clip_area(gesture->track_index, gesture->lane, first, last - first));
 }
 
 void TimelineView::paint_live_takes(juce::Graphics& graphics)

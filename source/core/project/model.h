@@ -32,6 +32,7 @@ struct Clip
 	std::int64_t source_length = 0;
 	float gain_db = 0.0f;
 	int lane = 0;
+	bool active = true;
 	std::int64_t fade_in = 0;
 	std::int64_t fade_out = 0;
 
@@ -94,6 +95,7 @@ struct Track
 	bool mute = false;
 	bool solo = false;
 	bool plugins_bypassed = false;
+	bool expanded = false;
 	float volume_db = 0.0f;
 	float pan = 0.0f;
 	std::vector<Clip> clips;

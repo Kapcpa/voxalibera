@@ -37,7 +37,7 @@ struct RecordedRange
 	bool operator==(const RecordedRange&) const = default;
 };
 
-RecordedRange last_full_pass(std::int64_t start, std::int64_t written, std::int64_t latency, const Transport::Loop& loop);
+std::vector<RecordedRange> recorded_passes(std::int64_t start, std::int64_t written, std::int64_t latency, const Transport::Loop& loop);
 RecordedRange current_pass(std::int64_t start, std::int64_t written, const Transport::Loop& loop);
 
 class RecordingSession

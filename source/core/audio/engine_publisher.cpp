@@ -99,9 +99,13 @@ TrackPlayback EnginePublisher::build_track(const Track& track, bool solo_active,
 
 	playback.plugins = chain_for(track);
 
-	for (const auto& clip : track.clips)
+	for (const auto& clip : track.clips) {
+		if (!clip.active)
+			continue;
+
 		if (const auto built = build_clip(clip, rate, resampler_taps, problems))
 			playback.clips.push_back(*built);
+	}
 
 	return playback;
 }
