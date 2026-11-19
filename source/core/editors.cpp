@@ -97,6 +97,32 @@ void TrackEditor::rename(TrackId id, const juce::String& name)
 	edits.begin("Rename Track").set(id, &Track::name, name.trim());
 }
 
+void TrackEditor::move_selected(int direction)
+{
+	if (direction != 1 && direction != -1)
+		return;
+
+	auto sorted_tracks(selection.tracks);
+
+	std::erase_if(sorted_tracks, [this](TrackId id) { return project.index_of(id) == Project::NOT_FOUND; });
+
+	std::sort(sorted_tracks.begin(), sorted_tracks.end(), [this](const TrackId& a, const TrackId& b) { return project.index_of(a) < project.index_of(b); });
+
+	if (direction == 1)
+		std::reverse(sorted_tracks.begin(), sorted_tracks.end());
+
+	const auto leading = project.index_of(sorted_tracks.front());
+	const auto edge = direction == 1 ? (int) project.tracks.size() - 1 : 0;
+
+	if (leading == edge)
+		return;
+
+	auto edit = edits.begin(selection.tracks.size() == 1 ? "Move Track" : "Move Tracks", "move-tracks");
+
+	for (auto id : sorted_tracks)
+		edit.move_track(id, (size_t) (project.index_of(id) + direction));
+}
+
 void TrackEditor::set_colour(TrackId id, std::uint32_t colour)
 {
 	edits.begin("Track Colour").set(id, &Track::colour, colour);

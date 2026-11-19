@@ -74,6 +74,7 @@ public:
 
 	TrackId add_track(Track track, size_t position);
 	void remove_track(TrackId id);
+	void move_track(TrackId id, size_t position);
 	ClipId add_clip(TrackId track_id, Clip clip);
 	void remove_clip(ClipId id);
 	void move_clip(ClipId id, TrackId target);

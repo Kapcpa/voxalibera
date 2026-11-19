@@ -22,6 +22,7 @@ public:
 	void change_settings(TrackId id, const TrackSettings& settings);
 	void remove_selected();
 	void rename(TrackId id, const juce::String& name);
+	void move_selected(int direction);
 	void set_colour(TrackId id, std::uint32_t colour);
 	void set_volume(TrackId id, float volume_db);
 	void set_pan(TrackId id, float pan);
