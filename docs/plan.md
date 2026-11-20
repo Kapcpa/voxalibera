@@ -4,7 +4,7 @@ Rough development plan. Each milestone ends with something usable, so the app is
 
 ## Where we are
 
-Milestones 1 and 2 are done: recording and playback of mono and stereo tracks, timeline, mixer, projects with autosave and crash recovery, VST3 and LV2 effect chains with latency compensation. Next is milestone 3.
+Milestones 1 to 3 are done: recording and playback of mono and stereo tracks, timeline, mixer, projects with autosave and crash recovery, VST3 and LV2 effect chains with latency compensation (on tracks and the master), audio import, clip editing (trim, split, fades, gain, copy and paste across tracks), grid and loop, take lanes with comping, reordering tracks, and exporting the mix to WAV. Next is milestone 4 (MIDI).
 
 ## Architecture to settle before milestone 1
 
