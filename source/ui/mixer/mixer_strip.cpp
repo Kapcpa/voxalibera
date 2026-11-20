@@ -89,11 +89,11 @@ MixerStrip::MixerStrip(AppContext& context, TrackId id) : context(context), id(i
 			on_show_plugins(this->id);
 	};
 
-	for (auto* child : std::initializer_list<juce::Component*>{&name, &volume_value, &fader, &meter_view})
+	for (auto* child : std::initializer_list<juce::Component*>{&name, &volume_value, &fader, &meter_view, &plugins_button})
 		addAndMakeVisible(child);
 
 	if (!is_master())
-		for (auto* child : std::initializer_list<juce::Component*>{&pan, &pan_value, &plugins_button, &mute_button, &solo_button})
+		for (auto* child : std::initializer_list<juce::Component*>{&pan, &pan_value, &mute_button, &solo_button})
 			addAndMakeVisible(child);
 }
 
@@ -139,10 +139,12 @@ void MixerStrip::show_track(const Track& track, bool is_selected, LevelMeter* me
 	repaint();
 }
 
-void MixerStrip::show_master(float volume_db, LevelMeter* meter)
+void MixerStrip::show_master(const Track& master, float volume_db, bool is_selected, LevelMeter* meter)
 {
 	colour = theme::DIM_TEXT;
-	name.setText("Master", juce::dontSendNotification);
+	selected = is_selected;
+	name.setText(master.name, juce::dontSendNotification);
+	plugins_button.show(master);
 
 	if (!fader.isMouseButtonDown())
 		fader.setValue(volume_db, juce::dontSendNotification);
@@ -200,8 +202,10 @@ void MixerStrip::resized()
 
 void MixerStrip::mouseDown(const juce::MouseEvent& event)
 {
-	if (is_master())
+	if (is_master()) {
+		context.selection.select_master();
 		return;
+	}
 
 	if (event.mods.isShiftDown())
 		context.selection.toggle(id);

@@ -15,7 +15,16 @@ bool Selection::contains(ClipId id) const
 void Selection::select_only(TrackId id)
 {
 	tracks = {id};
+	master = false;
 	clips.clear();
+	clear_chain();
+}
+
+void Selection::select_master()
+{
+	tracks.clear();
+	clips.clear();
+	master = true;
 	clear_chain();
 }
 
@@ -55,6 +64,7 @@ void Selection::toggle(TrackId id)
 	else
 		tracks.push_back(id);
 
+	master = false;
 	clear_chain();
 }
 
@@ -71,6 +81,7 @@ void Selection::toggle(ClipId id)
 void Selection::clear()
 {
 	tracks.clear();
+	master = false;
 	clips.clear();
 	clear_chain();
 }

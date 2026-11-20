@@ -90,6 +90,8 @@ The core loop: arm a track, record, hear it back, record again.
 - Takes: cycle recording into take lanes, pick or swipe-comp the best parts.
 - Selection across tracks, copy and paste.
 - Export the mix to WAV.
+- Effect chain on the master.
+- Reorder tracks.
 
 ### 4. MIDI
 

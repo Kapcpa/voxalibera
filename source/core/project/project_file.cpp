@@ -178,7 +178,9 @@ namespace
 			return true;
 		});
 
-		for (auto& track : project.tracks) {
+		for (auto* owner : project.chain_owners()) {
+			auto& track = *owner;
+
 			std::erase_if(track.clips, [&](const Clip& clip) {
 				if (is_usable(clip) && claim(clip.id.value))
 					return false;
@@ -198,6 +200,31 @@ namespace
 
 		const auto highest = ids.empty() ? 0 : *ids.rbegin();
 		project.next_id = std::max(project.next_id, highest + 1);
+	}
+
+	juce::var write_master(const Track& master)
+	{
+		juce::Array<juce::var> plugins;
+
+		for (const auto& plugin : master.plugins)
+			plugins.add(write_plugin(plugin));
+
+		Object object = new juce::DynamicObject();
+		object->setProperty("plugins-bypassed", master.plugins_bypassed);
+		object->setProperty("plugins", plugins);
+		return object.get();
+	}
+
+	Track read_master(const juce::var& json)
+	{
+		auto master = master_track();
+		master.plugins_bypassed = (bool) read(json, "plugins-bypassed", false);
+
+		if (const auto* plugins = read(json, "plugins", juce::var()).getArray())
+			for (const auto& plugin : *plugins)
+				master.plugins.push_back(read_plugin(plugin));
+
+		return master;
 	}
 
 	juce::var write_grid(const Grid& grid)
@@ -265,6 +292,7 @@ juce::String write_project(const Project& project, const juce::String& app_versi
 	root->setProperty("grid", write_grid(project.grid));
 	root->setProperty("master-volume-db", project.master_volume_db);
 	root->setProperty("next-id", project.next_id);
+	root->setProperty("master", write_master(project.master));
 	root->setProperty("tracks", tracks);
 	return juce::JSON::toString(root.get());
 }
@@ -298,6 +326,8 @@ std::optional<LoadedProject> read_project(const juce::String& text)
 	if (const auto* tracks = read(json, "tracks", juce::var()).getArray())
 		for (const auto& track : *tracks)
 			project.tracks.push_back(read_track(track));
+
+	project.master = read_master(read(json, "master", juce::var()));
 
 	keep_valid_parts(project, loaded.problems);
 	return loaded;

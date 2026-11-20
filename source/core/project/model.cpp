@@ -2,6 +2,22 @@
 
 #include <algorithm>
 
+namespace
+{
+	constexpr std::uint32_t MASTER_COLOUR = 0xff6c7078;
+}
+
+Track master_track()
+{
+	Track master;
+	master.id = MASTER_TRACK;
+	master.name = "Master";
+	master.colour = MASTER_COLOUR;
+	master.channels = TrackChannels::stereo;
+	master.input = TrackInput{TrackInput::NONE};
+	return master;
+}
+
 int channel_count(TrackChannels channels)
 {
 	return channels == TrackChannels::stereo ? 2 : 1;
@@ -33,12 +49,18 @@ bool is_audible(const Track& track, bool solo_active)
 
 Track* Project::find_track(TrackId id)
 {
+	if (id == MASTER_TRACK)
+		return &master;
+
 	const auto index = index_of(id);
 	return index == NOT_FOUND ? nullptr : &tracks[(size_t) index];
 }
 
 const Track* Project::find_track(TrackId id) const
 {
+	if (id == MASTER_TRACK)
+		return &master;
+
 	const auto index = index_of(id);
 	return index == NOT_FOUND ? nullptr : &tracks[(size_t) index];
 }
@@ -97,10 +119,32 @@ const Track* Project::find_track_of(ClipId id) const
 	return nullptr;
 }
 
+std::vector<Track*> Project::chain_owners()
+{
+	std::vector<Track*> owners;
+
+	for (auto& track : tracks)
+		owners.push_back(&track);
+
+	owners.push_back(&master);
+	return owners;
+}
+
+std::vector<const Track*> Project::chain_owners() const
+{
+	std::vector<const Track*> owners;
+
+	for (const auto& track : tracks)
+		owners.push_back(&track);
+
+	owners.push_back(&master);
+	return owners;
+}
+
 Plugin* Project::find_plugin(PluginId id)
 {
-	for (auto& track : tracks)
-		for (auto& plugin : track.plugins)
+	for (auto* track : chain_owners())
+		for (auto& plugin : track->plugins)
 			if (plugin.id == id)
 				return &plugin;
 
@@ -109,8 +153,8 @@ Plugin* Project::find_plugin(PluginId id)
 
 const Plugin* Project::find_plugin(PluginId id) const
 {
-	for (const auto& track : tracks)
-		for (const auto& plugin : track.plugins)
+	for (const auto* track : chain_owners())
+		for (const auto& plugin : track->plugins)
 			if (plugin.id == id)
 				return &plugin;
 
@@ -119,10 +163,10 @@ const Plugin* Project::find_plugin(PluginId id) const
 
 Track* Project::find_track_of(PluginId id)
 {
-	for (auto& track : tracks)
-		for (const auto& plugin : track.plugins)
+	for (auto* track : chain_owners())
+		for (const auto& plugin : track->plugins)
 			if (plugin.id == id)
-				return &track;
+				return track;
 
 	return nullptr;
 }

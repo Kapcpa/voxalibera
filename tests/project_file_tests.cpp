@@ -116,6 +116,31 @@ TEST_CASE("a project survives writing and reading back")
 	CHECK(project.tracks[1].mute);
 }
 
+TEST_CASE("master effects survive writing and reading back")
+{
+	Project original;
+	Plugin limiter;
+	limiter.id = PluginId{original.next_id++};
+	limiter.format = "LV2";
+	limiter.identifier = "LV2-limiter";
+	limiter.name = "Limiter";
+	original.master.plugins.push_back(limiter);
+	original.master.plugins_bypassed = true;
+
+	const auto loaded = read_project(write_project(original, "test"));
+
+	REQUIRE(loaded);
+	CHECK(loaded->problems.isEmpty());
+
+	const auto& master = loaded->project.master;
+	CHECK(master.id == MASTER_TRACK);
+	CHECK(master.plugins_bypassed);
+	REQUIRE(master.plugins.size() == 1);
+	CHECK(master.plugins[0].name == "Limiter");
+	CHECK(loaded->project.find_plugin(limiter.id) == &master.plugins[0]);
+	CHECK(loaded->project.next_id > limiter.id.value);
+}
+
 TEST_CASE("a damaged project keeps what can be read")
 {
 	const auto text = R"({

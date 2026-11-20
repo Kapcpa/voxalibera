@@ -10,6 +10,7 @@ struct Selection
 	bool contains(TrackId id) const;
 	bool contains(ClipId id) const;
 	void select_only(TrackId id);
+	void select_master();
 	void select_only(ClipId id);
 	void toggle(TrackId id);
 	void toggle(ClipId id);
@@ -20,6 +21,7 @@ struct Selection
 	void forget_missing(const Project& project);
 
 	std::vector<TrackId> tracks;
+	bool master = false;
 	std::vector<ClipId> clips;
 	PluginId plugin;
 	std::optional<size_t> gap;
