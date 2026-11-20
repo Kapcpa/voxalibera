@@ -2,8 +2,12 @@
 
 #include "ui/theme.h"
 
-MixerView::MixerView(AppContext& context) : context(context), master(context, TrackId{})
+MixerView::MixerView(AppContext& context) : context(context), master(context, MASTER_TRACK)
 {
+	master.on_show_plugins = [this](TrackId id) {
+		if (on_show_plugins)
+			on_show_plugins(id);
+	};
 	viewport.setViewedComponent(&strip_row, false);
 	viewport.setScrollBarsShown(false, true);
 	addAndMakeVisible(master);
@@ -50,7 +54,7 @@ void MixerView::sync_strips()
 		strip->show_track(track, context.selection.contains(track.id), meter_for(track.id));
 	}
 
-	master.show_master(context.project.master_volume_db, &context.engine.mixer.master_meter);
+	master.show_master(context.project.master, context.project.master_volume_db, context.selection.master, &context.engine.mixer.master_meter);
 }
 
 void MixerView::layout_strips()

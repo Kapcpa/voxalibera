@@ -74,6 +74,7 @@ JSON with `kebab-case` keys, stable key order and pretty printing, so diffs show
       ]
     }
   ],
+  "master": {"plugins-bypassed": false, "plugins": []},
   "markers": [{"id": 40, "name": "Chorus", "position": 3528000}]
 }
 ```

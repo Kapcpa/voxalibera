@@ -39,6 +39,9 @@ PluginChainView::PluginChainView(AppContext& context) : context(context)
 
 const Track* PluginChainView::shown_track() const
 {
+	if (context.selection.master)
+		return &context.project.master;
+
 	return context.selection.tracks.empty() ? nullptr : context.project.find_track(context.selection.tracks.front());
 }
 

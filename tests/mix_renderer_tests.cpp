@@ -223,6 +223,29 @@ TEST_CASE("a track with plugin latency reads the loop start before the playhead 
 	file.deleteFile();
 }
 
+TEST_CASE("clips are read ahead by the master chain's latency so the mix still plays on time")
+{
+	const auto file = write_ramp_file();
+
+	TrackPlayback track;
+	track.channels = 1;
+	track.gains = {1.0f, 1.0f};
+	track.clips.push_back({AudioFile::open(file), 100, 500, 200.0, 1.0f, nullptr});
+
+	EngineSnapshot snapshot;
+	snapshot.tracks.push_back(track);
+	snapshot.master_plugins = std::make_shared<PluginChain>(std::vector<PluginChain::Slot>{{std::make_shared<DelayProcessor>(PLUGIN_LATENCY), false}});
+
+	std::vector<float> left(256), right(256);
+	float* outputs[]{left.data(), right.data()};
+	MixRenderer().render(snapshot, {}, outputs, 2, 256, {.playing = true, .start = 0});
+
+	CHECK(near(right[99], 0.0f));
+	CHECK(near(right[100], 200.0f / FILE_LENGTH));
+	CHECK(near(right[255], 355.0f / FILE_LENGTH));
+	file.deleteFile();
+}
+
 TEST_CASE("a bypassed plugin's latency is not compensated")
 {
 	const auto file = write_ramp_file();

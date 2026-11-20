@@ -379,13 +379,17 @@ void MainWindow::toggle_plugin_chain()
 void MainWindow::show_plugins_of(TrackId track)
 {
 	const auto& selected = context.selection.tracks;
+	const auto already_shown = track == MASTER_TRACK ? context.selection.master : !selected.empty() && selected.front() == track;
 
-	if (main_view.is_plugin_chain_visible() && !selected.empty() && selected.front() == track) {
+	if (main_view.is_plugin_chain_visible() && already_shown) {
 		toggle_plugin_chain();
 		return;
 	}
 
-	context.selection.select_only(track);
+	if (track == MASTER_TRACK)
+		context.selection.select_master();
+	else
+		context.selection.select_only(track);
 	main_view.set_plugin_chain_visible(true);
 	command_manager.commandStatusChanged();
 }

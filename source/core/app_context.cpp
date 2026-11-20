@@ -245,6 +245,11 @@ juce::String AppContext::start_export(const juce::File& file, int bit_depth, boo
 			job.tail = std::max<std::int64_t>(job.tail, track.plugins->longest_tail());
 		}
 
+	if (snapshot->master_plugins != nullptr) {
+		job.pre_roll += snapshot->master_latency();
+		job.tail += snapshot->master_plugins->longest_tail();
+	}
+
 	job.snapshot = std::move(snapshot);
 	exporter.start(std::move(job));
 	log_event("Exporting the mix to " + file.getFullPathName());

@@ -102,6 +102,9 @@ struct Track
 	std::vector<Plugin> plugins;
 };
 
+inline constexpr TrackId MASTER_TRACK{-1};
+
+Track master_track();
 int channel_count(TrackChannels channels);
 juce::String describe_channels(TrackChannels channels);
 juce::String describe_input(const TrackInput& input, TrackChannels channels);
@@ -131,6 +134,8 @@ struct Project
 	Plugin* find_plugin(PluginId id);
 	const Plugin* find_plugin(PluginId id) const;
 	Track* find_track_of(PluginId id);
+	std::vector<Track*> chain_owners();
+	std::vector<const Track*> chain_owners() const;
 	TrackId allocate_track_id();
 	ClipId allocate_clip_id();
 	PluginId allocate_plugin_id();
@@ -144,6 +149,7 @@ struct Project
 	Grid grid;
 	float master_volume_db = 0.0f;
 	std::vector<Track> tracks;
+	Track master = master_track();
 	int next_id = 1;
 	int revision = 0;
 };

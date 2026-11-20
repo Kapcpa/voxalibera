@@ -14,6 +14,11 @@ namespace
 	{
 		return position < loop.end ? position : loop.start + (position - loop.end) % loop.length();
 	}
+
+	std::int64_t position_ahead(const Transport::Block& block, int latency)
+	{
+		return block.wraps_ahead() ? wrapped_into_loop(block.start + latency, block.loop) : block.start + latency;
+	}
 }
 
 void MixRenderer::render(const EngineSnapshot& snapshot, Inputs inputs, float* const* outputs, int output_count, int sample_count, Transport::Block block, int buffer_offset)
@@ -34,16 +39,27 @@ void MixRenderer::render_chunk(const EngineSnapshot& snapshot, Inputs inputs, in
 	master_buffer.clear(0, sample_count);
 
 	for (const auto& track : snapshot.tracks)
-		render_track(track, inputs, offset, sample_count, block, snapshot.tempo);
+		render_track(track, inputs, offset, sample_count, block, snapshot);
 
+	process_master(snapshot, sample_count, block);
 	master_buffer.applyGain(0, sample_count, snapshot.master_gain);
 	master_meter.measure(master_buffer.getArrayOfReadPointers(), master_buffer.getNumChannels(), sample_count);
 }
 
-void MixRenderer::render_track(const TrackPlayback& track, Inputs inputs, int offset, int sample_count, Transport::Block block, const Tempo& tempo)
+void MixRenderer::process_master(const EngineSnapshot& snapshot, int sample_count, Transport::Block block)
 {
-	const auto latency = track.plugins != nullptr ? track.plugins->total_latency() : 0;
-	const auto source_position = block.wraps_ahead() ? wrapped_into_loop(block.start + latency, block.loop) : block.start + latency;
+	if (snapshot.master_plugins == nullptr)
+		return;
+
+	const auto source_position = position_ahead(block, snapshot.master_latency());
+	snapshot.master_plugins->process(master_buffer, sample_count, {block.playing, block.recording, source_position, snapshot.tempo, block.wraps_ahead() ? block.loop : Transport::Loop{}});
+}
+
+void MixRenderer::render_track(const TrackPlayback& track, Inputs inputs, int offset, int sample_count, Transport::Block block, const EngineSnapshot& snapshot)
+{
+	const auto latency = (track.plugins != nullptr ? track.plugins->total_latency() : 0) + snapshot.master_latency();
+	const auto source_position = position_ahead(block, latency);
+	const auto& tempo = snapshot.tempo;
 	const auto before_loop_end = block.wraps_ahead() && source_position < block.loop.end ? (int) std::min<std::int64_t>(sample_count, block.loop.end - source_position) : sample_count;
 
 	track_buffer.clear(0, sample_count);

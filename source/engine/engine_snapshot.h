@@ -43,5 +43,8 @@ struct EngineSnapshot
 	Tempo tempo;
 	bool metronome = false;
 	float master_gain = 1.0f;
+	std::shared_ptr<PluginChain> master_plugins;
 	std::vector<TrackPlayback> tracks;
+
+	int master_latency() const { return master_plugins != nullptr ? master_plugins->total_latency() : 0; }
 };

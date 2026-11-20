@@ -22,10 +22,10 @@ Application state. `project/` is the song document and its files, `audio/` talks
 - `app_context` - `AppContext`, the one shared object: settings, engine, devices, project, edits, selection, recorder, project session.
 - `clipboard` - copied clips with their tracks, starts relative to the earliest one; cleared when the project is replaced.
 - `editors` - `TrackEditor` (add, change settings, delete, rename, reorder, colour, volume, arm, mute, solo, add/insert/move/remove/bypass plugins) and `ClipEditor` (move the selection in time and across tracks, split at the playhead, paste at the playhead, duplicate after the selection, delete, comp takes, keep the comp).
-- `selection` - which tracks and clips are selected; outside undo.
+- `selection` - which tracks and clips are selected, or the master (for its effect chain); outside undo.
 - `settings` - `settings.json`: device, test monitor, hardware controls, extra plugin folders.
 - `log` - the log file under `~/.local/state/voxalibera/`, and `XrunWatch`, which logs dropouts at most every two seconds.
-- `project/model` - the whole project as plain data: `Project` (tempo, tracks, folder, change counter), `Track`, `Clip`, `Plugin`, the id types `TrackId`, `ClipId` and `PluginId`, the track colour palette, and the solo rules.
+- `project/model` - the whole project as plain data: `Project` (tempo, tracks, the master, folder, change counter), `Track` (the master is one too, with the id `MASTER_TRACK`, so its effects use the same code as any track's), `Clip`, `Plugin`, the id types `TrackId`, `ClipId` and `PluginId`, the track colour palette, and the solo rules.
 - `project/edit_history` - `Edit` and `EditHistory`: every change to the project, with undo and redo.
 - `project/project_file` - the `.vxl` format: a project to JSON and back; skips broken parts instead of refusing the file.
 - `project/takes` - take lanes and comping: a new take goes to the lane under everything it covers, comping makes a range play from one lane (splitting clips at its edges, short fades where takes meet); keeping the comp removes the takes that don't play. Lanes show only when a track has more than one.
@@ -70,8 +70,8 @@ Application state. `project/` is the song document and its files, `audio/` talks
 Everything the audio thread touches. Nothing here allocates, locks or touches files on the audio thread.
 
 - `audio_engine` - `AudioEngine`: the audio callback; owns the device manager, transport, metronome, meters and snapshots.
-- `engine_snapshot` - `EngineSnapshot`: the read-only copy of the project the audio thread plays from (tracks, clips, gains).
-- `mix_renderer` - plays clips and monitored inputs through each track's gain and pan into the master, fills the meters.
+- `engine_snapshot` - `EngineSnapshot`: the read-only copy of the project the audio thread plays from (tracks, clips, gains, the master's effect chain).
+- `mix_renderer` - plays clips and monitored inputs through each track's gain and pan into the master, runs the master's effects before its fader, fills the meters. Clips are read ahead by their track's plugin latency plus the master's, so the mix stays on time.
 - `resampler` - `ResamplingKernel`: plays a file at another sample rate (windowed sinc, a table per rate ratio; 32 taps in real time, 128 for export).
 - `audio_file` - a memory-mapped WAV file the audio thread can read from without system calls.
 - `levels` - fader decibels to gain, the mono pan law and stereo balance; `LevelMeter`, peak meters filled by the audio thread and read by the UI.
@@ -112,7 +112,7 @@ Views. They read state every frame and call into `core/` on user input; they nev
 
 - `main_view` - the main window's zones: transport bar, tracks area, mixer.
 - `mixer/mixer_view` - the master strip on the left, then one strip per track, scrolling sideways.
-- `mixer/mixer_strip` - pan, values, fader with meter, FX, mute, solo and a colour name plate; the master keeps the same sections so all faders line up.
+- `mixer/mixer_strip` - pan, values, fader with meter, FX, mute, solo and a colour name plate; the master keeps the same sections so all faders line up, and has its own FX button.
 - `export_dialog` - the Export Mix dialog: file, format, range (whole song or the loop range), length, progress.
 - `transport_bar` - play, stop, record, position (or the count-in beats), tempo, time signature, metronome, count-in, and a warning when clips don't match the device's sample rate.
 - `parts/modal_overlay` - dims the window and shows a dialog in the middle.
@@ -126,7 +126,7 @@ Views. They read state every frame and call into `core/` on user input; they nev
 - `tracks/ruler_view` - bar numbers, grid ticks, the current grid step and the loop range; click to move the playhead (and clear the range), drag to select a range, drag its edges to change it.
 - `tracks/clip_painter` - draws a clip with its waveform (one band per channel).
 - `tracks/track_dialog` - the New Track and Track Settings dialog: name, mono or stereo, input.
-- `plugins/plugin_chain_view` - the effect chain panel above the mixer: the chain row in a sideways scroll, the side menu (Add, Open, Remove, Bypass), and the plugin windows.
+- `plugins/plugin_chain_view` - the effect chain panel above the mixer, for the selected track or the master: the chain row in a sideways scroll, the side menu (Add, Open, Remove, Bypass), and the plugin windows.
 - `plugins/plugin_chain_row` - the track node, effect slots, wires with `+` and the Output node; selecting, opening, dragging effects onto wires.
 - `plugins/plugin_slot` - one effect in a chain: name, format or "not available", bypass and remove buttons, selection.
 - `plugins/plugin_browser` - the Add Effect dialog: search, list, scan progress.

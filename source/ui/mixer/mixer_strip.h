@@ -15,9 +15,9 @@ public:
 
 	MixerStrip(AppContext& context, TrackId id);
 
-	bool is_master() const { return !id.is_valid(); }
+	bool is_master() const { return id == MASTER_TRACK; }
 	void show_track(const Track& track, bool selected, LevelMeter* meter);
-	void show_master(float volume_db, LevelMeter* meter);
+	void show_master(const Track& master, float volume_db, bool selected, LevelMeter* meter);
 	void update_meter();
 
 	void paint(juce::Graphics& graphics) override;

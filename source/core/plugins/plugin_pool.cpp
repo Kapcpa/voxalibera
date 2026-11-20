@@ -130,8 +130,8 @@ bool PluginPool::take_changes()
 
 void PluginPool::store_states(Project& project) const
 {
-	for (auto& track : project.tracks)
-		for (auto& plugin : track.plugins)
+	for (auto* track : project.chain_owners())
+		for (auto& plugin : track->plugins)
 			plugin.state = current_state(plugin);
 }
 

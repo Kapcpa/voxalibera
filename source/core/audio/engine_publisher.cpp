@@ -78,6 +78,7 @@ std::unique_ptr<EngineSnapshot> EnginePublisher::build_snapshot(double rate, con
 	snapshot->tempo = project.tempo;
 	snapshot->metronome = project.metronome;
 	snapshot->master_gain = fader_gain(project.master_volume_db);
+	snapshot->master_plugins = chain_for(project.master);
 
 	for (const auto& track : project.tracks)
 		snapshot->tracks.push_back(build_track(track, solo_active, rate, chain_for, resampler_taps, problems));
