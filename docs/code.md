@@ -89,6 +89,7 @@ Everything the audio thread touches. Nothing here allocates, locks or touches fi
 - `plugins/builtin/drive_pedal` - `DrivePedal`, the base of the drives: oversampling, signal in volts, DC blocker; a pedal writes only its circuit.
 - `plugins/builtin/overdrive`, `blues_drive`, `distortion`, `fuzz` - drives modelled on the Tube Screamer, Bluesbreaker, Rat and Big Muff circuits.
 - `plugins/builtin/noise_gate` - a basic gate with threshold, hold, release and range; goes before the drives.
+- `plugins/builtin/graphic_eq` - a seven-band graphic EQ (100 Hz to 6.4 kHz) with an output level.
 - `plugins/builtin/cabinet` - two impulse responses (mic A and B) with blend, B alignment and polarity, then low and high cut, resonance and presence. IRs are read on the message thread and handed to the audio thread through a queue.
 - `dsp/` - building blocks for our effects: filters (`OnePole` for first order, `Svf` for second order, with `magnitude_db` for drawing the response), diode and rail clipping, envelope follower, oversampler, impulse response loading.
 - `plugins/hosted_plugin` - `HostedPlugin`: a VST3 or LV2 plugin behind `PluginProcessor` (channel layout, playhead, state, change notifications, editor).
