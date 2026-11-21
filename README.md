@@ -1,16 +1,21 @@
 # Voxalibera
 
-A DAW for Linux, in C++20 on JUCE 8 with its own audio engine. Pre-alpha: it records and plays back, but can't export a song yet.
+A DAW for Linux, in C++20 on JUCE 8 with its own audio engine. Pre-alpha: a song can be recorded, edited, mixed and exported, audio only for now.
 
 ## What works
 
 - JACK (PipeWire) and direct ALSA at low latency, hardware mixer controls per interface
 - mono and stereo audio tracks, recording with count-in and metronome, playback from disk
-- timeline with waveforms, moving and deleting clips, mixer
-- VST3 and LV2 effects: scanning, browser, per-track chains, plugin windows, bypass, latency compensation
+- audio import (WAV, FLAC, Ogg, MP3, AIFF), drag and drop
+- clip editing: move, trim, split, fades, gain, copy and paste across tracks
+- grid and snap, loop range, cycle recording into take lanes with comping
+- mixer, reordering tracks
+- VST3 and LV2 effects on tracks and the master: scanning, browser, chains, plugin windows, bypass, latency compensation
+- our own effects: noise gate, drives, cabinet with IR loading, graphic EQ
+- export to WAV (16-bit with dither, 24-bit, 32-bit float), whole song or loop range
 - projects saved as JSON folders, undo and redo, autosave and crash recovery
 
-Next up: importing audio, editing clips and exporting. See [docs/plan.md](docs/plan.md).
+Next up: MIDI and instruments. See [docs/plan.md](docs/plan.md).
 
 ## Build
 
