@@ -17,6 +17,7 @@ struct Selection
 	void select_only(PluginId id);
 	void select_gap(size_t position);
 	void clear_chain();
+	void deselect_clips();
 	void clear();
 	void forget_missing(const Project& project);
 

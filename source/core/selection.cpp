@@ -57,6 +57,12 @@ void Selection::clear_chain()
 	++revision;
 }
 
+void Selection::deselect_clips()
+{
+	clips.clear();
+	clear_chain();
+}
+
 void Selection::toggle(TrackId id)
 {
 	if (contains(id))

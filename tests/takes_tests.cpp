@@ -1,3 +1,5 @@
+#include "core/clipboard.h"
+#include "core/editors.h"
 #include "core/project/takes.h"
 
 #include <catch2/catch_test_macros.hpp>
@@ -46,8 +48,29 @@ namespace
 			return result;
 		}
 
+		void select_active_at(std::int64_t position)
+		{
+			for (const auto& clip : active_clips())
+				if (clip.start <= position && position < clip.end())
+					selection.select_only(clip.id);
+		}
+
+		bool active_clips_overlap() const
+		{
+			const auto active = active_clips();
+
+			for (size_t index = 1; index < active.size(); ++index)
+				if (active[index].start < active[index - 1].end())
+					return true;
+
+			return false;
+		}
+
 		Project project;
 		EditHistory history{project};
+		Selection selection;
+		ClipEditor clips{project, history, selection};
+		Clipboard clipboard;
 		TrackId track;
 	};
 }
@@ -184,4 +207,67 @@ TEST_CASE("keeping the comp removes the other takes and puts what plays on the f
 
 	for (const auto& clip : track.clips)
 		CHECK(clip.active);
+}
+
+TEST_CASE("copying a comp piece pastes every take under it with the same choice")
+{
+	Fixture fixture;
+	fixture.record(0, 1000, "a.wav");
+	fixture.record(0, 1000, "b.wav");
+	fixture.select_active_at(0);
+	fixture.clipboard.copy(fixture.selection, fixture.project);
+	fixture.clips.paste_clips(fixture.clipboard, 2000, SAMPLE_RATE);
+
+	std::vector<Clip> pasted;
+
+	for (const auto& clip : fixture.project.find_track(fixture.track)->clips)
+		if (clip.start >= 2000)
+			pasted.push_back(clip);
+
+	REQUIRE(pasted.size() == 2);
+	CHECK(std::ranges::count_if(pasted, [](const Clip& clip) { return clip.active && clip.file == "b.wav"; }) == 1);
+	CHECK(std::ranges::count_if(pasted, [](const Clip& clip) { return !clip.active && clip.file == "a.wav"; }) == 1);
+}
+
+TEST_CASE("pasting a comp over takes never plays two takes at once")
+{
+	Fixture fixture;
+	fixture.record(0, 1000, "a.wav");
+	fixture.record(0, 1000, "b.wav");
+	fixture.select_active_at(0);
+	fixture.clipboard.copy(fixture.selection, fixture.project);
+	fixture.clips.paste_clips(fixture.clipboard, 500, SAMPLE_RATE);
+
+	CHECK_FALSE(fixture.active_clips_overlap());
+	CHECK(lane_count(*fixture.project.find_track(fixture.track)) == 4);
+}
+
+TEST_CASE("deleting a comp piece removes that range from every take")
+{
+	Fixture fixture;
+	fixture.record(0, 1000, "a.wav");
+	fixture.record(0, 1000, "b.wav");
+	fixture.comp(0, 200, 600);
+	fixture.select_active_at(300);
+	fixture.clips.remove_selected();
+
+	for (const auto& clip : fixture.project.find_track(fixture.track)->clips)
+		CHECK((clip.end() <= 200 || clip.start >= 600));
+
+	CHECK(lane_count(*fixture.project.find_track(fixture.track)) == 2);
+}
+
+TEST_CASE("deleting everything a lane had removes the empty lane")
+{
+	Fixture fixture;
+	fixture.record(0, 1000, "a.wav");
+	fixture.record(0, 1000, "b.wav");
+	fixture.record(0, 400, "c.wav");
+	fixture.select_active_at(0);
+	fixture.clips.remove_selected();
+
+	const auto& track = *fixture.project.find_track(fixture.track);
+	CHECK(lane_count(track) == 2);
+	CHECK(fixture.active_clips().size() == 1);
+	CHECK(fixture.active_clips()[0].file == "b.wav");
 }

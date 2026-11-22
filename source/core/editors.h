@@ -4,6 +4,7 @@
 #include "core/selection.h"
 
 struct Clipboard;
+struct CopiedClip;
 
 struct TrackSettings
 {
@@ -75,6 +76,7 @@ public:
 	void duplicate_selected();
 
 private:
+	std::vector<ClipId> add_copies(Edit& edit, const std::vector<CopiedClip>& copies, std::int64_t offset);
 	void select_only(std::vector<ClipId> ids);
 	void forget_inactive();
 

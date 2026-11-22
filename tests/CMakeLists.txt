@@ -12,6 +12,7 @@ target_sources(voxalibera_tests PRIVATE
     ${VOXALIBERA_TEST_SOURCES}
     ${VOXALIBERA_EFFECT_SOURCES}
     ${PROJECT_SOURCE_DIR}/source/core/audio/mix_export.cpp
+    ${PROJECT_SOURCE_DIR}/source/core/clipboard.cpp
     ${PROJECT_SOURCE_DIR}/source/core/editors.cpp
     ${PROJECT_SOURCE_DIR}/source/core/selection.cpp
     ${PROJECT_SOURCE_DIR}/source/core/project/edit_history.cpp

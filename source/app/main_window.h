@@ -9,6 +9,7 @@
 #include "ui/parts/modal_overlay.h"
 #include "ui/plugins/plugin_browser.h"
 #include "ui/settings/settings_view.h"
+#include "ui/shortcuts_view.h"
 #include "ui/tracks/track_dialog.h"
 
 #include <juce_gui_basics/juce_gui_basics.h>
@@ -62,6 +63,7 @@ private:
 	void show_plugins_of(TrackId track);
 	void show_settings(int page);
 	void show_about();
+	void show_shortcuts();
 	void show_message(const juce::String& title, const juce::String& message, std::vector<MessageChoice> choices);
 	void show_title();
 	void quit_after_recording();
@@ -75,6 +77,7 @@ private:
 	PluginBrowser plugin_browser;
 	ExportDialog export_dialog;
 	MessageDialog message_dialog;
+	ShortcutsView shortcuts_view;
 	ProjectDialogs project_dialogs{context, [this](const auto& title, const auto& message, auto choices) { show_message(title, message, std::move(choices)); }};
 	ModalOverlay overlay;
 	std::unique_ptr<juce::FileChooser> import_file_chooser;

@@ -68,7 +68,6 @@ void TimelineMouse::down(const juce::MouseEvent& event)
 	if (!clip) {
 		select_track_at(event);
 		time_selection = TimeSelectionGesture{layout.tick_at(event.x, event.mods), false};
-		context.locate_to_tick(time_selection->grab_tick);
 		return;
 	}
 
@@ -232,8 +231,6 @@ void TimelineMouse::up(const juce::MouseEvent& event)
 	if (time_selection) {
 		if (time_selection->selected)
 			context.locate_to_tick(context.project.loop.start);
-		else
-			context.clear_loop_range();
 
 		time_selection.reset();
 		return;

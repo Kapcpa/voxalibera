@@ -18,6 +18,7 @@ namespace command
 	constexpr juce::CommandID PASTE = 51;
 	constexpr juce::CommandID CUT = 52;
 	constexpr juce::CommandID DUPLICATE = 53;
+	constexpr juce::CommandID DESELECT = 54;
 	constexpr juce::CommandID UNDO = 10;
 	constexpr juce::CommandID REDO = 11;
 	constexpr juce::CommandID SPLIT = 12;
@@ -47,6 +48,7 @@ namespace command
 	constexpr juce::CommandID INTERFACE_SETTINGS = 31;
 	constexpr juce::CommandID PLUGIN_SETTINGS = 32;
 	constexpr juce::CommandID ABOUT = 40;
+	constexpr juce::CommandID KEYBOARD_SHORTCUTS = 41;
 }
 
 struct CommandDefinition
