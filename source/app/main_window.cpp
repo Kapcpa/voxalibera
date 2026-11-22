@@ -101,6 +101,8 @@ MainWindow::MainWindow(const juce::String& name, AppContext& context) : Document
 		{command::AUDIO_SETTINGS, [this] { show_settings(SettingsView::AUDIO_PAGE); }},
 		{command::INTERFACE_SETTINGS, [this] { show_settings(SettingsView::INTERFACE_PAGE); }},
 		{command::PLUGIN_SETTINGS, [this] { show_settings(SettingsView::PLUGIN_PAGE); }},
+		{command::DESELECT, [this] { this->context.selection.deselect_clips(); }},
+		{command::KEYBOARD_SHORTCUTS, [this] { show_shortcuts(); }},
 		{command::ABOUT, [this] { show_about(); }},
 	};
 
@@ -433,6 +435,28 @@ void MainWindow::close_overlay()
 void MainWindow::show_about()
 {
 	show_message("About " + juce::JUCEApplication::getInstance()->getApplicationName(), "Version " + juce::JUCEApplication::getInstance()->getApplicationVersion() + "\n" + ABOUT_TEXT, {{"OK", {}}});
+}
+
+void MainWindow::show_shortcuts()
+{
+	std::vector<ShortcutGroup> groups;
+
+	for (const auto& definition : command_definitions()) {
+		const auto keys = command_manager.getKeyMappings()->getKeyPressesAssignedToCommand(definition.id);
+
+		if (keys.isEmpty())
+			continue;
+
+		auto group = std::ranges::find(groups, definition.category, &ShortcutGroup::title);
+
+		if (group == groups.end())
+			group = groups.insert(groups.end(), {definition.category, {}});
+
+		group->rows.emplace_back(describe_shortcut(keys.getFirst()), definition.name.trimCharactersAtEnd("."));
+	}
+
+	shortcuts_view.show(std::move(groups));
+	overlay.open("Keyboard Shortcuts", shortcuts_view);
 }
 
 void MainWindow::show_message(const juce::String& title, const juce::String& message, std::vector<MessageChoice> choices)

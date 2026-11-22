@@ -20,6 +20,7 @@ namespace
 		{command::PASTE, "Paste", "Edit", 'v', CONTROL},
 		{command::DUPLICATE, "Duplicate", "Edit", 'd', CONTROL},
 		{command::CUT, "Cut", "Edit", 'x', CONTROL},
+		{command::DESELECT, "Deselect Clips", "Edit", juce::KeyPress::escapeKey, NO_MODIFIERS},
 		{command::UNDO, "Undo", "Edit", 'z', CONTROL},
 		{command::REDO, "Redo", "Edit", 'z', CONTROL_SHIFT},
 		{command::SPLIT, "Split", "Edit", 'e', CONTROL},
@@ -48,6 +49,7 @@ namespace
 		{command::AUDIO_SETTINGS, "Audio...", "Settings", ',', CONTROL},
 		{command::INTERFACE_SETTINGS, "Interface...", "Settings", 0, NO_MODIFIERS},
 		{command::PLUGIN_SETTINGS, "Plugin...", "Settings", 0, NO_MODIFIERS},
+		{command::KEYBOARD_SHORTCUTS, "Keyboard Shortcuts", "Help", '/', CONTROL},
 		{command::ABOUT, "About Voxalibera", "Help", 0, NO_MODIFIERS},
 	};
 }

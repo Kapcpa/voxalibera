@@ -98,12 +98,16 @@ void TrackAreaView::layout_headers()
 
 void TrackAreaView::follow_playhead()
 {
-	if (!context.engine.transport.is_playing() || timeline.getWidth() <= 0)
+	const auto playing = context.engine.transport.is_playing();
+	const auto jumped = context.engine.transport.position() != shown_position;
+
+	if ((!playing && !jumped) || timeline.getWidth() <= 0)
 		return;
 
 	const auto x = viewport.beat_to_x(timeline.playhead_beat());
+	const auto right_edge = playing ? timeline.getWidth() * FOLLOW_RIGHT_EDGE : (double) timeline.getWidth();
 
-	if (x >= 0.0 && x <= timeline.getWidth() * FOLLOW_RIGHT_EDGE)
+	if (x >= 0.0 && x <= right_edge)
 		return;
 
 	viewport.first_beat = std::max(0.0, timeline.playhead_beat() - timeline.getWidth() * FOLLOW_LEFT_MARGIN / viewport.pixels_per_beat);

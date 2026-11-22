@@ -4,6 +4,8 @@
 #include "core/project/model.h"
 #include "core/project/takes.h"
 
+#include <algorithm>
+#include <iterator>
 #include <limits>
 
 namespace
@@ -271,10 +273,20 @@ void ClipEditor::remove_selected()
 	if (selection.clips.empty())
 		return;
 
-	auto edit = edits.begin(selection.clips.size() == 1 ? "Delete Clip" : "Delete Clips");
+	const auto ranges = comp_ranges(project, selection.clips);
+	std::vector<ClipId> plain_clips;
 
 	for (const auto id : selection.clips)
+		if (const auto* track = project.find_track_of(id); track != nullptr && !has_takes(*track))
+			plain_clips.push_back(id);
+
+	auto edit = edits.begin(selection.clips.size() == 1 ? "Delete Clip" : "Delete Clips");
+
+	for (const auto id : plain_clips)
 		edit.remove_clip(id);
+
+	for (const auto& range : ranges)
+		remove_range(edit, project, range.track, range.start, range.end);
 
 	edit.commit();
 	selection.forget_missing(project);
@@ -396,58 +408,73 @@ void ClipEditor::paste_clips(const Clipboard& clipboard, std::int64_t position, 
 	position = convert_samples(position, device_rate, timeline_rate(project, device_rate));
 
 	auto edit = edits.begin(clipboard.clips.size() == 1 ? "Paste Clip" : "Paste Clips");
-	std::vector<ClipId> pasted_clips;
-
-	for (auto entry : clipboard.clips) {
-		entry.clip.start += position;
-		const auto id = edit.add_clip(entry.track, entry.clip);
-
-		if (id.is_valid())
-			pasted_clips.push_back(id);
-	}
-
+	const auto pasted_clips = add_copies(edit, clipboard.clips, position);
+	edit.commit();
 	select_only(pasted_clips);
 }
 
 void ClipEditor::duplicate_selected()
 {
-	auto earliest_start = std::numeric_limits<std::int64_t>::max();
-	auto latest_end = std::numeric_limits<std::int64_t>::min();
+	const auto copies = copies_of(selection, project);
 
-	for (const auto id : selection.clips) {
-		const auto* clip = project.find_clip(id);
-
-		if (clip == nullptr)
-			continue;
-
-		earliest_start = std::min(earliest_start, clip->start);
-		latest_end = std::max(latest_end, clip->end());
-	}
-
-	if (latest_end < earliest_start)
+	if (copies.empty())
 		return;
 
-	const auto span = latest_end - earliest_start;
+	const auto earliest_start = std::ranges::min(copies, {}, [](const CopiedClip& entry) { return entry.clip.start; }).clip.start;
+	const auto latest_end = std::ranges::max(copies, {}, [](const CopiedClip& entry) { return entry.clip.end(); }).clip.end();
+
 	auto edit = edits.begin(selection.clips.size() == 1 ? "Duplicate Clip" : "Duplicate Clips");
-	std::vector<ClipId> duplicated_clips;
+	const auto duplicated_clips = add_copies(edit, copies, latest_end - earliest_start);
+	edit.commit();
+	select_only(duplicated_clips);
+}
 
-	for (const auto id : selection.clips) {
-		const auto* clip = project.find_clip(id);
-		const auto* track = project.find_track_of(id);
+std::vector<ClipId> ClipEditor::add_copies(Edit& edit, const std::vector<CopiedClip>& copies, std::int64_t offset)
+{
+	std::vector<TrackId> tracks;
 
-		if (clip == nullptr || track == nullptr)
+	for (const auto& entry : copies)
+		if (std::ranges::find(tracks, entry.track) == tracks.end())
+			tracks.push_back(entry.track);
+
+	std::vector<ClipId> added;
+
+	for (const auto track_id : tracks) {
+		const auto* track = project.find_track(track_id);
+
+		if (track == nullptr)
 			continue;
 
-		auto duplicate = *clip;
-		duplicate.start += span;
-		duplicated_clips.push_back(edit.add_clip(track->id, duplicate));
+		std::vector<Clip> clips;
+
+		for (const auto& entry : copies)
+			if (entry.track == track_id)
+				clips.push_back(entry.clip);
+
+		for (auto& clip : clips)
+			clip.start += offset;
+
+		const auto is_comp = has_takes(*track) || std::ranges::any_of(clips, [](const Clip& clip) { return clip.lane > 0 || !clip.active; });
+
+		if (is_comp) {
+			std::ranges::copy(add_comp(edit, project, track_id, clips), std::back_inserter(added));
+			continue;
+		}
+
+		for (const auto& clip : clips)
+			added.push_back(edit.add_clip(track_id, clip));
 	}
 
-	select_only(duplicated_clips);
+	return added;
 }
 
 void ClipEditor::select_only(std::vector<ClipId> ids)
 {
+	std::erase_if(ids, [this](ClipId id) {
+		const auto* clip = project.find_clip(id);
+		return clip == nullptr || !clip->active;
+	});
+
 	if (ids.empty())
 		return;
 

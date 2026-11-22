@@ -5,14 +5,16 @@
 
 #include <vector>
 
+struct CopiedClip
+{
+	TrackId track;
+	Clip clip;
+};
+
+std::vector<CopiedClip> copies_of(const Selection& selection, const Project& project);
+
 struct Clipboard
 {
-	struct CopiedClip
-	{
-		TrackId track;
-		Clip clip;
-	};
-
 	void copy(const Selection& selection, const Project& project);
 	void clear();
 

@@ -20,7 +20,7 @@ Starting the program, windows, commands and menus.
 Application state. `project/` is the song document and its files, `audio/` talks to the engine and the devices, `media/` handles audio files and waveforms, `plugins/` effects.
 
 - `app_context` - `AppContext`, the one shared object: settings, engine, devices, project, edits, selection, recorder, project session.
-- `clipboard` - copied clips with their tracks, starts relative to the earliest one; cleared when the project is replaced.
+- `clipboard` - copied clips with their tracks, starts relative to the earliest one (a clip on a track with takes brings every take under it); cleared when the project is replaced.
 - `editors` - `TrackEditor` (add, change settings, delete, rename, reorder, colour, volume, arm, mute, solo, add/insert/move/remove/bypass plugins) and `ClipEditor` (move the selection in time and across tracks, split at the playhead, paste at the playhead, duplicate after the selection, delete, comp takes, keep the comp).
 - `selection` - which tracks and clips are selected, or the master (for its effect chain); outside undo.
 - `settings` - `settings.json`: device, test monitor, hardware controls, extra plugin folders.
@@ -28,7 +28,7 @@ Application state. `project/` is the song document and its files, `audio/` talks
 - `project/model` - the whole project as plain data: `Project` (tempo, tracks, the master, folder, change counter), `Track` (the master is one too, with the id `MASTER_TRACK`, so its effects use the same code as any track's), `Clip`, `Plugin`, the id types `TrackId`, `ClipId` and `PluginId`, the track colour palette, and the solo rules.
 - `project/edit_history` - `Edit` and `EditHistory`: every change to the project, with undo and redo.
 - `project/project_file` - the `.vxl` format: a project to JSON and back; skips broken parts instead of refusing the file.
-- `project/takes` - take lanes and comping: a new take goes to the lane under everything it covers, comping makes a range play from one lane (splitting clips at its edges, short fades where takes meet); keeping the comp removes the takes that don't play. Lanes show only when a track has more than one.
+- `project/takes` - take lanes and comping: a new take goes to the lane under everything it covers, comping makes a range play from one lane (splitting clips at its edges, short fades where takes meet); keeping the comp removes the takes that don't play. Lanes show only when a track has more than one. Also copying, deleting and pasting whole comps, and removing empty lanes.
 - `project/project_session` - the open project's file: new, open, save, save as (moves or copies the recordings), backups, unsaved changes.
 - `project/project_recovery` - the `.lock` file that tells a crash from a clean exit, autosave written on the disk thread, finding crashed projects and leftover unsaved sessions, rebuilding a project from bare takes.
 - `project/project_cleanup` - takes no clip uses, deleting them with their waveform caches, and when to hint about them (`~/.local/state/voxalibera/cleanup-hints.json`).
@@ -114,6 +114,7 @@ Views. They read state every frame and call into `core/` on user input; they nev
 - `main_view` - the main window's zones: transport bar, tracks area, mixer.
 - `mixer/mixer_view` - the master strip on the left, then one strip per track, scrolling sideways.
 - `mixer/mixer_strip` - pan, values, fader with meter, FX, mute, solo and a colour name plate; the master keeps the same sections so all faders line up, and has its own FX button.
+- `shortcuts_view` - the Keyboard Shortcuts dialog: the commands with keys, and the mouse gestures.
 - `export_dialog` - the Export Mix dialog: file, format, range (whole song or the loop range), length, progress.
 - `transport_bar` - play, stop, record, position (or the count-in beats), tempo, time signature, metronome, count-in, and a warning when clips don't match the device's sample rate.
 - `parts/modal_overlay` - dims the window and shows a dialog in the middle.
