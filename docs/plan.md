@@ -4,7 +4,7 @@ Rough development plan. Each milestone ends with something usable, so the app is
 
 ## Where we are
 
-Milestones 1 to 3 are done: recording and playback of mono and stereo tracks, timeline, mixer, projects with autosave and crash recovery, VST3 and LV2 effect chains with latency compensation (on tracks and the master), audio import, clip editing (trim, split, fades, gain, copy and paste across tracks), grid and loop, take lanes with comping, reordering tracks, and exporting the mix to WAV. Next is milestone 4 (MIDI).
+Milestones 1 to 3 are done: recording and playback of mono and stereo tracks, timeline, mixer, projects with autosave and crash recovery, VST3 and LV2 effect chains with latency compensation (on tracks and the master), audio import, clip editing (trim, split, fades, gain, copy and paste across tracks), grid and loop, take lanes with comping, reordering tracks, and exporting the mix to WAV. Next is milestone 4 (Mix).
 
 ## Architecture to settle before milestone 1
 
@@ -93,24 +93,37 @@ The core loop: arm a track, record, hear it back, record again.
 - Effect chain on the master.
 - Reorder tracks.
 
-### 4. MIDI
+### 4. Mix
 
-- Instrument tracks, MIDI input devices, MIDI recording.
+Everything needed to finish a mix of recorded tracks without leaving the app.
+
+- Sends, buses, groups; latency compensation extended to all of them.
+- Automation lanes for volume, pan and any effect parameter (read, write, touch, latch), curve editing.
+- Presets for effects: save and load a plugin's state as a file, factory presets for our own effects.
+- Our own reverb, delay and compressor.
+
+### 5. Beats
+
+Drums from your own samples, clicked in like FL's step sequencer.
+
+- Note clips in the model: notes with position, length, pitch and velocity. Every editor and instrument works on these, so a piano roll later is just another view.
+- Drum rack: a builtin instrument where each pad is a sample with its own volume, pan and tuning, played by one note number.
+- Step sequencer for pattern clips: rows are the rack's pads with their sample names, click a step to add a hit, velocity per step, swing.
+- Pattern clips sit on the timeline like audio clips, so copy, duplicate and loop work the same.
+
+### 6. MIDI
+
+- MIDI input devices and recording, so a keyboard or pad controller plays any instrument track.
 - Piano roll with velocity, quantize, basic transforms.
+- Hosted instrument plugins (VST3, LV2).
 - Takes and comping for MIDI as well.
 
-### 5. Automation and control
+### 7. Control
 
-- Automation lanes for any parameter (read, write, touch, latch), curve editing.
 - Macros and modulators (LFO, envelope follower) on any parameter.
 - MIDI controller mapping.
 
-### 6. Routing and presets
-
-- Sends, buses, groups; latency compensation extended to all of them.
-- Presets for effects: save and load a plugin's state as a file, factory presets for our own effects.
-
-### 7. Ready for users
+### 8. Ready for users
 
 - Key remapping UI and command palette.
 - A proper notification system for errors and warnings (non-blocking, with details on demand) instead of the plain message dialog and the transport bar note.
@@ -132,5 +145,5 @@ Self-contained and not urgent, each fits one pull request. Say in an issue which
 - **Export to FLAC and MP3** next to WAV (`core/audio/mix_export`).
 - **Markers:** named positions on the ruler, saved under `markers` in the project file ([projects.md](projects.md)).
 - **Themes:** all colours are in `ui/theme.h`; make them switchable and add a light theme or two.
-- **Our own effects:** parametric EQ, compressor, reverb, delay, modulation (chorus, flanger, phaser), pitch shifter. Building blocks are in `engine/dsp/`, existing effects in `engine/plugins/builtin/`.
+- **Our own effects:** parametric EQ, modulation (chorus, flanger, phaser), pitch shifter. Building blocks are in `engine/dsp/`, existing effects in `engine/plugins/builtin/`.
 - **AUR package:** a PKGBUILD that builds a tagged release.
